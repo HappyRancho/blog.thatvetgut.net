@@ -1,0 +1,6 @@
+{
+  "name": "ThatVetGuy",
+  "description": "Veterinary Medicine • Animal Health • Pet Education. A collaborative veterinary publication created and operated by a team of veterinary professionals.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

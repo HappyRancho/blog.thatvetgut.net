@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isCoFounder() {
+      return isAuthenticated() && (
+        getUserData().role == 'CO_FOUNDER' ||
+        request.auth.token.email == 'chiragpatidar0369@gmail.com' ||
+        request.auth.token.email.matches('.*@thatvetguy[.]net')
+      );
+    }
+    
+    function isContributor() {
+      return isAuthenticated() && getUserData().role == 'CONTRIBUTOR';
+    }
+
+    // Articles collection
+    match /articles/{articleId} {
+      allow read: if resource.data.status == 'PUBLISHED' || isCoFounder() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
+      allow create: if isCoFounder() || isContributor();
+      allow update: if isCoFounder() || (isContributor() && resource.data.authorId == request.auth.uid && request.resource.data.status != 'PUBLISHED');
+      allow delete: if isCoFounder();
+    }
+
+    // Users / Authors profile collection
+    match /users/{userId} {
+      allow read: if true;
+      allow create, update: if isCoFounder() || (isAuthenticated() && request.auth.uid == userId);
+      allow delete: if isCoFounder();
+    }
+
+    // Categories & Tags
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isCoFounder();
+    }
+    
+    match /tags/{tagId} {
+      allow read: if true;
+      allow write: if isCoFounder();
+    }
+  }
+}
