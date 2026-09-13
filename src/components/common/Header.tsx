@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bookmark, Menu, PenTool, Search, Stethoscope } from 'lucide-react';
+import { Bookmark, Menu, Search, Stethoscope } from 'lucide-react';
 import { useNavigation } from '../../context/NavigationContext';
 import { useBookmarks } from '../../context/BookmarksContext';
 import { MobileNavDrawer } from './MobileNavDrawer';
@@ -132,17 +132,6 @@ export const Header: React.FC = () => {
                 <span>Saved ({bookmarks.length})</span>
               </button>
             )}
-
-            {/* Editorial CMS Portal Button */}
-            <button
-              id="header-cms-portal-btn"
-              onClick={() => navigateTo({ name: 'admin' })}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-950 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded-xl transition-all min-h-[44px]"
-              title="Open ThatVetGuy Editorial Portal & CMS"
-            >
-              <PenTool className="w-3.5 h-3.5 text-emerald-800" />
-              <span className="hidden sm:inline">Editorial Portal</span>
-            </button>
 
             {/* Mobile Hamburger Menu Button */}
             <button

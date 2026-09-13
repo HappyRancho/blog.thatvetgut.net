@@ -25,7 +25,6 @@ import {
   ShieldAlert,
   AlertCircle,
   ExternalLink,
-  HelpCircle,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigation } from '../../context/NavigationContext';
@@ -36,7 +35,6 @@ import { ReviewQueue } from './ReviewQueue';
 import { ContributorsManager } from './ContributorsManager';
 import { AdminSettings } from './AdminSettings';
 import { getArticlesFromFirestore } from '../../services/articleService';
-import { DEFAULT_MEMBER_CREDENTIALS, MASTER_ADMIN_KEY } from '../../services/securityService';
 
 export const AdminDashboard: React.FC = () => {
   const {
@@ -47,7 +45,8 @@ export const AdminDashboard: React.FC = () => {
     isAuthorized,
     loading,
     signInWithGoogle,
-    loginWithPasscode,
+    loginWithCredentials,
+    resetPasswordWithKey,
     getLockoutSeconds,
     allAuthors,
     signOutUser,
@@ -61,15 +60,20 @@ export const AdminDashboard: React.FC = () => {
   const [reviewCount, setReviewCount] = useState(0);
   const [isSigningIn, setIsSigningIn] = useState(false);
 
-  // Secure Auth State
-  const [authMethod, setAuthMethod] = useState<'passcode' | 'google'>('passcode');
-  const [selectedMemberId, setSelectedMemberId] = useState<string>('dr-chirag-patidar');
-  const [passcodeInput, setPasscodeInput] = useState<string>('');
-  const [customEmailInput, setCustomEmailInput] = useState<string>('');
-  const [showPasscode, setShowPasscode] = useState<boolean>(false);
-  const [showTeamKeys, setShowTeamKeys] = useState<boolean>(false);
+  // Secure Auth State: Username & Password
+  const [authMethod, setAuthMethod] = useState<'credentials' | 'google' | 'reset'>('credentials');
+  const [usernameInput, setUsernameInput] = useState<string>('');
+  const [passwordInput, setPasswordInput] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const [lockoutSeconds, setLockoutSeconds] = useState<number>(0);
   const [verificationFeedback, setVerificationFeedback] = useState<string | null>(null);
+
+  // Reset Password State
+  const [resetUsername, setResetUsername] = useState<string>('');
+  const [resetRecoveryKey, setResetRecoveryKey] = useState<string>('');
+  const [resetNewPassword, setResetNewPassword] = useState<string>('');
+  const [resetConfirmPassword, setResetConfirmPassword] = useState<string>('');
+  const [resetError, setResetError] = useState<string | null>(null);
 
   // Active section from route or default to 'overview'
   const activeSection = route.name === 'admin' ? route.section || 'overview' : 'overview';
@@ -93,26 +97,67 @@ export const AdminDashboard: React.FC = () => {
     }
   }, [getLockoutSeconds]);
 
-  const handlePasscodeLogin = (e: React.FormEvent) => {
+  const handleCredentialLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setVerificationFeedback(null);
     clearAuthError();
 
-    const target =
-      selectedMemberId === 'custom' ? customEmailInput : selectedMemberId;
-
-    if (!target || !target.trim()) {
+    if (!usernameInput.trim()) {
+      return;
+    }
+    if (!passwordInput.trim()) {
       return;
     }
 
-    const res = loginWithPasscode(target, passcodeInput);
+    const res = loginWithCredentials(usernameInput.trim(), passwordInput.trim());
     if (res.success) {
       setVerificationFeedback(res.message);
-      setPasscodeInput('');
+      setPasswordInput('');
     } else {
       if (res.remainingSeconds && res.remainingSeconds > 0) {
         setLockoutSeconds(res.remainingSeconds);
       }
+    }
+  };
+
+  const handleResetPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError(null);
+
+    if (!resetUsername.trim()) {
+      setResetError('Please enter your username or registered email.');
+      return;
+    }
+    if (!resetRecoveryKey.trim()) {
+      setResetError('Please provide the Master Recovery Key.');
+      return;
+    }
+    if (!resetNewPassword || resetNewPassword.length < 6) {
+      setResetError('New password must be at least 6 characters.');
+      return;
+    }
+    if (resetNewPassword !== resetConfirmPassword) {
+      setResetError('Passwords do not match. Please verify.');
+      return;
+    }
+
+    const res = resetPasswordWithKey(
+      resetUsername.trim(),
+      resetRecoveryKey.trim(),
+      resetNewPassword.trim()
+    );
+
+    if (res.success) {
+      setVerificationFeedback('Password reset successfully! Please sign in with your new password.');
+      setUsernameInput(resetUsername.trim());
+      setPasswordInput(resetNewPassword.trim());
+      setAuthMethod('credentials');
+      setResetUsername('');
+      setResetRecoveryKey('');
+      setResetNewPassword('');
+      setResetConfirmPassword('');
+    } else {
+      setResetError(res.message);
     }
   };
 
@@ -169,10 +214,6 @@ export const AdminDashboard: React.FC = () => {
 
   // If not authenticated, render the Secure Authenticated Team Sign-in Screen
   if (!isAuthorized) {
-    const selectedAuthorObj = allAuthors.find(
-      (a) => a.id === selectedMemberId || a.slug === selectedMemberId
-    );
-
     return (
       <div className="min-h-screen bg-stone-100 flex flex-col justify-center items-center p-4 sm:p-6">
         <div className="max-w-lg w-full bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-xl space-y-6">
@@ -185,7 +226,7 @@ export const AdminDashboard: React.FC = () => {
               ThatVetGuy Editorial Portal
             </h1>
             <p className="text-xs text-stone-600">
-              Zero-Trust Secured Gateway for ThatVetGuy Co-Founders & Accredited Editorial Staff.
+              Secured Username & Password Access for Co-Founders & Accredited Editorial Staff.
             </p>
           </div>
 
@@ -193,19 +234,19 @@ export const AdminDashboard: React.FC = () => {
           <div className="grid grid-cols-2 p-1 bg-stone-100 rounded-2xl gap-1 border border-stone-200 text-xs font-semibold">
             <button
               type="button"
-              id="cms-auth-tab-passcode"
+              id="cms-auth-tab-credentials"
               onClick={() => {
-                setAuthMethod('passcode');
+                setAuthMethod('credentials');
                 clearAuthError();
               }}
               className={`py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                authMethod === 'passcode'
+                authMethod === 'credentials' || authMethod === 'reset'
                   ? 'bg-white text-emerald-950 shadow-xs border border-stone-200'
                   : 'text-stone-500 hover:text-stone-800'
               }`}
             >
               <Lock className="w-3.5 h-3.5 text-emerald-850" />
-              <span>Member Passcode</span>
+              <span>Username & Password</span>
             </button>
             <button
               type="button"
@@ -275,141 +316,84 @@ export const AdminDashboard: React.FC = () => {
               <div>
                 <strong className="block font-semibold">Security Lockout Active</strong>
                 <span>
-                  Too many incorrect passcode attempts. Authentication blocked for{' '}
+                  Too many incorrect password attempts. Authentication blocked for{' '}
                   <span className="font-mono font-bold text-red-700">{lockoutSeconds}</span> seconds.
                 </span>
               </div>
             </div>
           )}
 
-          {/* TAB 1: Passcode Authentication */}
-          {authMethod === 'passcode' && (
-            <form onSubmit={handlePasscodeLogin} className="space-y-4">
-              {/* Member Selection */}
+          {/* TAB 1: Username & Password Authentication */}
+          {authMethod === 'credentials' && (
+            <form onSubmit={handleCredentialLogin} className="space-y-4">
+              {/* Username / Email Input */}
               <div className="space-y-1.5">
                 <label
-                  htmlFor="cms-member-select"
+                  htmlFor="cms-username-input"
                   className="text-[11px] font-bold uppercase tracking-wider text-stone-600 block"
                 >
-                  Select Editorial Member Account
+                  Username or Registered Email
                 </label>
-                <select
-                  id="cms-member-select"
-                  value={selectedMemberId}
-                  onChange={(e) => {
-                    setSelectedMemberId(e.target.value);
-                    clearAuthError();
-                  }}
-                  className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-300 rounded-2xl text-xs font-semibold text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-800"
-                >
-                  <optgroup label="Co-Founders & Lead Administrators (Equal Authority)">
-                    <option value="dr-chirag-patidar">
-                      Dr. Chirag Patidar — Lead Admin (chiragpatidar0369@gmail.com)
-                    </option>
-                    <option value="dr-amaan-ahmed">
-                      Dr. Amaan Ahmed — Co-Founder (Small Animal & Imaging)
-                    </option>
-                    <option value="dr-shivam-singh-thakur">
-                      Dr. Shivam Singh Thakur — Co-Founder (Clinical Pathologist)
-                    </option>
-                    <option value="dr-ritesh-verma">
-                      Dr. Ritesh Verma — Co-Founder (Avian & Exotic Specialist)
-                    </option>
-                    <option value="dr-deepesh-mathur">
-                      Dr. Deepesh Mathur — Co-Founder (Large Animal Medicine)
-                    </option>
-                    <option value="dr-deepesh-chaware">
-                      Dr. Deepesh Chaware — Co-Founder (Veterinary Surgeon)
-                    </option>
-                  </optgroup>
-                  <optgroup label="Accredited Contributors & Staff">
-                    <option value="custom">Other Registered Contributor Email...</option>
-                  </optgroup>
-                </select>
-              </div>
-
-              {/* Custom Email input if 'custom' selected */}
-              {selectedMemberId === 'custom' && (
-                <div className="space-y-1">
-                  <label
-                    htmlFor="cms-custom-email-input"
-                    className="text-[11px] font-bold uppercase tracking-wider text-stone-600 block"
-                  >
-                    Contributor Registered Email
-                  </label>
+                <div className="relative">
                   <input
-                    id="cms-custom-email-input"
-                    type="email"
-                    value={customEmailInput}
-                    onChange={(e) => setCustomEmailInput(e.target.value)}
-                    placeholder="contributor@thatvetguy.net"
+                    id="cms-username-input"
+                    type="text"
+                    value={usernameInput}
+                    onChange={(e) => {
+                      setUsernameInput(e.target.value);
+                      clearAuthError();
+                    }}
+                    disabled={lockoutSeconds > 0}
+                    placeholder="e.g. chirag, amaan, or email"
                     required
-                    className="w-full px-3.5 py-2 text-xs bg-white border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-800"
+                    className="w-full px-3.5 py-2.5 bg-white border border-stone-300 rounded-2xl text-xs font-medium text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-800 disabled:bg-stone-100 disabled:cursor-not-allowed"
                   />
                 </div>
-              )}
+              </div>
 
-              {/* Selected Member Profile Card preview */}
-              {selectedMemberId !== 'custom' && selectedAuthorObj && (
-                <div className="p-3 bg-stone-50 border border-stone-200 rounded-2xl flex items-center justify-between">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <img
-                      src={selectedAuthorObj.avatarUrl}
-                      alt={selectedAuthorObj.name}
-                      referrerPolicy="no-referrer"
-                      className="w-10 h-10 rounded-xl object-cover border border-stone-200 shrink-0"
-                    />
-                    <div className="min-w-0">
-                      <div className="font-serif font-bold text-xs text-stone-900 truncate">
-                        {selectedAuthorObj.name}
-                      </div>
-                      <div className="text-[10px] text-stone-500 truncate">
-                        {selectedAuthorObj.professionalRole || selectedAuthorObj.designation}
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-[10px] bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0">
-                    {selectedAuthorObj.role === 'CO_FOUNDER' ? 'Co-Founder' : 'Contributor'}
-                  </span>
-                </div>
-              )}
-
-              {/* Passcode / PIN Input */}
+              {/* Password Input */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label
-                    htmlFor="cms-passcode-input"
+                    htmlFor="cms-password-input"
                     className="text-[11px] font-bold uppercase tracking-wider text-stone-600 flex items-center gap-1.5"
                   >
                     <Key className="w-3.5 h-3.5 text-emerald-850" />
-                    <span>Member Editorial Passcode / PIN</span>
+                    <span>Password</span>
                   </label>
                   <button
                     type="button"
-                    onClick={() => setShowTeamKeys(!showTeamKeys)}
+                    onClick={() => {
+                      setAuthMethod('reset');
+                      setResetUsername(usernameInput);
+                      clearAuthError();
+                    }}
                     className="text-[11px] text-emerald-850 hover:text-emerald-950 font-semibold underline cursor-pointer"
                   >
-                    {showTeamKeys ? 'Hide PIN Directory' : 'Team PIN Directory'}
+                    Forgot Password?
                   </button>
                 </div>
                 <div className="relative">
                   <input
-                    id="cms-passcode-input"
-                    type={showPasscode ? 'text' : 'password'}
-                    value={passcodeInput}
-                    onChange={(e) => setPasscodeInput(e.target.value)}
+                    id="cms-password-input"
+                    type={showPassword ? 'text' : 'password'}
+                    value={passwordInput}
+                    onChange={(e) => {
+                      setPasswordInput(e.target.value);
+                      clearAuthError();
+                    }}
                     disabled={lockoutSeconds > 0}
-                    placeholder="Enter private member passcode (e.g. CP-3690)"
+                    placeholder="Enter your password"
                     required
                     className="w-full pl-3.5 pr-10 py-2.5 bg-white border border-stone-300 rounded-2xl text-xs font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-emerald-800 disabled:bg-stone-100 disabled:cursor-not-allowed"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPasscode(!showPasscode)}
+                    onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-1"
-                    aria-label={showPasscode ? 'Hide passcode' : 'Show passcode'}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
-                    {showPasscode ? (
+                    {showPassword ? (
                       <EyeOff className="w-4 h-4" />
                     ) : (
                       <Eye className="w-4 h-4" />
@@ -421,16 +405,115 @@ export const AdminDashboard: React.FC = () => {
               {/* Submit Authentication Button */}
               <button
                 type="submit"
-                id="cms-submit-passcode-btn"
-                disabled={lockoutSeconds > 0 || !passcodeInput.trim()}
+                id="cms-submit-login-btn"
+                disabled={lockoutSeconds > 0 || !usernameInput.trim() || !passwordInput.trim()}
                 className="w-full py-3 px-4 bg-emerald-950 hover:bg-emerald-900 disabled:bg-stone-300 disabled:cursor-not-allowed text-white font-bold text-xs uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer min-h-[48px]"
               >
                 <Lock className="w-4 h-4" />
                 <span>
                   {lockoutSeconds > 0
                     ? `Locked (${lockoutSeconds}s)`
-                    : 'Verify Passcode & Enter CMS'}
+                    : 'Sign In to Editorial Portal'}
                 </span>
+              </button>
+            </form>
+          )}
+
+          {/* TAB RESET: Password Reset Flow */}
+          {authMethod === 'reset' && (
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-stone-200">
+                <div className="flex items-center gap-2">
+                  <Key className="w-4 h-4 text-emerald-800" />
+                  <span className="font-serif font-bold text-sm text-stone-900">
+                    Reset Member Password
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMethod('credentials');
+                    setResetError(null);
+                  }}
+                  className="text-xs text-stone-500 hover:text-stone-800 font-semibold"
+                >
+                  ← Back to Login
+                </button>
+              </div>
+
+              <p className="text-xs text-stone-600">
+                Enter your username and the Master Recovery Key (or verify with an authorized Co-Founder) to establish a new password.
+              </p>
+
+              {resetError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-900 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-700 shrink-0 mt-0.5" />
+                  <span>{resetError}</span>
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-stone-600 block">
+                  Username or Registered Email
+                </label>
+                <input
+                  type="text"
+                  value={resetUsername}
+                  onChange={(e) => setResetUsername(e.target.value)}
+                  placeholder="e.g. chirag or chiragpatidar0369@gmail.com"
+                  required
+                  className="w-full px-3.5 py-2 text-xs bg-white border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-800"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-stone-600 block">
+                  Master Administrator Recovery Key
+                </label>
+                <input
+                  type="password"
+                  value={resetRecoveryKey}
+                  onChange={(e) => setResetRecoveryKey(e.target.value)}
+                  placeholder="Enter recovery key"
+                  required
+                  className="w-full px-3.5 py-2 text-xs font-mono bg-white border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-800"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-stone-600 block">
+                  New Password (min 6 characters)
+                </label>
+                <input
+                  type="password"
+                  value={resetNewPassword}
+                  onChange={(e) => setResetNewPassword(e.target.value)}
+                  placeholder="Enter new strong password"
+                  required
+                  className="w-full px-3.5 py-2 text-xs font-mono bg-white border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-800"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-stone-600 block">
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  value={resetConfirmPassword}
+                  onChange={(e) => setResetConfirmPassword(e.target.value)}
+                  placeholder="Re-type new password"
+                  required
+                  className="w-full px-3.5 py-2 text-xs font-mono bg-white border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-800"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 px-4 bg-emerald-950 hover:bg-emerald-900 text-white font-bold text-xs uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer min-h-[46px]"
+              >
+                <CheckCircle className="w-4 h-4" />
+                <span>Save New Password & Sign In</span>
               </button>
             </form>
           )}
@@ -444,9 +527,7 @@ export const AdminDashboard: React.FC = () => {
                   <span>Google Single Sign-On</span>
                 </div>
                 <p>
-                  Sign in with your authorized Google account (such as{' '}
-                  <code className="text-emerald-900 font-bold">chiragpatidar0369@gmail.com</code>).
-                  Your account role will be verified against the official ThatVetGuy editorial roster.
+                  Sign in with your authorized Google account. Your editorial account privileges will be verified against the official ThatVetGuy team roster automatically.
                 </p>
               </div>
 
@@ -481,7 +562,7 @@ export const AdminDashboard: React.FC = () => {
               {/* Browser sandbox notice */}
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-[11px] text-amber-950 space-y-2">
                 <p>
-                  <strong>Sandbox Notice:</strong> If your browser restricts popups inside the preview frame, use the Member Passcode option or open in a full window:
+                  <strong>Sandbox Notice:</strong> If your browser restricts popups inside the preview frame, use the Username & Password option or open in a full window:
                 </p>
                 <button
                   type="button"
@@ -491,72 +572,6 @@ export const AdminDashboard: React.FC = () => {
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>Open ThatVetGuy CMS in Full Window</span>
                 </button>
-              </div>
-            </div>
-          )}
-
-          {/* Expandable Official Team PIN Directory (Zero guesswork for co-founders) */}
-          {showTeamKeys && (
-            <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 space-y-3 text-xs">
-              <div className="flex items-center justify-between border-b border-stone-200 pb-2">
-                <div className="flex items-center gap-2 font-bold text-stone-900">
-                  <ShieldCheck className="w-4 h-4 text-emerald-850" />
-                  <span>Official Editorial Passcode Reference</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowTeamKeys(false)}
-                  className="text-stone-400 hover:text-stone-600 text-xs font-bold"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <p className="text-[11px] text-stone-600">
-                To ensure only team members can log in (and prevent anyone from one-tap clicking into the CMS), each member has a private editorial passcode. You can change your passcode in <strong>Admin Settings → Security</strong> once logged in.
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-[11px]">
-                <div className="bg-white p-2.5 rounded-xl border border-stone-200">
-                  <div className="font-sans font-bold text-stone-800">Dr. Chirag Patidar</div>
-                  <div className="text-stone-500 text-[10px]">Lead Admin</div>
-                  <div className="text-emerald-850 font-bold mt-1">PIN: CP-3690</div>
-                </div>
-
-                <div className="bg-white p-2.5 rounded-xl border border-stone-200">
-                  <div className="font-sans font-bold text-stone-800">Dr. Amaan Ahmed</div>
-                  <div className="text-stone-500 text-[10px]">Co-Founder</div>
-                  <div className="text-emerald-850 font-bold mt-1">PIN: AA-7860</div>
-                </div>
-
-                <div className="bg-white p-2.5 rounded-xl border border-stone-200">
-                  <div className="font-sans font-bold text-stone-800">Dr. Shivam Singh Thakur</div>
-                  <div className="text-stone-500 text-[10px]">Co-Founder</div>
-                  <div className="text-emerald-850 font-bold mt-1">PIN: ST-1008</div>
-                </div>
-
-                <div className="bg-white p-2.5 rounded-xl border border-stone-200">
-                  <div className="font-sans font-bold text-stone-800">Dr. Ritesh Verma</div>
-                  <div className="text-stone-500 text-[10px]">Co-Founder</div>
-                  <div className="text-emerald-850 font-bold mt-1">PIN: RV-2025</div>
-                </div>
-
-                <div className="bg-white p-2.5 rounded-xl border border-stone-200">
-                  <div className="font-sans font-bold text-stone-800">Dr. Deepesh Mathur</div>
-                  <div className="text-stone-500 text-[10px]">Co-Founder</div>
-                  <div className="text-emerald-850 font-bold mt-1">PIN: DM-5544</div>
-                </div>
-
-                <div className="bg-white p-2.5 rounded-xl border border-stone-200">
-                  <div className="font-sans font-bold text-stone-800">Dr. Deepesh Chaware</div>
-                  <div className="text-stone-500 text-[10px]">Co-Founder</div>
-                  <div className="text-emerald-850 font-bold mt-1">PIN: DC-8899</div>
-                </div>
-              </div>
-
-              <div className="bg-emerald-50/70 border border-emerald-200/60 p-2.5 rounded-xl text-[11px] font-mono text-emerald-950">
-                <span className="font-sans font-bold block text-emerald-900">Master Admin Emergency Key:</span>
-                <code>TVG-FOUNDER-ADMIN-2025</code>
               </div>
             </div>
           )}

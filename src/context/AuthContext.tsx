@@ -17,13 +17,16 @@ import { auth, googleProvider, db } from '../lib/firebase';
 import { Author, UserRole } from '../types';
 import { AUTHORS } from '../data/authors';
 import {
-  verifyPasscode,
+  verifyCredentials,
+  changeUserPassword,
+  adminSetUserPassword,
+  resetPasswordWithMasterKey,
+  getPasswordStatus,
   recordFailedAttempt,
   resetFailedAttempts,
   getLockoutRemainingSeconds,
-  setMemberPasscode,
-  getMemberPasscode,
   DEFAULT_MEMBER_CREDENTIALS,
+  MASTER_ADMIN_KEY,
 } from '../services/securityService';
 
 // Initial pre-configured Co-Founder profiles based on official data
@@ -59,11 +62,29 @@ interface AuthContextType {
   canReview: boolean;
   loginWithGoogle: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  loginWithCredentials: (
+    usernameOrEmail: string,
+    password: string
+  ) => { success: boolean; message: string; remainingSeconds?: number };
   loginWithPasscode: (
     authorIdOrEmail: string,
     passcode: string
   ) => { success: boolean; message: string; remainingSeconds?: number };
+  changePassword: (
+    currentPassword: string,
+    newPassword: string
+  ) => { success: boolean; message: string };
+  adminUpdateMemberPassword: (
+    authorId: string,
+    newPassword: string
+  ) => { success: boolean; message: string };
   updatePasscode: (authorId: string, newPasscode: string) => boolean;
+  resetPasswordWithKey: (
+    usernameOrEmail: string,
+    recoveryKey: string,
+    newPassword: string
+  ) => { success: boolean; message: string };
+  getPasswordStatus: (authorId: string) => { isCustom: boolean; lastUpdated: string | null };
   getPasscodeHint: (authorId: string) => string;
   getLockoutSeconds: () => number;
   logout: () => Promise<void>;
@@ -230,11 +251,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [resolveAuthorLocally, allAuthors]
   );
 
-  // Secure Member Passcode Authentication (Zero-Trust Identity Verification)
-  const loginWithPasscode = useCallback(
+  // Username & Password Authentication
+  const loginWithCredentials = useCallback(
     (
-      authorIdOrEmail: string,
-      passcode: string
+      usernameOrEmail: string,
+      passwordInput: string
     ): { success: boolean; message: string; remainingSeconds?: number } => {
       setAuthError(null);
 
@@ -246,41 +267,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, message: lockMsg, remainingSeconds: remainingSecs };
       }
 
-      if (!authorIdOrEmail || !authorIdOrEmail.trim()) {
-        const err = 'Please select a member profile or enter an authorized email.';
+      if (!usernameOrEmail || !usernameOrEmail.trim()) {
+        const err = 'Please enter your username or registered email.';
         setAuthError(err);
         return { success: false, message: err };
       }
 
-      if (!passcode || !passcode.trim()) {
-        const err = 'Please enter your private editorial security passcode.';
+      if (!passwordInput || !passwordInput.trim()) {
+        const err = 'Please enter your account password.';
         setAuthError(err);
         return { success: false, message: err };
       }
 
-      const cleanIdentifier = authorIdOrEmail.trim().toLowerCase();
-      const matched =
-        resolveAuthorLocally(cleanIdentifier) ||
-        allAuthors.find(
-          (a) =>
-            a.id === cleanIdentifier ||
-            a.slug === cleanIdentifier ||
-            a.socials?.email?.toLowerCase() === cleanIdentifier
-        );
-
-      if (!matched) {
-        const err = `Account '${authorIdOrEmail}' is not recognized in the ThatVetGuy editorial registry.`;
-        setAuthError(err);
-        return { success: false, message: err };
-      }
-
-      // Verify passcode against member's stored PIN, default PIN, or master recovery key
-      const isValid = verifyPasscode(matched.id, passcode);
-
-      if (!isValid) {
+      const verifyResult = verifyCredentials(usernameOrEmail, passwordInput, allAuthors);
+      if (!verifyResult.valid || !verifyResult.authorId) {
         const attemptResult = recordFailedAttempt();
         if (attemptResult.locked) {
-          const lockMsg = `Security Alert: 5 incorrect passcode attempts. Account temporarily locked for ${attemptResult.remainingSeconds}s.`;
+          const lockMsg = `Security Alert: 5 incorrect password attempts. Account temporarily locked for ${attemptResult.remainingSeconds}s.`;
           setAuthError(lockMsg);
           return {
             success: false,
@@ -288,7 +291,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             remainingSeconds: attemptResult.remainingSeconds,
           };
         }
-        const err = `Invalid security passcode for ${matched.name}. ${attemptResult.attemptsLeft} attempt(s) remaining before security lockout.`;
+        const err = `${verifyResult.error || 'Invalid credentials.'} (${attemptResult.attemptsLeft} attempt(s) remaining before security lockout)`;
+        setAuthError(err);
+        return { success: false, message: err };
+      }
+
+      const matched =
+        allAuthors.find(
+          (a) => a.id === verifyResult.authorId || a.slug === verifyResult.authorId
+        ) || resolveAuthorLocally(verifyResult.authorId);
+
+      if (!matched) {
+        const err = 'User profile was not found in the local directory.';
         setAuthError(err);
         return { success: false, message: err };
       }
@@ -309,21 +323,64 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setAuthError(null);
       return {
         success: true,
-        message: `Authenticated successfully as ${matched.name} (${
+        message: `Welcome back, ${matched.name}! Authenticated as ${
           matched.role === 'CO_FOUNDER' ? 'Co-Founder & Administrator' : 'Accredited Contributor'
-        }).`,
+        }.`,
       };
     },
     [resolveAuthorLocally, allAuthors]
   );
 
+  // Backward-compatible alias for passcode
+  const loginWithPasscode = useCallback(
+    (
+      authorIdOrEmail: string,
+      passcode: string
+    ): { success: boolean; message: string; remainingSeconds?: number } => {
+      return loginWithCredentials(authorIdOrEmail, passcode);
+    },
+    [loginWithCredentials]
+  );
+
+  // Change Password for currently signed in user
+  const changePassword = useCallback(
+    (currentPassword: string, newPassword: string): { success: boolean; message: string } => {
+      if (!currentAuthor) {
+        return { success: false, message: 'You must be signed in to change your password.' };
+      }
+      return changeUserPassword(currentAuthor.id, currentPassword, newPassword);
+    },
+    [currentAuthor]
+  );
+
+  // Admin changing password for any member
+  const adminUpdateMemberPassword = useCallback(
+    (authorId: string, newPassword: string): { success: boolean; message: string } => {
+      return adminSetUserPassword(authorId, newPassword);
+    },
+    []
+  );
+
   const updatePasscode = useCallback((authorId: string, newPasscode: string): boolean => {
-    return setMemberPasscode(authorId, newPasscode);
+    const res = adminSetUserPassword(authorId, newPasscode);
+    return res.success;
   }, []);
+
+  // Reset password using Emergency Master Admin Key
+  const resetPasswordWithKey = useCallback(
+    (
+      usernameOrEmail: string,
+      recoveryKey: string,
+      newPassword: string
+    ): { success: boolean; message: string } => {
+      return resetPasswordWithMasterKey(usernameOrEmail, recoveryKey, newPassword, allAuthors);
+    },
+    [allAuthors]
+  );
 
   const getPasscodeHint = useCallback((authorId: string): string => {
     const cred = DEFAULT_MEMBER_CREDENTIALS[authorId];
-    return cred ? cred.hint : 'Enter your private editorial security passcode';
+    return cred ? cred.hint : 'Enter your password';
   }, []);
 
   const getLockoutSeconds = useCallback((): number => {
@@ -415,8 +472,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         canReview,
         loginWithGoogle,
         signInWithGoogle: loginWithGoogle,
+        loginWithCredentials,
         loginWithPasscode,
+        changePassword,
+        adminUpdateMemberPassword,
         updatePasscode,
+        resetPasswordWithKey,
+        getPasswordStatus,
         getPasscodeHint,
         getLockoutSeconds,
         logout,

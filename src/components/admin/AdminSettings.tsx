@@ -30,69 +30,81 @@ export const AdminSettings: React.FC = () => {
     isCoFounder,
     allAuthors,
     switchActiveAuthor,
-    updatePasscode,
+    changePassword,
+    adminUpdateMemberPassword,
+    getPasswordStatus,
     signOutUser,
   } = useAuth();
 
-  const [newPasscode, setNewPasscode] = useState('');
-  const [confirmPasscode, setConfirmPasscode] = useState('');
-  const [showPasscode, setShowPasscode] = useState(false);
+  // Change My Password State
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [securityFeedback, setSecurityFeedback] = useState<string | null>(null);
   const [securityError, setSecurityError] = useState<string | null>(null);
 
-  // Admin member passcode manager
+  // Admin member password manager
   const [targetMemberId, setTargetMemberId] = useState<string>(
     currentAuthor?.id || 'dr-chirag-patidar'
   );
-  const [memberNewPasscode, setMemberNewPasscode] = useState('');
+  const [memberNewPassword, setMemberNewPassword] = useState('');
 
-  const handleUpdateCurrentPasscode = (e: React.FormEvent) => {
+  const passwordStatus = currentAuthor ? getPasswordStatus(currentAuthor.id) : null;
+
+  const handleUpdateCurrentPassword = (e: React.FormEvent) => {
     e.preventDefault();
     setSecurityFeedback(null);
     setSecurityError(null);
 
     if (!currentAuthor) return;
 
-    if (!newPasscode || newPasscode.trim().length < 4) {
-      setSecurityError('Passcode must be at least 4 characters long.');
+    if (!newPassword || newPassword.trim().length < 6) {
+      setSecurityError('New password must be at least 6 characters long.');
       return;
     }
 
-    if (newPasscode !== confirmPasscode) {
-      setSecurityError('Passcodes do not match. Please verify.');
+    if (newPassword !== confirmPassword) {
+      setSecurityError('Passwords do not match. Please verify.');
       return;
     }
 
-    const success = updatePasscode(currentAuthor.id, newPasscode.trim());
-    if (success) {
+    const result = changePassword(currentPassword.trim(), newPassword.trim());
+    if (result.success) {
       setSecurityFeedback(
-        `Passcode updated successfully for ${currentAuthor.name}! Your new passcode is now active.`
+        `Password updated successfully for ${currentAuthor.name}! Your new password is now active.`
       );
-      setNewPasscode('');
-      setConfirmPasscode('');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     } else {
-      setSecurityError('Failed to update passcode. Please try again.');
+      setSecurityError(result.message);
     }
   };
 
-  const handleAdminUpdateMemberPasscode = (e: React.FormEvent) => {
+  const handleAdminUpdateMemberPassword = (e: React.FormEvent) => {
     e.preventDefault();
     setSecurityFeedback(null);
     setSecurityError(null);
 
-    if (!targetMemberId || !memberNewPasscode.trim()) return;
+    if (!targetMemberId || !memberNewPassword.trim()) return;
 
     const targetAuthor = allAuthors.find((a) => a.id === targetMemberId);
     if (!targetAuthor) return;
 
-    const success = updatePasscode(targetMemberId, memberNewPasscode.trim());
-    if (success) {
+    if (memberNewPassword.trim().length < 6) {
+      setSecurityError('New password must be at least 6 characters.');
+      return;
+    }
+
+    const result = adminUpdateMemberPassword(targetMemberId, memberNewPassword.trim());
+    if (result.success) {
       setSecurityFeedback(
-        `Passcode for ${targetAuthor.name} has been updated to "${memberNewPasscode.trim()}".`
+        `Password for ${targetAuthor.name} has been updated to "${memberNewPassword.trim()}".`
       );
-      setMemberNewPasscode('');
+      setMemberNewPassword('');
     } else {
-      setSecurityError('Failed to update member passcode.');
+      setSecurityError(result.message);
     }
   };
 
@@ -149,22 +161,42 @@ export const AdminSettings: React.FC = () => {
         </div>
       </div>
 
-      {/* Passcode & Zero-Trust Security Settings */}
+      {/* Password & Zero-Trust Security Settings */}
       <div className="bg-white rounded-2xl border border-stone-200 p-5 sm:p-6 shadow-xs space-y-5">
         <div className="flex items-start justify-between">
           <div>
             <h3 className="font-serif font-bold text-stone-900 text-base flex items-center gap-2">
               <Key className="w-4 h-4 text-emerald-900" />
-              <span>Passcode & Security Management</span>
+              <span>Password & Security Management</span>
             </h3>
             <p className="text-xs text-stone-500 mt-1">
-              Prevent unauthorized login. Manage your personal editorial passcode and team member security credentials.
+              Secure your editorial account. You can change your password anytime with zero-trust validation.
             </p>
           </div>
           <span className="text-[10px] bg-emerald-100 text-emerald-950 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
             Zero-Trust Active
           </span>
         </div>
+
+        {/* Current Password Status */}
+        {passwordStatus && (
+          <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 text-xs flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-800" />
+              <span className="text-stone-700">
+                Password Status:{' '}
+                <strong className={passwordStatus.isCustom ? 'text-emerald-900' : 'text-stone-800'}>
+                  {passwordStatus.isCustom ? 'Custom Password Set' : 'Default Preset Password Active'}
+                </strong>
+              </span>
+            </div>
+            {passwordStatus.lastUpdated && (
+              <span className="text-[10px] text-stone-500">
+                Last modified: {new Date(passwordStatus.lastUpdated).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+        )}
 
         {securityFeedback && (
           <div className="p-3 bg-emerald-50 border border-emerald-300 text-emerald-950 rounded-xl text-xs flex items-center gap-2">
@@ -180,39 +212,57 @@ export const AdminSettings: React.FC = () => {
           </div>
         )}
 
-        {/* Update My Passcode Form */}
-        <form onSubmit={handleUpdateCurrentPasscode} className="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-3">
-          <h4 className="font-semibold text-xs text-stone-800 uppercase tracking-wider">
-            Change My Passcode ({currentAuthor?.name})
-          </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Update My Password Form */}
+        <form onSubmit={handleUpdateCurrentPassword} className="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="font-semibold text-xs text-stone-800 uppercase tracking-wider">
+              Change My Password ({currentAuthor?.name})
+            </h4>
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="text-[11px] text-emerald-850 hover:text-emerald-950 font-medium inline-flex items-center gap-1 cursor-pointer"
+            >
+              {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              <span>{showPassword ? 'Hide characters' : 'Show characters'}</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1">
-              <label className="text-[11px] font-medium text-stone-600 block">New Passcode</label>
-              <div className="relative">
-                <input
-                  type={showPasscode ? 'text' : 'password'}
-                  value={newPasscode}
-                  onChange={(e) => setNewPasscode(e.target.value)}
-                  placeholder="Min 4 characters (e.g. CP-2025)"
-                  className="w-full px-3 py-2 bg-white border border-stone-300 rounded-xl text-xs font-mono pr-8 focus:ring-2 focus:ring-emerald-800 focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPasscode(!showPasscode)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-1"
-                >
-                  {showPasscode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                </button>
-              </div>
+              <label className="text-[11px] font-medium text-stone-600 block">Current Password</label>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Enter current password"
+                required
+                className="w-full px-3 py-2 bg-white border border-stone-300 rounded-xl text-xs font-mono focus:ring-2 focus:ring-emerald-800 focus:outline-none"
+              />
             </div>
 
             <div className="space-y-1">
-              <label className="text-[11px] font-medium text-stone-600 block">Confirm Passcode</label>
+              <label className="text-[11px] font-medium text-stone-600 block">
+                New Password (min 6 chars)
+              </label>
               <input
-                type={showPasscode ? 'text' : 'password'}
-                value={confirmPasscode}
-                onChange={(e) => setConfirmPasscode(e.target.value)}
-                placeholder="Re-enter new passcode"
+                type={showPassword ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+                required
+                className="w-full px-3 py-2 bg-white border border-stone-300 rounded-xl text-xs font-mono focus:ring-2 focus:ring-emerald-800 focus:outline-none"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] font-medium text-stone-600 block">Confirm New Password</label>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Re-type new password"
+                required
                 className="w-full px-3 py-2 bg-white border border-stone-300 rounded-xl text-xs font-mono focus:ring-2 focus:ring-emerald-800 focus:outline-none"
               />
             </div>
@@ -221,20 +271,20 @@ export const AdminSettings: React.FC = () => {
           <div className="flex justify-end pt-1">
             <button
               type="submit"
-              disabled={!newPasscode.trim() || !confirmPasscode.trim()}
-              className="px-4 py-2 bg-emerald-950 hover:bg-emerald-900 disabled:bg-stone-300 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
+              disabled={!currentPassword.trim() || !newPassword.trim() || !confirmPassword.trim()}
+              className="px-4 py-2 bg-emerald-950 hover:bg-emerald-900 disabled:bg-stone-300 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer min-h-[40px]"
             >
-              Update My Passcode
+              Update Password
             </button>
           </div>
         </form>
 
-        {/* Co-Founder Team Member Passcode Controls */}
+        {/* Co-Founder Team Member Password Controls */}
         {isCoFounder && (
-          <form onSubmit={handleAdminUpdateMemberPasscode} className="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-3">
+          <form onSubmit={handleAdminUpdateMemberPassword} className="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="font-semibold text-xs text-stone-800 uppercase tracking-wider">
-                Admin Member Passcode Manager
+                Admin Member Password Manager
               </h4>
               <span className="text-[10px] text-stone-500">Co-Founder Tool</span>
             </div>
@@ -257,13 +307,13 @@ export const AdminSettings: React.FC = () => {
 
               <div className="space-y-1">
                 <label className="text-[11px] font-medium text-stone-600 block">
-                  Assign New Passcode
+                  Assign New Password (min 6 chars)
                 </label>
                 <input
                   type="text"
-                  value={memberNewPasscode}
-                  onChange={(e) => setMemberNewPasscode(e.target.value)}
-                  placeholder="e.g. AA-9900"
+                  value={memberNewPassword}
+                  onChange={(e) => setMemberNewPassword(e.target.value)}
+                  placeholder="e.g. Amaan@2025"
                   className="w-full px-3 py-2 bg-white border border-stone-300 rounded-xl text-xs font-mono focus:ring-2 focus:ring-emerald-800 focus:outline-none"
                 />
               </div>
@@ -272,10 +322,10 @@ export const AdminSettings: React.FC = () => {
             <div className="flex justify-end pt-1">
               <button
                 type="submit"
-                disabled={!memberNewPasscode.trim()}
-                className="px-4 py-2 bg-emerald-900 hover:bg-emerald-850 disabled:bg-stone-300 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
+                disabled={!memberNewPassword.trim()}
+                className="px-4 py-2 bg-emerald-900 hover:bg-emerald-850 disabled:bg-stone-300 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer min-h-[40px]"
               >
-                Set Member Passcode
+                Set Member Password
               </button>
             </div>
           </form>
