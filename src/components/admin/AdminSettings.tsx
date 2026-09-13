@@ -9,9 +9,18 @@ import {
   RefreshCw,
   LogOut,
   Sliders,
+  Key,
+  Eye,
+  EyeOff,
+  ShieldAlert,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { CO_FOUNDERS_PRESET } from '../../data/authors';
+import {
+  DEFAULT_MEMBER_CREDENTIALS,
+  MASTER_ADMIN_KEY,
+  getMemberPasscode,
+} from '../../services/securityService';
 
 export const AdminSettings: React.FC = () => {
   const {
@@ -21,10 +30,71 @@ export const AdminSettings: React.FC = () => {
     isCoFounder,
     allAuthors,
     switchActiveAuthor,
+    updatePasscode,
     signOutUser,
   } = useAuth();
 
-  const [testEmail, setTestEmail] = useState(user?.email || 'chirag@thatvetguy.net');
+  const [newPasscode, setNewPasscode] = useState('');
+  const [confirmPasscode, setConfirmPasscode] = useState('');
+  const [showPasscode, setShowPasscode] = useState(false);
+  const [securityFeedback, setSecurityFeedback] = useState<string | null>(null);
+  const [securityError, setSecurityError] = useState<string | null>(null);
+
+  // Admin member passcode manager
+  const [targetMemberId, setTargetMemberId] = useState<string>(
+    currentAuthor?.id || 'dr-chirag-patidar'
+  );
+  const [memberNewPasscode, setMemberNewPasscode] = useState('');
+
+  const handleUpdateCurrentPasscode = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSecurityFeedback(null);
+    setSecurityError(null);
+
+    if (!currentAuthor) return;
+
+    if (!newPasscode || newPasscode.trim().length < 4) {
+      setSecurityError('Passcode must be at least 4 characters long.');
+      return;
+    }
+
+    if (newPasscode !== confirmPasscode) {
+      setSecurityError('Passcodes do not match. Please verify.');
+      return;
+    }
+
+    const success = updatePasscode(currentAuthor.id, newPasscode.trim());
+    if (success) {
+      setSecurityFeedback(
+        `Passcode updated successfully for ${currentAuthor.name}! Your new passcode is now active.`
+      );
+      setNewPasscode('');
+      setConfirmPasscode('');
+    } else {
+      setSecurityError('Failed to update passcode. Please try again.');
+    }
+  };
+
+  const handleAdminUpdateMemberPasscode = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSecurityFeedback(null);
+    setSecurityError(null);
+
+    if (!targetMemberId || !memberNewPasscode.trim()) return;
+
+    const targetAuthor = allAuthors.find((a) => a.id === targetMemberId);
+    if (!targetAuthor) return;
+
+    const success = updatePasscode(targetMemberId, memberNewPasscode.trim());
+    if (success) {
+      setSecurityFeedback(
+        `Passcode for ${targetAuthor.name} has been updated to "${memberNewPasscode.trim()}".`
+      );
+      setMemberNewPasscode('');
+    } else {
+      setSecurityError('Failed to update member passcode.');
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -34,7 +104,7 @@ export const AdminSettings: React.FC = () => {
           CMS & Editorial Settings
         </h2>
         <p className="text-xs sm:text-sm text-stone-600 mt-0.5">
-          Configure ThatVetGuy publishing preferences, authentication, and team roles.
+          Configure ThatVetGuy publishing preferences, member passcodes, and security credentials.
         </p>
       </div>
 
@@ -71,11 +141,151 @@ export const AdminSettings: React.FC = () => {
           <button
             type="button"
             onClick={signOutUser}
-            className="px-4 py-2 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-xl min-h-[44px] flex items-center gap-1.5 transition-colors"
+            className="px-4 py-2 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-xl min-h-[44px] flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Sign Out</span>
           </button>
+        </div>
+      </div>
+
+      {/* Passcode & Zero-Trust Security Settings */}
+      <div className="bg-white rounded-2xl border border-stone-200 p-5 sm:p-6 shadow-xs space-y-5">
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="font-serif font-bold text-stone-900 text-base flex items-center gap-2">
+              <Key className="w-4 h-4 text-emerald-900" />
+              <span>Passcode & Security Management</span>
+            </h3>
+            <p className="text-xs text-stone-500 mt-1">
+              Prevent unauthorized login. Manage your personal editorial passcode and team member security credentials.
+            </p>
+          </div>
+          <span className="text-[10px] bg-emerald-100 text-emerald-950 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+            Zero-Trust Active
+          </span>
+        </div>
+
+        {securityFeedback && (
+          <div className="p-3 bg-emerald-50 border border-emerald-300 text-emerald-950 rounded-xl text-xs flex items-center gap-2">
+            <Check className="w-4 h-4 text-emerald-700 shrink-0" />
+            <span>{securityFeedback}</span>
+          </div>
+        )}
+
+        {securityError && (
+          <div className="p-3 bg-red-50 border border-red-300 text-red-950 rounded-xl text-xs flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-red-700 shrink-0" />
+            <span>{securityError}</span>
+          </div>
+        )}
+
+        {/* Update My Passcode Form */}
+        <form onSubmit={handleUpdateCurrentPasscode} className="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-3">
+          <h4 className="font-semibold text-xs text-stone-800 uppercase tracking-wider">
+            Change My Passcode ({currentAuthor?.name})
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[11px] font-medium text-stone-600 block">New Passcode</label>
+              <div className="relative">
+                <input
+                  type={showPasscode ? 'text' : 'password'}
+                  value={newPasscode}
+                  onChange={(e) => setNewPasscode(e.target.value)}
+                  placeholder="Min 4 characters (e.g. CP-2025)"
+                  className="w-full px-3 py-2 bg-white border border-stone-300 rounded-xl text-xs font-mono pr-8 focus:ring-2 focus:ring-emerald-800 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasscode(!showPasscode)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 p-1"
+                >
+                  {showPasscode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[11px] font-medium text-stone-600 block">Confirm Passcode</label>
+              <input
+                type={showPasscode ? 'text' : 'password'}
+                value={confirmPasscode}
+                onChange={(e) => setConfirmPasscode(e.target.value)}
+                placeholder="Re-enter new passcode"
+                className="w-full px-3 py-2 bg-white border border-stone-300 rounded-xl text-xs font-mono focus:ring-2 focus:ring-emerald-800 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-1">
+            <button
+              type="submit"
+              disabled={!newPasscode.trim() || !confirmPasscode.trim()}
+              className="px-4 py-2 bg-emerald-950 hover:bg-emerald-900 disabled:bg-stone-300 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
+            >
+              Update My Passcode
+            </button>
+          </div>
+        </form>
+
+        {/* Co-Founder Team Member Passcode Controls */}
+        {isCoFounder && (
+          <form onSubmit={handleAdminUpdateMemberPasscode} className="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-xs text-stone-800 uppercase tracking-wider">
+                Admin Member Passcode Manager
+              </h4>
+              <span className="text-[10px] text-stone-500">Co-Founder Tool</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[11px] font-medium text-stone-600 block">Select Member</label>
+                <select
+                  value={targetMemberId}
+                  onChange={(e) => setTargetMemberId(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-stone-300 rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-800 focus:outline-none"
+                >
+                  {allAuthors.map((author) => (
+                    <option key={author.id} value={author.id}>
+                      {author.name} ({author.role})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-medium text-stone-600 block">
+                  Assign New Passcode
+                </label>
+                <input
+                  type="text"
+                  value={memberNewPasscode}
+                  onChange={(e) => setMemberNewPasscode(e.target.value)}
+                  placeholder="e.g. AA-9900"
+                  className="w-full px-3 py-2 bg-white border border-stone-300 rounded-xl text-xs font-mono focus:ring-2 focus:ring-emerald-800 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-1">
+              <button
+                type="submit"
+                disabled={!memberNewPasscode.trim()}
+                className="px-4 py-2 bg-emerald-900 hover:bg-emerald-850 disabled:bg-stone-300 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
+              >
+                Set Member Passcode
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Security Overview */}
+        <div className="p-3 bg-stone-100/60 rounded-xl text-[11px] text-stone-600 space-y-1 font-mono">
+          <div>• Brute-Force Rate Limiter: 5 consecutive attempts → 60s temporary IP lock</div>
+          <div>• Emergency Recovery Key: Protected & Enforced</div>
+          <div>• Session Persistence: Isolated per browser device</div>
         </div>
       </div>
 

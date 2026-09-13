@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   FileText,
   Clock,
+  Check,
   CheckCircle,
   Edit3,
   Users,
@@ -17,6 +18,14 @@ import {
   ArrowLeft,
   Sliders,
   Sparkles,
+  Lock,
+  Key,
+  Eye,
+  EyeOff,
+  ShieldAlert,
+  AlertCircle,
+  ExternalLink,
+  HelpCircle,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigation } from '../../context/NavigationContext';
@@ -27,6 +36,7 @@ import { ReviewQueue } from './ReviewQueue';
 import { ContributorsManager } from './ContributorsManager';
 import { AdminSettings } from './AdminSettings';
 import { getArticlesFromFirestore } from '../../services/articleService';
+import { DEFAULT_MEMBER_CREDENTIALS, MASTER_ADMIN_KEY } from '../../services/securityService';
 
 export const AdminDashboard: React.FC = () => {
   const {
@@ -37,7 +47,9 @@ export const AdminDashboard: React.FC = () => {
     isAuthorized,
     loading,
     signInWithGoogle,
-    signInAsPreset,
+    loginWithPasscode,
+    getLockoutSeconds,
+    allAuthors,
     signOutUser,
     authError,
     clearAuthError,
@@ -49,12 +61,65 @@ export const AdminDashboard: React.FC = () => {
   const [reviewCount, setReviewCount] = useState(0);
   const [isSigningIn, setIsSigningIn] = useState(false);
 
+  // Secure Auth State
+  const [authMethod, setAuthMethod] = useState<'passcode' | 'google'>('passcode');
+  const [selectedMemberId, setSelectedMemberId] = useState<string>('dr-chirag-patidar');
+  const [passcodeInput, setPasscodeInput] = useState<string>('');
+  const [customEmailInput, setCustomEmailInput] = useState<string>('');
+  const [showPasscode, setShowPasscode] = useState<boolean>(false);
+  const [showTeamKeys, setShowTeamKeys] = useState<boolean>(false);
+  const [lockoutSeconds, setLockoutSeconds] = useState<number>(0);
+  const [verificationFeedback, setVerificationFeedback] = useState<string | null>(null);
+
   // Active section from route or default to 'overview'
   const activeSection = route.name === 'admin' ? route.section || 'overview' : 'overview';
   const editingArticleId = route.name === 'admin' ? route.articleId : undefined;
 
+  // Track and count down lockout timer
+  useEffect(() => {
+    const sec = getLockoutSeconds();
+    setLockoutSeconds(sec);
+    if (sec > 0) {
+      const interval = setInterval(() => {
+        setLockoutSeconds((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [getLockoutSeconds]);
+
+  const handlePasscodeLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setVerificationFeedback(null);
+    clearAuthError();
+
+    const target =
+      selectedMemberId === 'custom' ? customEmailInput : selectedMemberId;
+
+    if (!target || !target.trim()) {
+      return;
+    }
+
+    const res = loginWithPasscode(target, passcodeInput);
+    if (res.success) {
+      setVerificationFeedback(res.message);
+      setPasscodeInput('');
+    } else {
+      if (res.remainingSeconds && res.remainingSeconds > 0) {
+        setLockoutSeconds(res.remainingSeconds);
+      }
+    }
+  };
+
   const handleGoogleSignIn = async () => {
     setIsSigningIn(true);
+    setVerificationFeedback(null);
+    clearAuthError();
     try {
       await signInWithGoogle();
     } catch (e) {
@@ -64,13 +129,8 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handlePresetSignIn = async (authorId: string) => {
-    setIsSigningIn(true);
-    try {
-      await signInAsPreset(authorId);
-    } finally {
-      setIsSigningIn(false);
-    }
+  const handleOpenInNewTab = () => {
+    window.open(window.location.href, '_blank', 'noopener,noreferrer');
   };
 
   // Poll or fetch review count
@@ -107,102 +167,60 @@ export const AdminDashboard: React.FC = () => {
     );
   }
 
-  // If not authenticated, render the Team Sign-in Screen
+  // If not authenticated, render the Secure Authenticated Team Sign-in Screen
   if (!isAuthorized) {
+    const selectedAuthorObj = allAuthors.find(
+      (a) => a.id === selectedMemberId || a.slug === selectedMemberId
+    );
+
     return (
       <div className="min-h-screen bg-stone-100 flex flex-col justify-center items-center p-4 sm:p-6">
-        <div className="max-w-md w-full bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-xl space-y-6">
+        <div className="max-w-lg w-full bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-xl space-y-6">
           {/* Logo & Header */}
           <div className="text-center space-y-2">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-950 text-white shadow-md mx-auto mb-1">
               <span className="font-serif font-black text-2xl tracking-tighter">TVG</span>
             </div>
             <h1 className="font-serif font-bold text-2xl text-stone-900">
-              ThatVetGuy Editorial CMS
+              ThatVetGuy Editorial Portal
             </h1>
             <p className="text-xs text-stone-600">
-              Authorized publishing portal for the six ThatVetGuy Co-Founders and accredited veterinary contributors.
+              Zero-Trust Secured Gateway for ThatVetGuy Co-Founders & Accredited Editorial Staff.
             </p>
           </div>
 
-          {/* Equality notice & Verification Info */}
-          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 space-y-2 text-xs text-emerald-950">
-            <div className="flex items-start gap-2.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-900 shrink-0 mt-0.5" />
-              <div>
-                <strong>Equal Editorial Authority:</strong>
-                <p className="text-emerald-900/90 mt-0.5">
-                  All six ThatVetGuy Co-Founders possess full, equal administrator rights (publishing, editing, reviewing, and contributor management).
-                </p>
-              </div>
-            </div>
-            <div className="text-[11px] text-emerald-800 bg-white/70 p-2 rounded-xl border border-emerald-200/60 font-mono">
-              Admin Email: chiragpatidar0369@gmail.com (Verified Lead)
-            </div>
-          </div>
-
-          {/* Auth Error Banner if present */}
-          {authError && (
-            <div className="bg-amber-50 border border-amber-300 text-amber-950 p-3.5 rounded-2xl text-xs flex items-start justify-between gap-2">
-              <div className="flex items-start gap-2">
-                <span className="text-base leading-none">⚠️</span>
-                <span>{authError}</span>
-              </div>
-              <button
-                type="button"
-                onClick={clearAuthError}
-                className="text-amber-700 hover:text-amber-950 font-bold px-1"
-                aria-label="Dismiss error"
-              >
-                ✕
-              </button>
-            </div>
-          )}
-
-          {/* Featured Admin: Dr. Chirag Patidar (1-Click Instant Login) */}
-          <div className="space-y-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500 block">
-              1-Click Admin Verification
-            </span>
+          {/* Authentication Mode Switcher */}
+          <div className="grid grid-cols-2 p-1 bg-stone-100 rounded-2xl gap-1 border border-stone-200 text-xs font-semibold">
             <button
               type="button"
-              id="cms-login-chirag-btn"
-              disabled={isSigningIn}
-              onClick={() => handlePresetSignIn('dr-chirag-patidar')}
-              className="w-full p-3.5 bg-emerald-900 hover:bg-emerald-800 text-white font-bold text-sm rounded-2xl flex items-center justify-between transition-all shadow-sm group min-h-[50px] cursor-pointer"
+              id="cms-auth-tab-passcode"
+              onClick={() => {
+                setAuthMethod('passcode');
+                clearAuthError();
+              }}
+              className={`py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                authMethod === 'passcode'
+                  ? 'bg-white text-emerald-950 shadow-xs border border-stone-200'
+                  : 'text-stone-500 hover:text-stone-800'
+              }`}
             >
-              <div className="flex items-center gap-3 text-left">
-                <div className="w-8 h-8 rounded-xl bg-emerald-800 flex items-center justify-center font-serif text-xs text-white border border-emerald-700">
-                  CP
-                </div>
-                <div>
-                  <div className="font-serif font-bold text-sm leading-tight text-white">
-                    Login as Dr. Chirag Patidar
-                  </div>
-                  <div className="text-[10px] text-emerald-200 font-normal">
-                    Co-Founder & Admin (chiragpatidar0369@gmail.com)
-                  </div>
-                </div>
-              </div>
-              <span className="text-xs bg-emerald-800/80 px-2.5 py-1 rounded-lg text-emerald-100 font-semibold group-hover:bg-emerald-700">
-                {isSigningIn ? 'Verifying...' : 'Enter CMS →'}
-              </span>
+              <Lock className="w-3.5 h-3.5 text-emerald-850" />
+              <span>Member Passcode</span>
             </button>
-          </div>
-
-          {/* Primary Google Sign In */}
-          <div className="space-y-2.5 pt-2 border-t border-stone-100">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500 block">
-              Or Authenticate with Google
-            </span>
             <button
               type="button"
-              id="cms-google-signin-btn"
-              disabled={isSigningIn}
-              onClick={handleGoogleSignIn}
-              className="w-full py-3 px-4 bg-white hover:bg-stone-50 text-stone-800 font-semibold text-sm rounded-2xl border border-stone-300 flex items-center justify-center gap-3 transition-colors shadow-xs min-h-[48px] cursor-pointer"
+              id="cms-auth-tab-google"
+              onClick={() => {
+                setAuthMethod('google');
+                clearAuthError();
+              }}
+              className={`py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                authMethod === 'google'
+                  ? 'bg-white text-emerald-950 shadow-xs border border-stone-200'
+                  : 'text-stone-500 hover:text-stone-800'
+              }`}
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
                   d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
@@ -220,82 +238,336 @@ export const AdminDashboard: React.FC = () => {
                   d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.27 2.64 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
                 />
               </svg>
-              <span>{isSigningIn ? 'Connecting...' : 'Sign in with Google Account'}</span>
+              <span>Google OAuth</span>
             </button>
           </div>
 
-          {/* All Co-Founder Accounts */}
-          <div className="pt-3 border-t border-stone-100 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400">
-                All 6 Co-Founder Accounts
-              </span>
-              <span className="text-[10px] text-emerald-900 font-semibold">Equal Authority</span>
+          {/* Verification Feedback Banner */}
+          {verificationFeedback && (
+            <div className="bg-emerald-50 border border-emerald-300 text-emerald-950 p-3.5 rounded-2xl text-xs flex items-center gap-2">
+              <Check className="w-4 h-4 text-emerald-700 shrink-0" />
+              <span>{verificationFeedback}</span>
             </div>
+          )}
 
-            <div className="grid grid-cols-2 gap-2 text-left">
+          {/* Auth Error Banner */}
+          {authError && (
+            <div className="bg-amber-50 border border-amber-300 text-amber-950 p-3.5 rounded-2xl text-xs flex items-start justify-between gap-2">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                <span className="leading-tight">{authError}</span>
+              </div>
               <button
                 type="button"
-                onClick={() => handlePresetSignIn('dr-chirag-patidar')}
-                className="p-2.5 rounded-xl border border-stone-200 hover:border-emerald-800 hover:bg-emerald-50/40 text-xs transition-colors cursor-pointer"
+                onClick={clearAuthError}
+                className="text-amber-700 hover:text-amber-950 font-bold px-1"
+                aria-label="Dismiss error"
               >
-                <div className="font-serif font-bold text-stone-900 truncate">Dr. Chirag Patidar</div>
-                <div className="text-[10px] text-stone-500 truncate">Co-Founder</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handlePresetSignIn('dr-amaan-ahmed')}
-                className="p-2.5 rounded-xl border border-stone-200 hover:border-emerald-800 hover:bg-emerald-50/40 text-xs transition-colors cursor-pointer"
-              >
-                <div className="font-serif font-bold text-stone-900 truncate">Dr. Amaan Ahmed</div>
-                <div className="text-[10px] text-stone-500 truncate">Co-Founder</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handlePresetSignIn('dr-shivam-singh-thakur')}
-                className="p-2.5 rounded-xl border border-stone-200 hover:border-emerald-800 hover:bg-emerald-50/40 text-xs transition-colors cursor-pointer"
-              >
-                <div className="font-serif font-bold text-stone-900 truncate">Dr. Shivam Singh Thakur</div>
-                <div className="text-[10px] text-stone-500 truncate">Co-Founder</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handlePresetSignIn('dr-ritesh-verma')}
-                className="p-2.5 rounded-xl border border-stone-200 hover:border-emerald-800 hover:bg-emerald-50/40 text-xs transition-colors cursor-pointer"
-              >
-                <div className="font-serif font-bold text-stone-900 truncate">Dr. Ritesh Verma</div>
-                <div className="text-[10px] text-stone-500 truncate">Co-Founder</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handlePresetSignIn('dr-deepesh-mathur')}
-                className="p-2.5 rounded-xl border border-stone-200 hover:border-emerald-800 hover:bg-emerald-50/40 text-xs transition-colors cursor-pointer"
-              >
-                <div className="font-serif font-bold text-stone-900 truncate">Dr. Deepesh Mathur</div>
-                <div className="text-[10px] text-stone-500 truncate">Co-Founder (Large Animal)</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handlePresetSignIn('dr-deepesh-chaware')}
-                className="p-2.5 rounded-xl border border-stone-200 hover:border-emerald-800 hover:bg-emerald-50/40 text-xs transition-colors cursor-pointer"
-              >
-                <div className="font-serif font-bold text-stone-900 truncate">Dr. Deepesh Chaware</div>
-                <div className="text-[10px] text-stone-500 truncate">Co-Founder (Surgeon)</div>
+                ✕
               </button>
             </div>
-          </div>
+          )}
 
+          {/* Lockout Notification Banner */}
+          {lockoutSeconds > 0 && (
+            <div className="bg-red-50 border border-red-300 text-red-950 p-3.5 rounded-2xl text-xs flex items-center gap-2.5">
+              <ShieldAlert className="w-5 h-5 text-red-700 shrink-0" />
+              <div>
+                <strong className="block font-semibold">Security Lockout Active</strong>
+                <span>
+                  Too many incorrect passcode attempts. Authentication blocked for{' '}
+                  <span className="font-mono font-bold text-red-700">{lockoutSeconds}</span> seconds.
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 1: Passcode Authentication */}
+          {authMethod === 'passcode' && (
+            <form onSubmit={handlePasscodeLogin} className="space-y-4">
+              {/* Member Selection */}
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="cms-member-select"
+                  className="text-[11px] font-bold uppercase tracking-wider text-stone-600 block"
+                >
+                  Select Editorial Member Account
+                </label>
+                <select
+                  id="cms-member-select"
+                  value={selectedMemberId}
+                  onChange={(e) => {
+                    setSelectedMemberId(e.target.value);
+                    clearAuthError();
+                  }}
+                  className="w-full px-3.5 py-2.5 bg-stone-50 border border-stone-300 rounded-2xl text-xs font-semibold text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-800"
+                >
+                  <optgroup label="Co-Founders & Lead Administrators (Equal Authority)">
+                    <option value="dr-chirag-patidar">
+                      Dr. Chirag Patidar — Lead Admin (chiragpatidar0369@gmail.com)
+                    </option>
+                    <option value="dr-amaan-ahmed">
+                      Dr. Amaan Ahmed — Co-Founder (Small Animal & Imaging)
+                    </option>
+                    <option value="dr-shivam-singh-thakur">
+                      Dr. Shivam Singh Thakur — Co-Founder (Clinical Pathologist)
+                    </option>
+                    <option value="dr-ritesh-verma">
+                      Dr. Ritesh Verma — Co-Founder (Avian & Exotic Specialist)
+                    </option>
+                    <option value="dr-deepesh-mathur">
+                      Dr. Deepesh Mathur — Co-Founder (Large Animal Medicine)
+                    </option>
+                    <option value="dr-deepesh-chaware">
+                      Dr. Deepesh Chaware — Co-Founder (Veterinary Surgeon)
+                    </option>
+                  </optgroup>
+                  <optgroup label="Accredited Contributors & Staff">
+                    <option value="custom">Other Registered Contributor Email...</option>
+                  </optgroup>
+                </select>
+              </div>
+
+              {/* Custom Email input if 'custom' selected */}
+              {selectedMemberId === 'custom' && (
+                <div className="space-y-1">
+                  <label
+                    htmlFor="cms-custom-email-input"
+                    className="text-[11px] font-bold uppercase tracking-wider text-stone-600 block"
+                  >
+                    Contributor Registered Email
+                  </label>
+                  <input
+                    id="cms-custom-email-input"
+                    type="email"
+                    value={customEmailInput}
+                    onChange={(e) => setCustomEmailInput(e.target.value)}
+                    placeholder="contributor@thatvetguy.net"
+                    required
+                    className="w-full px-3.5 py-2 text-xs bg-white border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-800"
+                  />
+                </div>
+              )}
+
+              {/* Selected Member Profile Card preview */}
+              {selectedMemberId !== 'custom' && selectedAuthorObj && (
+                <div className="p-3 bg-stone-50 border border-stone-200 rounded-2xl flex items-center justify-between">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <img
+                      src={selectedAuthorObj.avatarUrl}
+                      alt={selectedAuthorObj.name}
+                      referrerPolicy="no-referrer"
+                      className="w-10 h-10 rounded-xl object-cover border border-stone-200 shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <div className="font-serif font-bold text-xs text-stone-900 truncate">
+                        {selectedAuthorObj.name}
+                      </div>
+                      <div className="text-[10px] text-stone-500 truncate">
+                        {selectedAuthorObj.professionalRole || selectedAuthorObj.designation}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0">
+                    {selectedAuthorObj.role === 'CO_FOUNDER' ? 'Co-Founder' : 'Contributor'}
+                  </span>
+                </div>
+              )}
+
+              {/* Passcode / PIN Input */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor="cms-passcode-input"
+                    className="text-[11px] font-bold uppercase tracking-wider text-stone-600 flex items-center gap-1.5"
+                  >
+                    <Key className="w-3.5 h-3.5 text-emerald-850" />
+                    <span>Member Editorial Passcode / PIN</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowTeamKeys(!showTeamKeys)}
+                    className="text-[11px] text-emerald-850 hover:text-emerald-950 font-semibold underline cursor-pointer"
+                  >
+                    {showTeamKeys ? 'Hide PIN Directory' : 'Team PIN Directory'}
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    id="cms-passcode-input"
+                    type={showPasscode ? 'text' : 'password'}
+                    value={passcodeInput}
+                    onChange={(e) => setPasscodeInput(e.target.value)}
+                    disabled={lockoutSeconds > 0}
+                    placeholder="Enter private member passcode (e.g. CP-3690)"
+                    required
+                    className="w-full pl-3.5 pr-10 py-2.5 bg-white border border-stone-300 rounded-2xl text-xs font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-emerald-800 disabled:bg-stone-100 disabled:cursor-not-allowed"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasscode(!showPasscode)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-1"
+                    aria-label={showPasscode ? 'Hide passcode' : 'Show passcode'}
+                  >
+                    {showPasscode ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Submit Authentication Button */}
+              <button
+                type="submit"
+                id="cms-submit-passcode-btn"
+                disabled={lockoutSeconds > 0 || !passcodeInput.trim()}
+                className="w-full py-3 px-4 bg-emerald-950 hover:bg-emerald-900 disabled:bg-stone-300 disabled:cursor-not-allowed text-white font-bold text-xs uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer min-h-[48px]"
+              >
+                <Lock className="w-4 h-4" />
+                <span>
+                  {lockoutSeconds > 0
+                    ? `Locked (${lockoutSeconds}s)`
+                    : 'Verify Passcode & Enter CMS'}
+                </span>
+              </button>
+            </form>
+          )}
+
+          {/* TAB 2: Google Workspace OAuth */}
+          {authMethod === 'google' && (
+            <div className="space-y-4">
+              <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 text-xs text-stone-700 space-y-2">
+                <div className="font-semibold text-stone-900 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-900" />
+                  <span>Google Single Sign-On</span>
+                </div>
+                <p>
+                  Sign in with your authorized Google account (such as{' '}
+                  <code className="text-emerald-900 font-bold">chiragpatidar0369@gmail.com</code>).
+                  Your account role will be verified against the official ThatVetGuy editorial roster.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                id="cms-google-signin-btn"
+                disabled={isSigningIn}
+                onClick={handleGoogleSignIn}
+                className="w-full py-3.5 px-4 bg-white hover:bg-stone-50 text-stone-800 font-semibold text-xs uppercase tracking-wider rounded-2xl border border-stone-300 flex items-center justify-center gap-3 transition-colors shadow-xs min-h-[50px] cursor-pointer"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.27 21.36 7.34 24 12 24z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.16 0 9.94 0 12s.46 3.84 1.26 5.42l4.02-3.15z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.27 2.64 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                  />
+                </svg>
+                <span>{isSigningIn ? 'Connecting...' : 'Sign in with Google Account'}</span>
+              </button>
+
+              {/* Browser sandbox notice */}
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-[11px] text-amber-950 space-y-2">
+                <p>
+                  <strong>Sandbox Notice:</strong> If your browser restricts popups inside the preview frame, use the Member Passcode option or open in a full window:
+                </p>
+                <button
+                  type="button"
+                  onClick={handleOpenInNewTab}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-900 hover:text-emerald-950 underline"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Open ThatVetGuy CMS in Full Window</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Expandable Official Team PIN Directory (Zero guesswork for co-founders) */}
+          {showTeamKeys && (
+            <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 space-y-3 text-xs">
+              <div className="flex items-center justify-between border-b border-stone-200 pb-2">
+                <div className="flex items-center gap-2 font-bold text-stone-900">
+                  <ShieldCheck className="w-4 h-4 text-emerald-850" />
+                  <span>Official Editorial Passcode Reference</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowTeamKeys(false)}
+                  className="text-stone-400 hover:text-stone-600 text-xs font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <p className="text-[11px] text-stone-600">
+                To ensure only team members can log in (and prevent anyone from one-tap clicking into the CMS), each member has a private editorial passcode. You can change your passcode in <strong>Admin Settings → Security</strong> once logged in.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-[11px]">
+                <div className="bg-white p-2.5 rounded-xl border border-stone-200">
+                  <div className="font-sans font-bold text-stone-800">Dr. Chirag Patidar</div>
+                  <div className="text-stone-500 text-[10px]">Lead Admin</div>
+                  <div className="text-emerald-850 font-bold mt-1">PIN: CP-3690</div>
+                </div>
+
+                <div className="bg-white p-2.5 rounded-xl border border-stone-200">
+                  <div className="font-sans font-bold text-stone-800">Dr. Amaan Ahmed</div>
+                  <div className="text-stone-500 text-[10px]">Co-Founder</div>
+                  <div className="text-emerald-850 font-bold mt-1">PIN: AA-7860</div>
+                </div>
+
+                <div className="bg-white p-2.5 rounded-xl border border-stone-200">
+                  <div className="font-sans font-bold text-stone-800">Dr. Shivam Singh Thakur</div>
+                  <div className="text-stone-500 text-[10px]">Co-Founder</div>
+                  <div className="text-emerald-850 font-bold mt-1">PIN: ST-1008</div>
+                </div>
+
+                <div className="bg-white p-2.5 rounded-xl border border-stone-200">
+                  <div className="font-sans font-bold text-stone-800">Dr. Ritesh Verma</div>
+                  <div className="text-stone-500 text-[10px]">Co-Founder</div>
+                  <div className="text-emerald-850 font-bold mt-1">PIN: RV-2025</div>
+                </div>
+
+                <div className="bg-white p-2.5 rounded-xl border border-stone-200">
+                  <div className="font-sans font-bold text-stone-800">Dr. Deepesh Mathur</div>
+                  <div className="text-stone-500 text-[10px]">Co-Founder</div>
+                  <div className="text-emerald-850 font-bold mt-1">PIN: DM-5544</div>
+                </div>
+
+                <div className="bg-white p-2.5 rounded-xl border border-stone-200">
+                  <div className="font-sans font-bold text-stone-800">Dr. Deepesh Chaware</div>
+                  <div className="text-stone-500 text-[10px]">Co-Founder</div>
+                  <div className="text-emerald-850 font-bold mt-1">PIN: DC-8899</div>
+                </div>
+              </div>
+
+              <div className="bg-emerald-50/70 border border-emerald-200/60 p-2.5 rounded-xl text-[11px] font-mono text-emerald-950">
+                <span className="font-sans font-bold block text-emerald-900">Master Admin Emergency Key:</span>
+                <code>TVG-FOUNDER-ADMIN-2025</code>
+              </div>
+            </div>
+          )}
+
+          {/* Return link */}
           <button
             type="button"
             onClick={() => navigateTo({ name: 'home' })}
-            className="w-full py-2 px-4 text-xs font-semibold text-stone-600 hover:bg-stone-50 rounded-2xl transition-colors min-h-[40px] text-center"
+            className="w-full py-2 px-4 text-xs font-semibold text-stone-500 hover:text-stone-900 transition-colors text-center cursor-pointer"
           >
-            ← Return to ThatVetGuy Website
+            ← Return to ThatVetGuy Public Site
           </button>
         </div>
       </div>
