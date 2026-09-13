@@ -163,6 +163,14 @@ export const Footer: React.FC = () => {
             >
               Inquiries
             </button>
+            <span>•</span>
+            <button
+              id="footer-staff-login-btn"
+              onClick={() => navigateTo({ name: 'admin' })}
+              className="hover:text-emerald-400 transition-colors text-stone-400 hover:underline"
+            >
+              Staff Sign In
+            </button>
           </div>
         </div>
       </div>

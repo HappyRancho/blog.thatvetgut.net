@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Bookmark, Menu, Search, Stethoscope } from 'lucide-react';
+import { Bookmark, Lock, LogIn, Menu, Search, Stethoscope } from 'lucide-react';
 import { useNavigation } from '../../context/NavigationContext';
 import { useBookmarks } from '../../context/BookmarksContext';
+import { useAuth } from '../../context/AuthContext';
 import { MobileNavDrawer } from './MobileNavDrawer';
 
 export const Header: React.FC = () => {
   const { navigateTo, route } = useNavigation();
   const { bookmarks } = useBookmarks();
+  const { isAuthorized, currentAuthor } = useAuth();
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   return (
@@ -132,6 +134,26 @@ export const Header: React.FC = () => {
                 <span>Saved ({bookmarks.length})</span>
               </button>
             )}
+
+            {/* Author / Staff Sign-In or CMS Access Trigger */}
+            <button
+              id="header-staff-signin-btn"
+              onClick={() => navigateTo({ name: 'admin' })}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-950 bg-stone-100 hover:bg-emerald-50 hover:text-emerald-900 border border-stone-200 hover:border-emerald-300 rounded-xl transition-all min-h-[44px]"
+              title={isAuthorized ? `Editorial CMS (${currentAuthor?.name || 'Authorized'})` : 'Author / Staff Sign In'}
+            >
+              {isAuthorized ? (
+                <>
+                  <Lock className="w-3.5 h-3.5 text-emerald-700" />
+                  <span className="hidden sm:inline">Portal</span>
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-3.5 h-3.5 text-emerald-800" />
+                  <span>Sign In</span>
+                </>
+              )}
+            </button>
 
             {/* Mobile Hamburger Menu Button */}
             <button

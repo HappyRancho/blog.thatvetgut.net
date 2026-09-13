@@ -688,6 +688,17 @@ export const AdminDashboard: React.FC = () => {
               </span>
             </div>
           </div>
+
+          {/* Quick Header Sign Out */}
+          <button
+            type="button"
+            onClick={signOutUser}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-stone-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-colors min-h-[44px]"
+            title="Sign out of CMS"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sign Out</span>
+          </button>
         </div>
       </header>
 
