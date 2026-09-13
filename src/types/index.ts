@@ -112,6 +112,7 @@ export interface Article {
   isDemo?: boolean;
   isFeatured?: boolean;
   isPopular?: boolean;
+  viewCount?: number;
   status?: ArticleStatus;
   content?: string; // HTML / Rich-text formatted body
   contentBlocks?: ArticleContentBlock[];
@@ -122,6 +123,7 @@ export interface Article {
   socialImage?: string;
   version?: number;
   internalNotes?: ReviewNote[];
+  updatedAt?: string;
 }
 
 export type PageRoute =

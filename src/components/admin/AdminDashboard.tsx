@@ -39,16 +39,39 @@ export const AdminDashboard: React.FC = () => {
     signInWithGoogle,
     signInAsPreset,
     signOutUser,
+    authError,
+    clearAuthError,
   } = useAuth();
   const { route, navigateTo } = useNavigation();
 
   // Mobile sidebar drawer state
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [reviewCount, setReviewCount] = useState(0);
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   // Active section from route or default to 'overview'
   const activeSection = route.name === 'admin' ? route.section || 'overview' : 'overview';
   const editingArticleId = route.name === 'admin' ? route.articleId : undefined;
+
+  const handleGoogleSignIn = async () => {
+    setIsSigningIn(true);
+    try {
+      await signInWithGoogle();
+    } catch (e) {
+      // Handled in AuthContext
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
+
+  const handlePresetSignIn = async (authorId: string) => {
+    setIsSigningIn(true);
+    try {
+      await signInAsPreset(authorId);
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
 
   // Poll or fetch review count
   useEffect(() => {
@@ -102,41 +125,110 @@ export const AdminDashboard: React.FC = () => {
             </p>
           </div>
 
-          {/* Equality notice */}
-          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 flex items-start gap-2.5 text-xs text-emerald-950">
-            <ShieldCheck className="w-4 h-4 text-emerald-900 shrink-0 mt-0.5" />
-            <p>
-              <strong>Collaborative Publishing:</strong> All six Co-Founders share equal editorial control. Direct publishing, peer reviews, and article updates are managed here.
-            </p>
+          {/* Equality notice & Verification Info */}
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 space-y-2 text-xs text-emerald-950">
+            <div className="flex items-start gap-2.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-900 shrink-0 mt-0.5" />
+              <div>
+                <strong>Equal Editorial Authority:</strong>
+                <p className="text-emerald-900/90 mt-0.5">
+                  All six ThatVetGuy Co-Founders possess full, equal administrator rights (publishing, editing, reviewing, and contributor management).
+                </p>
+              </div>
+            </div>
+            <div className="text-[11px] text-emerald-800 bg-white/70 p-2 rounded-xl border border-emerald-200/60 font-mono">
+              Admin Email: chiragpatidar0369@gmail.com (Verified Lead)
+            </div>
+          </div>
+
+          {/* Auth Error Banner if present */}
+          {authError && (
+            <div className="bg-amber-50 border border-amber-300 text-amber-950 p-3.5 rounded-2xl text-xs flex items-start justify-between gap-2">
+              <div className="flex items-start gap-2">
+                <span className="text-base leading-none">⚠️</span>
+                <span>{authError}</span>
+              </div>
+              <button
+                type="button"
+                onClick={clearAuthError}
+                className="text-amber-700 hover:text-amber-950 font-bold px-1"
+                aria-label="Dismiss error"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {/* Featured Admin: Dr. Chirag Patidar (1-Click Instant Login) */}
+          <div className="space-y-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500 block">
+              1-Click Admin Verification
+            </span>
+            <button
+              type="button"
+              id="cms-login-chirag-btn"
+              disabled={isSigningIn}
+              onClick={() => handlePresetSignIn('dr-chirag-patidar')}
+              className="w-full p-3.5 bg-emerald-900 hover:bg-emerald-800 text-white font-bold text-sm rounded-2xl flex items-center justify-between transition-all shadow-sm group min-h-[50px] cursor-pointer"
+            >
+              <div className="flex items-center gap-3 text-left">
+                <div className="w-8 h-8 rounded-xl bg-emerald-800 flex items-center justify-center font-serif text-xs text-white border border-emerald-700">
+                  CP
+                </div>
+                <div>
+                  <div className="font-serif font-bold text-sm leading-tight text-white">
+                    Login as Dr. Chirag Patidar
+                  </div>
+                  <div className="text-[10px] text-emerald-200 font-normal">
+                    Co-Founder & Admin (chiragpatidar0369@gmail.com)
+                  </div>
+                </div>
+              </div>
+              <span className="text-xs bg-emerald-800/80 px-2.5 py-1 rounded-lg text-emerald-100 font-semibold group-hover:bg-emerald-700">
+                {isSigningIn ? 'Verifying...' : 'Enter CMS →'}
+              </span>
+            </button>
           </div>
 
           {/* Primary Google Sign In */}
-          <div className="space-y-3">
+          <div className="space-y-2.5 pt-2 border-t border-stone-100">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500 block">
+              Or Authenticate with Google
+            </span>
             <button
               type="button"
-              onClick={signInWithGoogle}
-              className="w-full py-3.5 px-4 bg-emerald-900 hover:bg-emerald-800 text-white font-bold text-sm rounded-2xl flex items-center justify-center gap-3 transition-colors shadow-xs min-h-[48px]"
+              id="cms-google-signin-btn"
+              disabled={isSigningIn}
+              onClick={handleGoogleSignIn}
+              className="w-full py-3 px-4 bg-white hover:bg-stone-50 text-stone-800 font-semibold text-sm rounded-2xl border border-stone-300 flex items-center justify-center gap-3 transition-colors shadow-xs min-h-[48px] cursor-pointer"
             >
-              <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                <path d="M12.24 10.285V13.4h6.887C18.2 16.14 15.645 18 12.24 18c-3.315 0-6-2.685-6-6s2.685-6 6-6c1.47 0 2.815.54 3.86 1.425l2.36-2.36C17.065 3.565 14.81 2.7 12.24 2.7 7.085 2.7 2.9 6.885 2.9 12.04c0 5.155 4.185 9.34 9.34 9.34 5.39 0 8.97-3.79 8.97-9.125 0-.62-.065-1.22-.175-1.97H12.24z" />
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.27 21.36 7.34 24 12 24z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.16 0 9.94 0 12s.46 3.84 1.26 5.42l4.02-3.15z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.27 2.64 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                />
               </svg>
-              <span>Sign in with Google</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => navigateTo({ name: 'home' })}
-              className="w-full py-2.5 px-4 text-xs font-semibold text-stone-600 hover:bg-stone-50 rounded-2xl transition-colors min-h-[44px]"
-            >
-              ← Return to ThatVetGuy Website
+              <span>{isSigningIn ? 'Connecting...' : 'Sign in with Google Account'}</span>
             </button>
           </div>
 
-          {/* Quick Co-Founder Simulation Selection */}
-          <div className="pt-4 border-t border-stone-100 space-y-2.5">
+          {/* All Co-Founder Accounts */}
+          <div className="pt-3 border-t border-stone-100 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400">
-                Quick Access (Co-Founder Accounts)
+                All 6 Co-Founder Accounts
               </span>
               <span className="text-[10px] text-emerald-900 font-semibold">Equal Authority</span>
             </div>
@@ -144,8 +236,8 @@ export const AdminDashboard: React.FC = () => {
             <div className="grid grid-cols-2 gap-2 text-left">
               <button
                 type="button"
-                onClick={() => signInAsPreset('dr-chirag-patidar')}
-                className="p-2.5 rounded-xl border border-stone-200 hover:border-emerald-800 hover:bg-emerald-50/40 text-xs transition-colors"
+                onClick={() => handlePresetSignIn('dr-chirag-patidar')}
+                className="p-2.5 rounded-xl border border-stone-200 hover:border-emerald-800 hover:bg-emerald-50/40 text-xs transition-colors cursor-pointer"
               >
                 <div className="font-serif font-bold text-stone-900 truncate">Dr. Chirag Patidar</div>
                 <div className="text-[10px] text-stone-500 truncate">Co-Founder</div>
@@ -153,8 +245,8 @@ export const AdminDashboard: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => signInAsPreset('dr-amaan-ahmed')}
-                className="p-2.5 rounded-xl border border-stone-200 hover:border-emerald-800 hover:bg-emerald-50/40 text-xs transition-colors"
+                onClick={() => handlePresetSignIn('dr-amaan-ahmed')}
+                className="p-2.5 rounded-xl border border-stone-200 hover:border-emerald-800 hover:bg-emerald-50/40 text-xs transition-colors cursor-pointer"
               >
                 <div className="font-serif font-bold text-stone-900 truncate">Dr. Amaan Ahmed</div>
                 <div className="text-[10px] text-stone-500 truncate">Co-Founder</div>
@@ -162,8 +254,8 @@ export const AdminDashboard: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => signInAsPreset('dr-shivam-singh-thakur')}
-                className="p-2.5 rounded-xl border border-stone-200 hover:border-emerald-800 hover:bg-emerald-50/40 text-xs transition-colors"
+                onClick={() => handlePresetSignIn('dr-shivam-singh-thakur')}
+                className="p-2.5 rounded-xl border border-stone-200 hover:border-emerald-800 hover:bg-emerald-50/40 text-xs transition-colors cursor-pointer"
               >
                 <div className="font-serif font-bold text-stone-900 truncate">Dr. Shivam Singh Thakur</div>
                 <div className="text-[10px] text-stone-500 truncate">Co-Founder</div>
@@ -171,8 +263,8 @@ export const AdminDashboard: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => signInAsPreset('dr-ritesh-verma')}
-                className="p-2.5 rounded-xl border border-stone-200 hover:border-emerald-800 hover:bg-emerald-50/40 text-xs transition-colors"
+                onClick={() => handlePresetSignIn('dr-ritesh-verma')}
+                className="p-2.5 rounded-xl border border-stone-200 hover:border-emerald-800 hover:bg-emerald-50/40 text-xs transition-colors cursor-pointer"
               >
                 <div className="font-serif font-bold text-stone-900 truncate">Dr. Ritesh Verma</div>
                 <div className="text-[10px] text-stone-500 truncate">Co-Founder</div>
@@ -180,8 +272,8 @@ export const AdminDashboard: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => signInAsPreset('dr-deepesh-mathur')}
-                className="p-2.5 rounded-xl border border-stone-200 hover:border-emerald-800 hover:bg-emerald-50/40 text-xs transition-colors"
+                onClick={() => handlePresetSignIn('dr-deepesh-mathur')}
+                className="p-2.5 rounded-xl border border-stone-200 hover:border-emerald-800 hover:bg-emerald-50/40 text-xs transition-colors cursor-pointer"
               >
                 <div className="font-serif font-bold text-stone-900 truncate">Dr. Deepesh Mathur</div>
                 <div className="text-[10px] text-stone-500 truncate">Co-Founder (Large Animal)</div>
@@ -189,14 +281,22 @@ export const AdminDashboard: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => signInAsPreset('dr-deepesh-chaware')}
-                className="p-2.5 rounded-xl border border-stone-200 hover:border-emerald-800 hover:bg-emerald-50/40 text-xs transition-colors"
+                onClick={() => handlePresetSignIn('dr-deepesh-chaware')}
+                className="p-2.5 rounded-xl border border-stone-200 hover:border-emerald-800 hover:bg-emerald-50/40 text-xs transition-colors cursor-pointer"
               >
                 <div className="font-serif font-bold text-stone-900 truncate">Dr. Deepesh Chaware</div>
                 <div className="text-[10px] text-stone-500 truncate">Co-Founder (Surgeon)</div>
               </button>
             </div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => navigateTo({ name: 'home' })}
+            className="w-full py-2 px-4 text-xs font-semibold text-stone-600 hover:bg-stone-50 rounded-2xl transition-colors min-h-[40px] text-center"
+          >
+            ← Return to ThatVetGuy Website
+          </button>
         </div>
       </div>
     );
@@ -353,6 +453,16 @@ export const AdminDashboard: React.FC = () => {
                 Equal publishing rights across all six clinical leads.
               </p>
             </div>
+
+            {/* Desktop Sign Out */}
+            <button
+              type="button"
+              onClick={signOutUser}
+              className="w-full py-2.5 px-3.5 text-xs font-semibold text-red-600 hover:text-red-700 hover:bg-red-50/80 rounded-xl flex items-center gap-2 transition-colors min-h-[44px] cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sign Out of CMS</span>
+            </button>
           </div>
         </aside>
 

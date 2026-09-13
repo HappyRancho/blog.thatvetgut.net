@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   Bookmark,
@@ -8,10 +8,13 @@ import {
   ShieldCheck,
   Tag as TagIcon,
   Type,
+  Loader2,
 } from 'lucide-react';
 import { getArticleBySlug } from '../data/articles';
 import { getAuthorById } from '../data/authors';
 import { getCategoryBySlug } from '../data/categories';
+import { getArticleBySlugFromFirestore } from '../services/articleService';
+import { Article } from '../types';
 import { ArticleContent } from '../components/article/ArticleContent';
 import { ReferenceList } from '../components/article/ReferenceList';
 import { AuthorBox } from '../components/article/AuthorBox';
@@ -32,7 +35,37 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({ slug }) =>
   const [shareOpen, setShareOpen] = useState(false);
   const [fontScale, setFontScale] = useState<'normal' | 'large'>('normal');
 
-  const article = getArticleBySlug(slug);
+  const [article, setArticle] = useState<Article | undefined>(() => getArticleBySlug(slug));
+  const [loading, setLoading] = useState<boolean>(!article);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadArticle() {
+      try {
+        const found = await getArticleBySlugFromFirestore(slug);
+        if (isMounted && found) {
+          setArticle(found);
+        }
+      } catch (err) {
+        console.warn('Could not fetch article from Firestore:', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    loadArticle();
+    return () => {
+      isMounted = false;
+    };
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <div className="py-24 text-center space-y-4">
+        <Loader2 className="w-8 h-8 text-emerald-800 animate-spin mx-auto" />
+        <p className="text-sm text-stone-500 font-medium">Loading clinical publication...</p>
+      </div>
+    );
+  }
 
   if (!article) {
     return (
@@ -51,7 +84,19 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({ slug }) =>
     );
   }
 
-  const author = getAuthorById(article.authorId);
+  const staticAuthor = getAuthorById(article.authorId);
+  const author = staticAuthor || (article.authorProfile ? {
+    id: article.authorId,
+    slug: article.authorId,
+    name: article.authorProfile.name,
+    designation: article.authorProfile.designation || 'Contributor, ThatVetGuy',
+    qualifications: article.authorProfile.qualifications || 'DVM',
+    professionalRole: article.authorProfile.professionalRole || 'Veterinary Clinician',
+    bio: article.authorProfile.bio || 'Veterinary author and clinician contributing to ThatVetGuy animal health education.',
+    avatarUrl: article.authorProfile.avatarUrl || 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=400&q=80',
+    isCoFounder: false,
+  } : undefined);
+
   const reviewer = article.reviewerId ? getAuthorById(article.reviewerId) : undefined;
   const category = getCategoryBySlug(article.category);
   const bookmarked = isBookmarked(article.id);
@@ -234,7 +279,7 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({ slug }) =>
 
       {/* Main Article Body with responsive text sizing */}
       <div className={fontScale === 'large' ? 'text-lg' : ''}>
-        <ArticleContent blocks={article.contentBlocks} />
+        <ArticleContent blocks={article.contentBlocks} contentHtml={article.content} />
       </div>
 
       {/* Tags */}

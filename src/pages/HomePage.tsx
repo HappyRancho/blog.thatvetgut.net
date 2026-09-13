@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { getFeaturedArticle, getLatestArticles, getPopularArticles } from '../data/articles';
+import { getArticlesFromFirestore } from '../services/articleService';
+import { Article } from '../types';
 import { FeaturedHero } from '../components/homepage/FeaturedHero';
 import { CategoryStrip } from '../components/homepage/CategoryStrip';
 import { TeamShowcase } from '../components/homepage/TeamShowcase';
@@ -12,9 +14,38 @@ import { useNavigation } from '../context/NavigationContext';
 
 export const HomePage: React.FC = () => {
   const { navigateTo } = useNavigation();
-  const featured = getFeaturedArticle();
-  const latest = getLatestArticles(6);
-  const popular = getPopularArticles().slice(0, 3);
+  const [featured, setFeatured] = useState<Article | undefined>(() => getFeaturedArticle());
+  const [latest, setLatest] = useState<Article[]>(() => getLatestArticles(6));
+  const [popular, setPopular] = useState<Article[]>(() => getPopularArticles().slice(0, 3));
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadLiveArticles() {
+      try {
+        const liveArticles = await getArticlesFromFirestore({ status: 'PUBLISHED' });
+        if (!isMounted || !liveArticles || liveArticles.length === 0) return;
+
+        const liveFeatured = liveArticles.find((a) => a.isFeatured) || liveArticles[0];
+        if (liveFeatured) setFeatured(liveFeatured);
+
+        const latestArticles = [...liveArticles]
+          .sort((a, b) => new Date(b.publishedDate || 0).getTime() - new Date(a.publishedDate || 0).getTime())
+          .slice(0, 6);
+        setLatest(latestArticles);
+
+        const popularArticles = [...liveArticles]
+          .sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0))
+          .slice(0, 3);
+        setPopular(popularArticles);
+      } catch (err) {
+        console.warn('Could not load dynamic articles on home page:', err);
+      }
+    }
+    loadLiveArticles();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <div className="space-y-10 sm:space-y-14">

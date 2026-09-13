@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   Award,
@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { getAuthorBySlug } from '../data/authors';
 import { getArticlesByAuthor } from '../data/articles';
+import { getArticlesFromFirestore } from '../services/articleService';
+import { Article } from '../types';
 import { ArticleCard } from '../components/article/ArticleCard';
 import { SEOHead } from '../components/common/SEOHead';
 import { useNavigation } from '../context/NavigationContext';
@@ -24,7 +26,29 @@ interface AuthorDetailPageProps {
 export const AuthorDetailPage: React.FC<AuthorDetailPageProps> = ({ slug }) => {
   const { navigateTo } = useNavigation();
   const author = getAuthorBySlug(slug);
-  const articles = getArticlesByAuthor(author?.id || slug);
+  const [articles, setArticles] = useState<Article[]>(() => getArticlesByAuthor(author?.id || slug));
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadAuthorArticles() {
+      if (!author) return;
+      try {
+        const live = await getArticlesFromFirestore({
+          status: 'PUBLISHED',
+          authorId: author.id,
+        });
+        if (isMounted && live && live.length > 0) {
+          setArticles(live);
+        }
+      } catch (err) {
+        console.warn('Could not load live author articles:', err);
+      }
+    }
+    loadAuthorArticles();
+    return () => {
+      isMounted = false;
+    };
+  }, [author]);
 
   if (!author) {
     return (

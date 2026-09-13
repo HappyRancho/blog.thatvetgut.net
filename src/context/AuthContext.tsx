@@ -35,7 +35,9 @@ export const APPROVED_EMAILS_MAP: Record<string, string> = {
 
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
+  user: FirebaseUser | null;
   currentAuthor: Author | null;
+  role: UserRole | undefined;
   loading: boolean;
   isAuthorized: boolean;
   isCoFounder: boolean;
@@ -43,8 +45,12 @@ interface AuthContextType {
   canPublish: boolean;
   canReview: boolean;
   loginWithGoogle: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
+  signOutUser: () => Promise<void>;
   simulateCoFounderLogin: (authorId: string) => Promise<void>;
+  signInAsPreset: (authorId: string) => Promise<void>;
+  switchActiveAuthor: (authorId: string) => Promise<void>;
   refreshAuthorProfile: () => Promise<void>;
   allAuthors: Author[];
   authError: string | null;
@@ -245,18 +251,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const matched = await resolveAuthor(user.email);
         if (!matched) {
           setAuthError(
-            `Access restricted: The Google account (${user.email}) is not an approved ThatVetGuy Co-Founder or Contributor.`
+            `Access restricted: The Google account (${user.email}) is not registered as an approved ThatVetGuy Co-Founder or Contributor.`
           );
         }
       }
     } catch (err: any) {
-      console.error('Google Sign-In failed:', err);
+      console.warn('Google Sign-In caught:', err);
       if (err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request') {
-        setAuthError('Popup blocked by browser. Please allow popups or use the direct Co-Founder access option below.');
+        setAuthError(
+          'Google popup was blocked or closed by the browser. Please allow popups for this preview, or use the 1-Click Co-Founder verification below.'
+        );
+      } else if (err.code === 'auth/unauthorized-domain') {
+        setAuthError(
+          'This preview domain is not in the Firebase Authorized Domains list yet. Use the 1-Click Co-Founder verification below to access the CMS immediately.'
+        );
       } else {
-        setAuthError(err.message || 'Failed to sign in with Google. Please try again.');
+        setAuthError(
+          err.message || 'Unable to complete Google sign-in. Use the 1-Click Co-Founder verification below.'
+        );
       }
-      throw err;
     }
   };
 
@@ -295,7 +308,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         firebaseUser,
+        user: firebaseUser,
         currentAuthor,
+        role: currentAuthor?.role,
         loading,
         isAuthorized,
         isCoFounder,
@@ -303,8 +318,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         canPublish,
         canReview,
         loginWithGoogle,
+        signInWithGoogle: loginWithGoogle,
         logout,
+        signOutUser: logout,
         simulateCoFounderLogin,
+        signInAsPreset: simulateCoFounderLogin,
+        switchActiveAuthor: simulateCoFounderLogin,
         refreshAuthorProfile,
         allAuthors,
         authError,

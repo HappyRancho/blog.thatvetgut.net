@@ -1,8 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Bookmark, Filter, Grid, LayoutList, Search, X } from 'lucide-react';
 import { ARTICLES } from '../data/articles';
 import { CATEGORIES } from '../data/categories';
 import { TAGS } from '../data/tags';
+import { getArticlesFromFirestore } from '../services/articleService';
+import { Article } from '../types';
 import { ArticleCard } from '../components/article/ArticleCard';
 import { SEOHead } from '../components/common/SEOHead';
 import { useBookmarks } from '../context/BookmarksContext';
@@ -17,6 +19,7 @@ export const ArticlesPage: React.FC<ArticlesPageProps> = ({
   initialTag,
 }) => {
   const { bookmarks } = useBookmarks();
+  const [allArticles, setAllArticles] = useState<Article[]>(() => ARTICLES);
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory || 'all');
   const [selectedTag, setSelectedTag] = useState<string>(initialTag || 'all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,8 +27,26 @@ export const ArticlesPage: React.FC<ArticlesPageProps> = ({
   const [sortBy, setSortBy] = useState<'newest' | 'readingTime' | 'title'>('newest');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchLive() {
+      try {
+        const live = await getArticlesFromFirestore({ status: 'PUBLISHED' });
+        if (isMounted && live && live.length > 0) {
+          setAllArticles(live);
+        }
+      } catch (err) {
+        console.warn('Could not fetch live articles:', err);
+      }
+    }
+    fetchLive();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const filteredArticles = useMemo(() => {
-    return ARTICLES.filter((article) => {
+    return allArticles.filter((article) => {
       // Category
       if (selectedCategory !== 'all' && article.category !== selectedCategory) {
         return false;

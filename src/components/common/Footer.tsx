@@ -113,6 +113,15 @@ export const Footer: React.FC = () => {
                   Search Medical Library
                 </button>
               </li>
+              <li>
+                <button
+                  id="footer-cms-link"
+                  onClick={() => navigateTo({ name: 'admin' })}
+                  className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors flex items-center gap-1.5"
+                >
+                  <span>Editorial Portal (CMS) &rarr;</span>
+                </button>
+              </li>
             </ul>
           </div>
 

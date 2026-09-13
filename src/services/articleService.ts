@@ -11,7 +11,7 @@ import {
   orderBy,
   serverTimestamp,
 } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Article, ArticleStatus, ReviewNote } from '../types';
 import { ARTICLES } from '../data/articles';
 import { AUTHORS } from '../data/authors';
@@ -74,13 +74,16 @@ function blocksToHtml(article: Article): string {
     .join('\n');
 }
 
-// Seed initial articles if Firestore collection is empty
+// Seed initial articles if Firestore collection is empty and user is authenticated as co-founder
 let isSeeded = false;
 export async function seedFirestoreArticlesIfNeeded(): Promise<void> {
   if (isSeeded) return;
+  // Only attempt seeding if authenticated
+  if (!auth.currentUser) return;
+
   try {
     const colRef = collection(db, ARTICLES_COLLECTION);
-    const snapshot = await getDocs(colRef);
+    const snapshot = await getDocs(query(colRef, where('status', '==', 'PUBLISHED')));
     if (snapshot.empty) {
       console.log('Seeding initial clinical articles to Firestore...');
       for (const article of ARTICLES) {
@@ -108,7 +111,7 @@ export async function seedFirestoreArticlesIfNeeded(): Promise<void> {
           internalNotes: [],
         };
 
-        await setDoc(newDocRef, articleData);
+        await setDoc(newDocRef, articleData, { merge: true });
       }
     }
     isSeeded = true;
@@ -123,12 +126,23 @@ export async function getArticlesFromFirestore(filter?: {
   authorId?: string;
   category?: string;
   tag?: string;
+  includeAllStatuses?: boolean;
 }): Promise<Article[]> {
-  await seedFirestoreArticlesIfNeeded();
-
   try {
     const colRef = collection(db, ARTICLES_COLLECTION);
-    const snapshot = await getDocs(colRef);
+    
+    // For unauthenticated users or standard public readers, query only PUBLISHED articles
+    // to strictly satisfy Firestore security rule: resource.data.status == 'PUBLISHED'
+    let q;
+    if (filter?.status) {
+      q = query(colRef, where('status', '==', filter.status));
+    } else if (filter?.includeAllStatuses && auth.currentUser) {
+      q = colRef;
+    } else {
+      q = query(colRef, where('status', '==', 'PUBLISHED'));
+    }
+
+    const snapshot = await getDocs(q);
 
     if (!snapshot.empty) {
       let articles: Article[] = [];
@@ -335,8 +349,7 @@ export async function saveArticleToFirestore(
   try {
     await setDoc(docRef, fullArticle, { merge: true });
   } catch (err) {
-    console.error('Error saving article to Firestore:', err);
-    throw err;
+    handleFirestoreError(err, OperationType.WRITE, `articles/${articleId}`);
   }
 
   return fullArticle;
@@ -354,7 +367,13 @@ export async function updateArticleStatusInFirestore(
   }
 ): Promise<void> {
   const docRef = doc(db, ARTICLES_COLLECTION, articleId);
-  const snap = await getDoc(docRef);
+  let snap;
+  try {
+    snap = await getDoc(docRef);
+  } catch (err) {
+    handleFirestoreError(err, OperationType.GET, `articles/${articleId}`);
+    return;
+  }
   if (!snap.exists()) {
     throw new Error('Article not found');
   }
@@ -391,7 +410,11 @@ export async function updateArticleStatusInFirestore(
     updatePayload.internalNotes = [...(existing.internalNotes || []), newNote];
   }
 
-  await updateDoc(docRef, updatePayload as any);
+  try {
+    await updateDoc(docRef, updatePayload as any);
+  } catch (err) {
+    handleFirestoreError(err, OperationType.UPDATE, `articles/${articleId}`);
+  }
 }
 
 // Add an internal review note (never exposed publicly)
@@ -402,7 +425,13 @@ export async function addInternalNoteToArticle(
   authorName: string
 ): Promise<ReviewNote> {
   const docRef = doc(db, ARTICLES_COLLECTION, articleId);
-  const snap = await getDoc(docRef);
+  let snap;
+  try {
+    snap = await getDoc(docRef);
+  } catch (err) {
+    handleFirestoreError(err, OperationType.GET, `articles/${articleId}`);
+    throw err;
+  }
   if (!snap.exists()) throw new Error('Article not found');
 
   const existing = snap.data() as Article;
@@ -416,12 +445,20 @@ export async function addInternalNoteToArticle(
   };
 
   const updatedNotes = [...(existing.internalNotes || []), newNote];
-  await updateDoc(docRef, { internalNotes: updatedNotes });
+  try {
+    await updateDoc(docRef, { internalNotes: updatedNotes });
+  } catch (err) {
+    handleFirestoreError(err, OperationType.UPDATE, `articles/${articleId}`);
+  }
   return newNote;
 }
 
 // Delete article from Firestore
 export async function deleteArticleFromFirestore(articleId: string): Promise<void> {
   const docRef = doc(db, ARTICLES_COLLECTION, articleId);
-  await deleteDoc(docRef);
+  try {
+    await deleteDoc(docRef);
+  } catch (err) {
+    handleFirestoreError(err, OperationType.DELETE, `articles/${articleId}`);
+  }
 }

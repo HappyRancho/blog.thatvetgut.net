@@ -117,6 +117,8 @@ export const AUTHORS: Author[] = [
   },
 ];
 
+export const CO_FOUNDERS_PRESET: Author[] = AUTHORS.filter((a) => a.role === 'CO_FOUNDER');
+
 export function getAuthorById(id: string): Author | undefined {
   if (id === 'dr-shivam') return AUTHORS.find((a) => a.id === 'dr-shivam-singh-thakur');
   return AUTHORS.find((a) => a.id === id || a.slug === id);

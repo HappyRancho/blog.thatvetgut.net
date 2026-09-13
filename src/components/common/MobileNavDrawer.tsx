@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, Compass, Heart, Home, Info, Mail, Search, Users, X } from 'lucide-react';
+import { BookOpen, Compass, Heart, Home, Info, Mail, PenTool, Search, Users, X } from 'lucide-react';
 import { CATEGORIES } from '../../data/categories';
 import { useNavigation } from '../../context/NavigationContext';
 
@@ -114,6 +114,15 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ isOpen, onClos
             >
               <Mail className="w-4 h-4 text-emerald-800 shrink-0" />
               Contact & Inquiries
+            </button>
+
+            <button
+              id="mobile-nav-cms"
+              onClick={() => handleNav(() => navigateTo({ name: 'admin' }))}
+              className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl bg-emerald-900 text-white hover:bg-emerald-800 text-sm font-semibold transition-colors min-h-[44px] shadow-xs mt-2"
+            >
+              <PenTool className="w-4 h-4 text-emerald-300 shrink-0" />
+              Editorial Portal (CMS)
             </button>
           </div>
 
