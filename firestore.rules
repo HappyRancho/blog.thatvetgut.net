@@ -5,20 +5,22 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    function userDocExists() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
     
     function isCoFounder() {
       return isAuthenticated() && (
-        getUserData().role == 'CO_FOUNDER' ||
         request.auth.token.email == 'chiragpatidar0369@gmail.com' ||
-        request.auth.token.email.matches('.*@thatvetguy[.]net')
+        (request.auth.token.email != null && request.auth.token.email.matches('.*@thatvetguy[.]net')) ||
+        (userDocExists() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'CO_FOUNDER')
       );
     }
     
     function isContributor() {
-      return isAuthenticated() && getUserData().role == 'CONTRIBUTOR';
+      return isAuthenticated() && (
+        userDocExists() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'CONTRIBUTOR'
+      );
     }
 
     // Articles collection
@@ -50,7 +52,7 @@ service cloud.firestore {
     // CMS Audit Logs
     match /audit_logs/{logId} {
       allow read: if isCoFounder();
-      allow create: if isAuthenticated();
+      allow create: if isAuthenticated() || isCoFounder();
       allow update, delete: if false; // Audit logs are strictly immutable
     }
   }

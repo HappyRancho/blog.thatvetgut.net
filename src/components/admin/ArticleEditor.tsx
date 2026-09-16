@@ -15,6 +15,8 @@ import {
   Upload,
   AlertCircle,
   BookOpen,
+  ExternalLink,
+  CheckCircle,
 } from 'lucide-react';
 import { Article, ArticleReference, ArticleStatus, Author } from '../../types';
 import { CATEGORIES } from '../../data/categories';
@@ -68,6 +70,11 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
   const [isDirty, setIsDirty] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingArticle, setLoadingArticle] = useState(Boolean(articleId));
+  const [publishNotification, setPublishNotification] = useState<{
+    status: ArticleStatus;
+    slug: string;
+    title: string;
+  } | null>(null);
 
   // Reference modal / inline adder
   const [showRefModal, setShowRefModal] = useState(false);
@@ -289,15 +296,14 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
         );
       }
 
-      if (targetStatus === 'PUBLISHED') {
-        alert('Article published successfully to ThatVetGuy!');
-        navigateTo({ name: 'admin', section: 'published' });
-      } else if (targetStatus === 'SUBMITTED FOR REVIEW') {
-        alert('Article submitted for peer review!');
-        navigateTo({ name: 'admin', section: 'submitted' });
-      } else {
-        alert('Draft saved successfully!');
-      }
+      setPublishNotification({
+        status: targetStatus,
+        slug: saved.slug,
+        title: saved.title,
+      });
+
+      // Scroll top smoothly so user immediately sees the confirmation banner
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
       console.error('Error saving article:', err);
       setSaveStatus('error');
@@ -465,6 +471,62 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
           )}
         </div>
       </div>
+
+      {/* Save / Publish Outcome Notification Banner */}
+      {publishNotification && (
+        <div className="mb-6 p-5 rounded-2xl bg-emerald-950 text-white shadow-md border border-emerald-800 animate-fadeIn">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-emerald-800/80 rounded-xl shrink-0 mt-0.5 sm:mt-0">
+                <CheckCircle className="w-5 h-5 text-emerald-300" />
+              </div>
+              <div>
+                <h3 className="font-serif font-bold text-base text-white">
+                  {publishNotification.status === 'PUBLISHED'
+                    ? 'Article Published & Live!'
+                    : publishNotification.status === 'SUBMITTED FOR REVIEW'
+                    ? 'Submitted for Clinical Peer Review'
+                    : 'Draft Saved Locally'}
+                </h3>
+                <p className="text-xs text-emerald-200/90 mt-0.5">
+                  {publishNotification.status === 'PUBLISHED'
+                    ? 'Your changes are now live and visible on ThatVetGuy for all readers.'
+                    : publishNotification.status === 'SUBMITTED FOR REVIEW'
+                    ? 'The manuscript has been queued for Co-Founder review.'
+                    : 'Your draft has been saved. Note: Drafts are private to the CMS and do not appear on the live blog until published.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+              {publishNotification.status === 'PUBLISHED' && (
+                <button
+                  type="button"
+                  onClick={() => navigateTo({ name: 'article', slug: publishNotification.slug })}
+                  className="px-4 py-2.5 text-xs font-bold text-emerald-950 bg-white hover:bg-emerald-50 rounded-xl flex items-center gap-1.5 transition-colors shadow-xs"
+                >
+                  <span>View Live Article</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => navigateTo({ name: 'admin', section: publishNotification.status === 'PUBLISHED' ? 'published' : 'all-articles' })}
+                className="px-4 py-2.5 text-xs font-semibold text-white bg-emerald-900/80 hover:bg-emerald-800 border border-emerald-700/60 rounded-xl transition-colors"
+              >
+                <span>Return to CMS List</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPublishNotification(null)}
+                className="px-3 py-2.5 text-xs text-emerald-300 hover:text-white"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Editorial Form */}
       <div className="space-y-6">

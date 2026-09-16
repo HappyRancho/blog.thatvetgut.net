@@ -1,0 +1,127 @@
+{
+  "entities": {
+    "Article": {
+      "title": "Article",
+      "description": "Clinical and educational veterinary article published on ThatVetGuy",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique article identifier"
+        },
+        "title": {
+          "type": "string",
+          "description": "Headline of the article",
+          "maxLength": 300
+        },
+        "subtitle": {
+          "type": "string",
+          "description": "Secondary sub-headline or clinical summary",
+          "maxLength": 500
+        },
+        "slug": {
+          "type": "string",
+          "description": "URL-friendly slug",
+          "maxLength": 200
+        },
+        "content": {
+          "type": "string",
+          "description": "Full HTML or markdown article body content"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["DRAFT", "SUBMITTED FOR REVIEW", "UNDER REVIEW", "CHANGES REQUESTED", "APPROVED", "PUBLISHED", "ARCHIVED"],
+          "description": "Editorial workflow lifecycle state"
+        },
+        "authorId": {
+          "type": "string",
+          "description": "Author identifier"
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Author display name"
+        },
+        "category": {
+          "type": "string",
+          "description": "Primary clinical category slug"
+        },
+        "tags": {
+          "type": "array",
+          "description": "List of associated clinical tags"
+        },
+        "featuredImage": {
+          "type": "string",
+          "description": "URL of lead article cover photo"
+        },
+        "publishedDate": {
+          "type": "string",
+          "description": "ISO timestamp when published"
+        },
+        "updatedDate": {
+          "type": "string",
+          "description": "ISO timestamp when last updated"
+        }
+      },
+      "required": ["id", "title", "slug", "status", "authorId"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Staff profile and author credentials",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth user identifier"
+        },
+        "email": {
+          "type": "string",
+          "description": "Contact email address"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["CO_FOUNDER", "CONTRIBUTOR", "PEER_REVIEWER"],
+          "description": "Role in editorial system"
+        }
+      },
+      "required": ["uid", "email"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable audit record for compliance and editorial governance",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Log record ID"
+        },
+        "action": {
+          "type": "string",
+          "description": "Action performed"
+        },
+        "authorId": {
+          "type": "string",
+          "description": "Author or user ID who performed the action"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "ISO timestamp of event"
+        }
+      },
+      "required": ["id", "action", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/articles/{articleId}": {
+      "schema": "Article",
+      "description": "Collection of veterinary articles, guides, and research pieces"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Author profiles and authorization metadata"
+    },
+    "/audit_logs/{logId}": {
+      "schema": "AuditLog",
+      "description": "Immutable log of editorial and security events"
+    }
+  }
+}

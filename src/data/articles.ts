@@ -532,34 +532,70 @@ export const ARTICLES: Article[] = [
   },
 ];
 
+function getCombinedArticles(): Article[] {
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem('tvg_articles_store') : null;
+    const deletedRaw = typeof window !== 'undefined' ? localStorage.getItem('tvg_deleted_articles') : null;
+    const deletedIds = new Set<string>(deletedRaw ? JSON.parse(deletedRaw) : []);
+    const localList: Article[] = raw ? JSON.parse(raw) : [];
+
+    const map = new Map<string, Article>();
+    for (const a of ARTICLES) {
+      if (!deletedIds.has(a.id)) {
+        map.set(a.id, a);
+      }
+    }
+    for (const a of localList) {
+      if (!deletedIds.has(a.id)) {
+        map.set(a.id, a);
+      }
+    }
+    return Array.from(map.values());
+  } catch (e) {
+    return ARTICLES;
+  }
+}
+
 export function getArticleBySlug(slug: string): Article | undefined {
-  return ARTICLES.find((a) => a.slug === slug);
+  const all = getCombinedArticles();
+  return all.find((a) => a.slug === slug);
 }
 
 export function getArticlesByCategory(categorySlug: string): Article[] {
-  return ARTICLES.filter((a) => a.category === categorySlug);
+  const all = getCombinedArticles();
+  return all.filter((a) => a.category === categorySlug && a.status !== 'DRAFT');
 }
 
 export function getArticlesByAuthor(authorIdOrSlug: string): Article[] {
+  const all = getCombinedArticles();
   const normalized = authorIdOrSlug === 'dr-shivam' ? 'dr-shivam-singh-thakur' : authorIdOrSlug;
-  return ARTICLES.filter((a) => a.authorId === normalized || (normalized === 'dr-shivam-singh-thakur' && a.authorId === 'dr-shivam'));
+  return all.filter(
+    (a) =>
+      (a.authorId === normalized || (normalized === 'dr-shivam-singh-thakur' && a.authorId === 'dr-shivam')) &&
+      a.status !== 'DRAFT'
+  );
 }
 
 export function getArticlesByTag(tagSlug: string): Article[] {
-  return ARTICLES.filter((a) => a.tags.includes(tagSlug));
+  const all = getCombinedArticles();
+  return all.filter((a) => a.tags.includes(tagSlug) && a.status !== 'DRAFT');
 }
 
 export function getFeaturedArticle(): Article {
-  return ARTICLES.find((a) => a.isFeatured) || ARTICLES[0];
+  const all = getCombinedArticles().filter((a) => a.status === 'PUBLISHED' || !a.status);
+  return all.find((a) => a.isFeatured) || all[0] || ARTICLES[0];
 }
 
 export function getPopularArticles(): Article[] {
-  return ARTICLES.filter((a) => a.isPopular);
+  const all = getCombinedArticles().filter((a) => a.status === 'PUBLISHED' || !a.status);
+  return all.filter((a) => a.isPopular);
 }
 
 export function getLatestArticles(limit?: number): Article[] {
-  const sorted = [...ARTICLES].sort(
-    (a, b) => new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime()
+  const all = getCombinedArticles().filter((a) => a.status === 'PUBLISHED' || !a.status);
+  const sorted = [...all].sort(
+    (a, b) => new Date(b.publishedDate || 0).getTime() - new Date(a.publishedDate || 0).getTime()
   );
   return limit ? sorted.slice(0, limit) : sorted;
 }
+

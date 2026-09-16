@@ -14,39 +14,90 @@ import {
   BookOpen,
   Linkedin,
   Activity,
+  Cloud,
+  RefreshCw,
+  Globe,
+  Database,
 } from 'lucide-react';
 import { Article, Author } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigation } from '../../context/NavigationContext';
-import { getArticlesFromFirestore } from '../../services/articleService';
+import {
+  getArticlesFromFirestore,
+  syncLocalArticlesToFirestore,
+  forceSeedAllArticlesToFirestore,
+} from '../../services/articleService';
 import { getAllContributors } from '../../services/contributorService';
+import { auth } from '../../lib/firebase';
 
 export const DashboardOverview: React.FC = () => {
-  const { currentAuthor, isCoFounder, role } = useAuth();
+  const { currentAuthor, isCoFounder, role, signInWithGoogle } = useAuth();
   const { navigateTo } = useNavigation();
 
   const [articles, setArticles] = useState<Article[]>([]);
   const [contributors, setContributors] = useState<Author[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [arts, users] = await Promise.all([
+        getArticlesFromFirestore({ includeAllStatuses: true }),
+        getAllContributors(),
+      ]);
+      setArticles(arts);
+      setContributors(users);
+    } catch (err) {
+      console.error('Error loading dashboard overview:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const [arts, users] = await Promise.all([
-          getArticlesFromFirestore(),
-          getAllContributors(),
-        ]);
-        setArticles(arts);
-        setContributors(users);
-      } catch (err) {
-        console.error('Error loading dashboard overview:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
     loadData();
   }, []);
+
+  const handleSyncCloud = async () => {
+    setSyncing(true);
+    setSyncMessage(null);
+    try {
+      const res = await syncLocalArticlesToFirestore();
+      if (res.error) {
+        setSyncMessage(`Notice: ${res.error}. Local articles are safely saved.`);
+      } else {
+        setSyncMessage(`Successfully pushed ${res.synced} article(s) to Firestore cloud!`);
+      }
+      await loadData();
+    } catch (e: any) {
+      setSyncMessage(`Sync notice: ${e.message || 'Saved locally'}`);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleSeedToCloud = async () => {
+    if (!confirm('Sync and publish all 6 foundational clinical articles to the live Firestore database?')) {
+      return;
+    }
+    setSyncing(true);
+    setSyncMessage(null);
+    try {
+      const res = await forceSeedAllArticlesToFirestore();
+      if (res.error) {
+        setSyncMessage(`Seed notice: ${res.error}`);
+      } else {
+        setSyncMessage(`Successfully published all ${res.count} clinical articles to live Firestore!`);
+      }
+      await loadData();
+    } catch (e: any) {
+      setSyncMessage(`Seed error: ${e.message}`);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const totalArticles = articles.length;
   const publishedArticles = articles.filter((a) => a.status === 'PUBLISHED').length;
@@ -85,6 +136,14 @@ export const DashboardOverview: React.FC = () => {
           <div className="flex items-center gap-3 shrink-0">
             <button
               type="button"
+              onClick={() => navigateTo({ name: 'home' })}
+              className="px-4 py-3 rounded-xl bg-emerald-800/80 text-white border border-emerald-700/60 font-medium text-xs sm:text-sm hover:bg-emerald-700 transition-colors flex items-center gap-2 shadow-sm min-h-[44px]"
+            >
+              <Globe className="w-4 h-4 text-emerald-200" />
+              <span>View Live Blog</span>
+            </button>
+            <button
+              type="button"
               onClick={() => navigateTo({ name: 'admin', section: 'edit' })}
               className="px-5 py-3 rounded-xl bg-white text-emerald-950 font-bold text-xs sm:text-sm hover:bg-emerald-50 transition-colors flex items-center gap-2 shadow-sm min-h-[44px]"
             >
@@ -93,6 +152,91 @@ export const DashboardOverview: React.FC = () => {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Live Blog & Cloud Sync Control Strip */}
+      <div className="bg-white rounded-2xl border border-stone-200 p-4 sm:p-5 shadow-xs">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className={`p-2.5 rounded-xl shrink-0 ${auth.currentUser ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>
+              <Database className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-serif font-bold text-stone-900 text-sm">
+                  Live Blog & Cloud Synchronization
+                </h3>
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  auth.currentUser ? 'bg-emerald-100 text-emerald-900' : 'bg-stone-100 text-stone-700'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${auth.currentUser ? 'bg-emerald-600 animate-pulse' : 'bg-stone-400'}`} />
+                  {auth.currentUser ? 'Cloud Live Connected' : 'Local Admin Active'}
+                </span>
+              </div>
+              <p className="text-xs text-stone-500 mt-0.5">
+                {auth.currentUser ? (
+                  <>Signed in as <strong className="text-stone-700">{auth.currentUser.email}</strong>. Articles publish instantly to the live global blog and Firestore.</>
+                ) : (
+                  <>Edits are active and live in this session. Sign in with Google (<strong className="text-stone-700">chiragpatidar0369@gmail.com</strong>) to sync changes globally to all external readers.</>
+                )}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              disabled={syncing}
+              onClick={handleSyncCloud}
+              className="px-3.5 py-2 text-xs font-semibold text-stone-700 bg-stone-100 hover:bg-stone-200 disabled:opacity-50 rounded-xl flex items-center gap-2 transition-colors min-h-[38px]"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-stone-600 ${syncing ? 'animate-spin' : ''}`} />
+              <span>Sync All to Cloud</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={syncing}
+              onClick={handleSeedToCloud}
+              className="px-3.5 py-2 text-xs font-semibold text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 disabled:opacity-50 rounded-xl flex items-center gap-2 transition-colors min-h-[38px]"
+            >
+              <Cloud className="w-3.5 h-3.5 text-emerald-700" />
+              <span>Seed 6 Foundational Articles</span>
+            </button>
+
+            {!auth.currentUser && (
+              <button
+                type="button"
+                onClick={signInWithGoogle}
+                className="px-3.5 py-2 text-xs font-bold text-white bg-emerald-900 hover:bg-emerald-800 rounded-xl flex items-center gap-2 transition-colors min-h-[38px] shadow-xs"
+              >
+                <span>Google Sign-In</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => navigateTo({ name: 'articles' })}
+              className="px-3.5 py-2 text-xs font-semibold text-stone-700 hover:text-stone-900 hover:bg-stone-50 rounded-xl flex items-center gap-1.5 transition-colors min-h-[38px]"
+            >
+              <span>Explore Public Articles</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {syncMessage && (
+          <div className="mt-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-medium text-emerald-900 flex items-center justify-between">
+            <span>{syncMessage}</span>
+            <button
+              type="button"
+              onClick={() => setSyncMessage(null)}
+              className="text-emerald-700 hover:text-emerald-900 font-bold ml-2"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Metrics / Counters */}
