@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { initializeFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import firebaseConfig from '../../firebase-applet-config.json';
 
@@ -12,14 +12,8 @@ export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-// Use specific Firestore database ID with long-polling enabled for preview iframes
-export const db = initializeFirestore(
-  app,
-  {
-    experimentalForceLongPolling: true,
-  },
-  firebaseConfig.firestoreDatabaseId || undefined
-);
+// Initialize Cloud Firestore with configured database ID
+export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
 // Standard error handler conforming to Firebase Integration Skill
 export enum OperationType {
@@ -74,8 +68,15 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
 async function testConnection() {
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    const code = (error as { code?: string })?.code;
+    if (
+      code === 'unavailable' ||
+      code === 'failed-precondition' ||
+      msg.includes('offline') ||
+      msg.includes('could not be completed')
+    ) {
       console.warn('Firebase client operating in offline mode. Local cache active.');
     }
   }

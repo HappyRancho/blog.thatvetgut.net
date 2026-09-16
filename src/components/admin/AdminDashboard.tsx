@@ -49,6 +49,7 @@ export const AdminDashboard: React.FC = () => {
     isAuthorized,
     loading,
     signInWithGoogle,
+    signInAsPreset,
     loginWithCredentials,
     resetPasswordWithKey,
     getLockoutSeconds,
@@ -64,8 +65,8 @@ export const AdminDashboard: React.FC = () => {
   const [reviewCount, setReviewCount] = useState(0);
   const [isSigningIn, setIsSigningIn] = useState(false);
 
-  // Secure Auth State: Username & Password
-  const [authMethod, setAuthMethod] = useState<'credentials' | 'google' | 'reset'>('credentials');
+  // Secure Auth State: Quick Access, Credentials, Google, Reset
+  const [authMethod, setAuthMethod] = useState<'quick' | 'credentials' | 'google' | 'reset'>('quick');
   const [usernameInput, setUsernameInput] = useState<string>('');
   const [passwordInput, setPasswordInput] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -178,6 +179,24 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleQuickAccess = (authorId: string) => {
+    clearAuthError();
+    setVerificationFeedback(null);
+    try {
+      signInAsPreset(authorId);
+    } catch (err: any) {
+      console.error('Quick access error:', err);
+    }
+  };
+
+  const handleReturnHome = () => {
+    try {
+      navigateTo({ name: 'home' });
+    } catch {
+      window.location.href = '/';
+    }
+  };
+
   const handleOpenInNewTab = () => {
     window.open(window.location.href, '_blank', 'noopener,noreferrer');
   };
@@ -218,6 +237,8 @@ export const AdminDashboard: React.FC = () => {
 
   // If not authenticated, render the Secure Authenticated Team Sign-in Screen
   if (!isAuthorized) {
+    const coFounders = allAuthors.filter((a) => a.role === 'CO_FOUNDER');
+
     return (
       <div className="min-h-screen bg-stone-100 flex flex-col justify-center items-center p-4 sm:p-6">
         <div className="max-w-lg w-full bg-white rounded-3xl p-6 sm:p-8 border border-stone-200 shadow-xl space-y-6">
@@ -227,30 +248,38 @@ export const AdminDashboard: React.FC = () => {
               <span className="font-serif font-black text-2xl tracking-tighter">TVG</span>
             </div>
             <h1 className="font-serif font-bold text-2xl text-stone-900">
-              ThatVetGuy Editorial Portal
+              ThatVetGuy Editorial CMS
             </h1>
             <p className="text-xs text-stone-600">
-              Secured Username & Password Access for Co-Founders & Accredited Editorial Staff.
+              Authorized publishing portal for ThatVetGuy Co-Founders & Editorial Team.
+            </p>
+          </div>
+
+          {/* Collaborative Publishing Architecture Notice */}
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 flex items-start gap-2.5 text-xs text-emerald-950">
+            <ShieldCheck className="w-4 h-4 text-emerald-900 shrink-0 mt-0.5" />
+            <p>
+              <strong>Equal Editorial Authority:</strong> All six Co-Founders have equal management access, direct publishing, peer review, and site administration privileges.
             </p>
           </div>
 
           {/* Authentication Mode Switcher */}
-          <div className="grid grid-cols-2 p-1 bg-stone-100 rounded-2xl gap-1 border border-stone-200 text-xs font-semibold">
+          <div className="grid grid-cols-3 p-1 bg-stone-100 rounded-2xl gap-1 border border-stone-200 text-xs font-semibold">
             <button
               type="button"
-              id="cms-auth-tab-credentials"
+              id="cms-auth-tab-quick"
               onClick={() => {
-                setAuthMethod('credentials');
+                setAuthMethod('quick');
                 clearAuthError();
               }}
-              className={`py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                authMethod === 'credentials' || authMethod === 'reset'
-                  ? 'bg-white text-emerald-950 shadow-xs border border-stone-200'
+              className={`py-2 px-2 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer text-center ${
+                authMethod === 'quick'
+                  ? 'bg-white text-emerald-950 shadow-xs border border-stone-200 font-bold'
                   : 'text-stone-500 hover:text-stone-800'
               }`}
             >
-              <Lock className="w-3.5 h-3.5 text-emerald-850" />
-              <span>Username & Password</span>
+              <Users className="w-3.5 h-3.5 text-emerald-850" />
+              <span className="truncate">Quick Access</span>
             </button>
             <button
               type="button"
@@ -259,13 +288,13 @@ export const AdminDashboard: React.FC = () => {
                 setAuthMethod('google');
                 clearAuthError();
               }}
-              className={`py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`py-2 px-2 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer text-center ${
                 authMethod === 'google'
-                  ? 'bg-white text-emerald-950 shadow-xs border border-stone-200'
+                  ? 'bg-white text-emerald-950 shadow-xs border border-stone-200 font-bold'
                   : 'text-stone-500 hover:text-stone-800'
               }`}
             >
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
                   d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
@@ -283,7 +312,23 @@ export const AdminDashboard: React.FC = () => {
                   d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.27 2.64 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
                 />
               </svg>
-              <span>Google OAuth</span>
+              <span className="truncate">Google</span>
+            </button>
+            <button
+              type="button"
+              id="cms-auth-tab-credentials"
+              onClick={() => {
+                setAuthMethod('credentials');
+                clearAuthError();
+              }}
+              className={`py-2 px-2 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer text-center ${
+                authMethod === 'credentials' || authMethod === 'reset'
+                  ? 'bg-white text-emerald-950 shadow-xs border border-stone-200 font-bold'
+                  : 'text-stone-500 hover:text-stone-800'
+              }`}
+            >
+              <Lock className="w-3.5 h-3.5 text-emerald-850" />
+              <span className="truncate">Password</span>
             </button>
           </div>
 
@@ -327,7 +372,66 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 1: Username & Password Authentication */}
+          {/* TAB 1: 1-Click Co-Founder Quick Access */}
+          {authMethod === 'quick' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                  Quick Access (Co-Founder Accounts)
+                </span>
+                <span className="text-[10px] text-emerald-900 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  Equal Authority
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {coFounders.map((author) => (
+                  <button
+                    key={author.id}
+                    type="button"
+                    id={`quick-access-${author.id}`}
+                    onClick={() => handleQuickAccess(author.id)}
+                    className="p-3 rounded-2xl border border-stone-200 hover:border-emerald-800 hover:bg-emerald-50/60 bg-stone-50/40 text-left transition-all group cursor-pointer flex items-center gap-3 shadow-xs"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-emerald-950 text-white font-serif font-bold text-xs flex items-center justify-center shrink-0 group-hover:bg-emerald-900 group-hover:scale-105 transition-all">
+                      {author.name
+                        .replace('Dr. ', '')
+                        .split(' ')
+                        .map((n) => n[0])
+                        .join('')
+                        .slice(0, 2)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-serif font-bold text-xs text-stone-900 truncate group-hover:text-emerald-950">
+                        {author.name}
+                      </div>
+                      <div className="text-[10px] text-stone-500 truncate flex items-center gap-1.5 mt-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 inline-block animate-pulse" />
+                        <span>Co-Founder</span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="pt-2 border-t border-stone-100">
+                <button
+                  type="button"
+                  id="cms-google-quick-btn"
+                  disabled={isSigningIn}
+                  onClick={handleGoogleSignIn}
+                  className="w-full py-3 px-4 bg-emerald-900 hover:bg-emerald-800 text-white font-bold text-xs uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2.5 transition-colors shadow-xs min-h-[46px] cursor-pointer"
+                >
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M12.24 10.285V13.4h6.887C18.2 16.14 15.645 18 12.24 18c-3.315 0-6-2.685-6-6s2.685-6 6-6c1.47 0 2.815.54 3.86 1.425l2.36-2.36C17.065 3.565 14.81 2.7 12.24 2.7 7.085 2.7 2.9 6.885 2.9 12.04c0 5.155 4.185 9.34 9.34 9.34 5.39 0 8.97-3.79 8.97-9.125 0-.62-.065-1.22-.175-1.97H12.24z" />
+                  </svg>
+                  <span>{isSigningIn ? 'Connecting...' : 'Sign in with Google'}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: Username & Password Authentication */}
           {authMethod === 'credentials' && (
             <form onSubmit={handleCredentialLogin} className="space-y-4">
               {/* Username / Email Input */}
@@ -583,10 +687,11 @@ export const AdminDashboard: React.FC = () => {
           {/* Return link */}
           <button
             type="button"
-            onClick={() => navigateTo({ name: 'home' })}
-            className="w-full py-2 px-4 text-xs font-semibold text-stone-500 hover:text-stone-900 transition-colors text-center cursor-pointer"
+            id="cms-return-home-btn"
+            onClick={handleReturnHome}
+            className="w-full py-2.5 px-4 text-xs font-semibold text-stone-500 hover:text-stone-900 transition-colors text-center cursor-pointer block rounded-xl hover:bg-stone-50"
           >
-            ← Return to ThatVetGuy Public Site
+            ← Return to ThatVetGuy Website
           </button>
         </div>
       </div>

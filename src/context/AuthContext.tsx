@@ -441,7 +441,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
       } else if (err.code === 'auth/unauthorized-domain') {
         setAuthError(
-          'This preview domain is not authorized in Firebase Auth settings. Use your Member Passcode below for instant secure access.'
+          'Domain not authorized in Firebase Auth. To enable Google login on your live domain, add "blog.thatvetguy.net" to Firebase Console > Authentication > Settings > Authorized domains. For now, please use the 1-Click Quick Access buttons below!'
         );
       } else {
         setAuthError(

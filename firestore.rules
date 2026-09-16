@@ -55,5 +55,10 @@ service cloud.firestore {
       allow create: if isAuthenticated() || isCoFounder();
       allow update, delete: if false; // Audit logs are strictly immutable
     }
+
+    // Health check ping for testConnection
+    match /test/{docId} {
+      allow read: if true;
+    }
   }
 }
