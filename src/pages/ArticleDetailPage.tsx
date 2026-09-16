@@ -24,6 +24,7 @@ import { ShareModal } from '../components/common/ShareModal';
 import { SEOHead } from '../components/common/SEOHead';
 import { useNavigation } from '../context/NavigationContext';
 import { useBookmarks } from '../context/BookmarksContext';
+import { useAuth } from '../context/AuthContext';
 
 interface ArticleDetailPageProps {
   slug: string;
@@ -32,6 +33,7 @@ interface ArticleDetailPageProps {
 export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({ slug }) => {
   const { navigateTo } = useNavigation();
   const { isBookmarked, toggleBookmark } = useBookmarks();
+  const { currentAuthor } = useAuth();
   const [shareOpen, setShareOpen] = useState(false);
   const [fontScale, setFontScale] = useState<'normal' | 'large'>('normal');
 
@@ -84,6 +86,37 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({ slug }) =>
     );
   }
 
+  // Draft Privacy Enforcement: Drafts must remain private to authenticated CMS editors
+  const isDraftOrUnpublished = article.status && article.status !== 'PUBLISHED';
+  if (isDraftOrUnpublished && !currentAuthor) {
+    return (
+      <div className="py-24 text-center space-y-4 max-w-md mx-auto">
+        <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-900 flex items-center justify-center mx-auto mb-2 font-bold text-lg">
+          🔒
+        </div>
+        <h2 className="font-serif font-bold text-2xl text-stone-900">Publication Is Private</h2>
+        <p className="text-xs text-stone-600 leading-relaxed">
+          This veterinary article is currently an unpublished draft or under clinical peer review.
+          Drafts are private to authorized ThatVetGuy editors and do not appear publicly.
+        </p>
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
+          <button
+            onClick={() => navigateTo({ name: 'articles' })}
+            className="w-full sm:w-auto px-5 py-2.5 bg-emerald-900 text-white text-xs font-semibold rounded-xl hover:bg-emerald-800 transition-colors min-h-[44px]"
+          >
+            Return to Articles Archive
+          </button>
+          <button
+            onClick={() => navigateTo({ name: 'admin' })}
+            className="w-full sm:w-auto px-5 py-2.5 bg-stone-100 text-stone-800 text-xs font-semibold rounded-xl hover:bg-stone-200 transition-colors min-h-[44px]"
+          >
+            Staff Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const staticAuthor = getAuthorById(article.authorId);
   const author = staticAuthor || (article.authorProfile ? {
     id: article.authorId,
@@ -119,10 +152,30 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({ slug }) =>
     <div className="max-w-4xl mx-auto pb-20 space-y-8">
       <SEOHead
         title={article.title}
-        description={article.excerpt}
+        description={article.excerpt || article.subtitle}
         article={article}
         authorName={author?.name}
       />
+
+      {/* Staff Draft Preview Banner */}
+      {isDraftOrUnpublished && currentAuthor && (
+        <div className="p-4 bg-amber-50 border border-amber-300 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-950 shadow-xs">
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 bg-amber-200 text-amber-900 rounded font-bold uppercase tracking-wider text-[10px]">
+              {article.status || 'DRAFT'}
+            </span>
+            <span>
+              <strong>Staff View:</strong> This publication is an unpublished draft. It is strictly private to ThatVetGuy editors and not visible to public visitors.
+            </span>
+          </div>
+          <button
+            onClick={() => navigateTo({ name: 'admin', section: 'all-articles', articleId: article.id })}
+            className="px-3 py-1.5 bg-amber-900 hover:bg-amber-800 text-white font-semibold rounded-lg shrink-0 transition-colors"
+          >
+            Edit in CMS
+          </button>
+        </div>
+      )}
 
       {/* Breadcrumbs & Back Button */}
       <div className="flex items-center justify-between text-xs text-stone-500">
@@ -159,6 +212,13 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({ slug }) =>
           <p className="text-base sm:text-xl text-stone-600 leading-relaxed font-normal">
             {article.subtitle}
           </p>
+        )}
+
+        {article.excerpt && article.excerpt !== article.subtitle && (
+          <div className="p-4 bg-stone-50 border-l-4 border-emerald-900 rounded-r-xl text-sm text-stone-700 italic">
+            <span className="font-semibold not-italic text-stone-900 mr-2">Key Takeaways:</span>
+            {article.excerpt}
+          </div>
         )}
 
         {/* Metadata & Author Bar */}

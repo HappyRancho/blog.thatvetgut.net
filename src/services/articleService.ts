@@ -505,6 +505,11 @@ export async function saveArticleToFirestore(
     socialImage: articleData.socialImage || articleData.featuredImage || existing?.featuredImage || '',
     version: (existing?.version || 0) + 1,
     internalNotes: articleData.internalNotes || existing?.internalNotes || [],
+    updatedAt: nowIso,
+    sourceUrl: articleData.sourceUrl || existing?.sourceUrl,
+    sourcePlatform: articleData.sourcePlatform || existing?.sourcePlatform,
+    importedAt: articleData.importedAt || existing?.importedAt,
+    importedBy: articleData.importedBy || existing?.importedBy,
   };
 
   // 1. Immediately persist to Local Unified Store so changes reflect everywhere on the live blog

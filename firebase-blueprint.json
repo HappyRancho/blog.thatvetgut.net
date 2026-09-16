@@ -60,6 +60,50 @@
         "updatedDate": {
           "type": "string",
           "description": "ISO timestamp when last updated"
+        },
+        "excerpt": {
+          "type": "string",
+          "description": "Concise summary for previews and social sharing"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation ISO timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last modified ISO timestamp"
+        },
+        "publishedAt": {
+          "type": "string",
+          "description": "Publishing ISO timestamp"
+        },
+        "seoTitle": {
+          "type": "string",
+          "description": "Custom SEO meta title"
+        },
+        "seoDescription": {
+          "type": "string",
+          "description": "Custom SEO meta description"
+        },
+        "canonicalUrl": {
+          "type": "string",
+          "description": "Canonical URL for original publisher attribution"
+        },
+        "sourceUrl": {
+          "type": "string",
+          "description": "Original source URL if imported"
+        },
+        "sourcePlatform": {
+          "type": "string",
+          "description": "Source platform name"
+        },
+        "importedAt": {
+          "type": "string",
+          "description": "Import timestamp"
+        },
+        "importedBy": {
+          "type": "string",
+          "description": "Author ID who initiated import"
         }
       },
       "required": ["id", "title", "slug", "status", "authorId"]

@@ -124,6 +124,10 @@ export interface Article {
   version?: number;
   internalNotes?: ReviewNote[];
   updatedAt?: string;
+  sourceUrl?: string;
+  sourcePlatform?: string;
+  importedAt?: string;
+  importedBy?: string;
 }
 
 export type PageRoute =

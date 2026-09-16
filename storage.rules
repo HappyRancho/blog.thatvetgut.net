@@ -1,0 +1,45 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isCoFounder() {
+      return isAuthenticated() && (
+        request.auth.token.email == 'chiragpatidar0369@gmail.com' ||
+        (request.auth.token.email != null && request.auth.token.email.matches('.*@thatvetguy[.]net'))
+      );
+    }
+    
+    // Strict image validation: allow only jpeg, png, webp, and gif under 10MB
+    function isValidImage() {
+      return request.resource.contentType.matches('image/(jpeg|png|webp|gif)')
+        && request.resource.size < 10 * 1024 * 1024;
+    }
+
+    // Article images: readable publicly, uploadable only by authenticated editors
+    match /articles/{articleId}/{fileName} {
+      allow read: if true;
+      allow write: if isAuthenticated() && isValidImage();
+    }
+
+    // Author profile images: readable publicly, uploadable by the author or Co-Founder
+    match /authors/{authorId}/{fileName} {
+      allow read: if true;
+      allow write: if isAuthenticated() && (isCoFounder() || request.auth.uid == authorId) && isValidImage();
+    }
+
+    // General editorial uploads: authenticated staff only
+    match /uploads/{fileName} {
+      allow read: if true;
+      allow write: if isAuthenticated() && isValidImage();
+    }
+    
+    // Disallow arbitrary public uploads everywhere else
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() && isValidImage();
+    }
+  }
+}

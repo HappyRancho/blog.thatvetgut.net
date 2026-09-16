@@ -4,6 +4,7 @@ import {
   Check,
   Clock,
   Eye,
+  EyeOff,
   Globe,
   Image as ImageIcon,
   Link,
@@ -17,6 +18,8 @@ import {
   BookOpen,
   ExternalLink,
   CheckCircle,
+  ShieldCheck,
+  FileText,
 } from 'lucide-react';
 import { Article, ArticleReference, ArticleStatus, Author } from '../../types';
 import { CATEGORIES } from '../../data/categories';
@@ -31,7 +34,10 @@ import {
   deleteArticleFromFirestore,
 } from '../../services/articleService';
 import { logAuditEvent } from '../../services/auditService';
+import { sanitizeHtml, sanitizePlainText } from '../../lib/sanitizer';
+import { uploadImageFile, validateImageFile } from '../../services/imageService';
 import { RichTextEditor } from './RichTextEditor';
+import { ArticleContent } from '../article/ArticleContent';
 
 interface ArticleEditorProps {
   articleId?: string;
@@ -46,6 +52,7 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
   const [id, setId] = useState<string>(articleId || '');
   const [title, setTitle] = useState('');
   const [subtitle, setSubtitle] = useState('');
+  const [excerpt, setExcerpt] = useState('');
   const [slug, setSlug] = useState('');
   const [isSlugManual, setIsSlugManual] = useState(false);
   const [content, setContent] = useState('');
@@ -63,6 +70,18 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
   const [canonicalUrl, setCanonicalUrl] = useState('');
+  const [sourceUrl, setSourceUrl] = useState('');
+  const [sourcePlatform, setSourcePlatform] = useState('');
+  const [importedAt, setImportedAt] = useState<string | undefined>(undefined);
+  const [importedBy, setImportedBy] = useState<string | undefined>(undefined);
+
+  // Preview Mode state
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
+
+  // Image upload states
+  const [isUploadingFeatured, setIsUploadingFeatured] = useState(false);
+  const [featuredUploadError, setFeaturedUploadError] = useState<string | null>(null);
+  const featuredFileInputRef = useRef<HTMLInputElement>(null);
 
   // Autosave status
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -76,7 +95,7 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
     title: string;
   } | null>(null);
 
-  // Reference modal / inline adder
+  // Reference modal
   const [showRefModal, setShowRefModal] = useState(false);
   const [newRefCitation, setNewRefCitation] = useState('');
   const [newRefSource, setNewRefSource] = useState('');
@@ -108,6 +127,7 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
           setId(art.id);
           setTitle(art.title);
           setSubtitle(art.subtitle || '');
+          setExcerpt(art.excerpt || art.subtitle || '');
           setSlug(art.slug);
           setIsSlugManual(true);
           setContent(art.content || '');
@@ -123,6 +143,10 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
           setSeoTitle(art.seoTitle || '');
           setSeoDescription(art.seoDescription || '');
           setCanonicalUrl(art.canonicalUrl || '');
+          setSourceUrl(art.sourceUrl || '');
+          setSourcePlatform(art.sourcePlatform || '');
+          setImportedAt(art.importedAt);
+          setImportedBy(art.importedBy);
         }
       } catch (err) {
         console.error('Error loading article:', err);
@@ -140,67 +164,70 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
   // Reading time
   const readingTime = calculateReadingTime(content);
 
-  // Autosave handler to localStorage & Firestore draft
+  // Autosave function (saves as current status or DRAFT without triggering full review workflow)
   const performAutosave = useCallback(async () => {
-    if (!title.trim() && !content.trim()) return;
+    if (!title.trim()) return;
+
     setSaveStatus('saving');
-
-    const draftKey = `tvg_autosave_${id || 'new'}`;
-    const authorObj = allAuthors.find((a) => a.id === selectedAuthorId) || currentAuthor;
-
-    const payload: Partial<Article> = {
-      id: id || undefined,
-      title: title || 'Untitled Draft',
-      subtitle,
-      slug: slug || generateSlug(title || 'draft'),
-      content,
-      featuredImage,
-      imageAlt: imageAlt || title,
-      imageCaption,
-      category,
-      tags: selectedTags,
-      authorId: selectedAuthorId,
-      authorName: authorObj?.name || 'ThatVetGuy Co-Founder',
-      authorProfile: {
-        name: authorObj?.name || 'ThatVetGuy Co-Founder',
-        designation: authorObj?.designation || 'Co-Founder, ThatVetGuy',
-        professionalRole: authorObj?.professionalRole || '',
-        avatarUrl: authorObj?.avatarUrl || '',
-      },
-      status: status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT',
-      references,
-      seoTitle,
-      seoDescription,
-      canonicalUrl,
-    };
-
-    // Save to local storage for immediate persistence
     try {
-      localStorage.setItem(draftKey, JSON.stringify({ payload, savedAt: Date.now() }));
-    } catch (e) {
-      // ignore
-    }
+      const authorObj = allAuthors.find((a) => a.id === selectedAuthorId) || currentAuthor;
+      const reviewerObj = allAuthors.find((a) => a.id === reviewerId);
 
-    // Save to Firestore as draft if title exists
-    if (title.trim()) {
-      try {
-        const saved = await saveArticleToFirestore(payload, authorObj || undefined);
-        if (!id && saved.id) {
-          setId(saved.id);
-        }
-      } catch (err) {
-        console.warn('Firestore autosave failed, saved locally:', err);
+      const cleanTitle = sanitizePlainText(title.trim());
+      const cleanSubtitle = sanitizePlainText(subtitle.trim());
+      const cleanExcerpt = sanitizePlainText(excerpt.trim() || cleanSubtitle);
+      const cleanContent = sanitizeHtml(content);
+
+      const payload: Partial<Article> = {
+        id: id || undefined,
+        title: cleanTitle,
+        subtitle: cleanSubtitle,
+        excerpt: cleanExcerpt,
+        slug: slug.trim() || generateSlug(title),
+        content: cleanContent,
+        featuredImage,
+        imageAlt: sanitizePlainText(imageAlt.trim() || cleanTitle),
+        imageCaption: sanitizePlainText(imageCaption.trim()),
+        category,
+        tags: selectedTags,
+        authorId: selectedAuthorId,
+        authorName: authorObj?.name || 'ThatVetGuy Co-Founder',
+        authorProfile: {
+          name: authorObj?.name || 'ThatVetGuy Co-Founder',
+          designation: authorObj?.designation || 'Co-Founder, ThatVetGuy',
+          professionalRole: authorObj?.professionalRole || '',
+          avatarUrl: authorObj?.avatarUrl || '',
+        },
+        reviewerId: reviewerId || undefined,
+        reviewer: reviewerObj?.name || undefined,
+        status: status || 'DRAFT',
+        references,
+        seoTitle: sanitizePlainText(seoTitle || `${cleanTitle} | ThatVetGuy`),
+        seoDescription: sanitizePlainText(seoDescription || cleanExcerpt || cleanSubtitle),
+        canonicalUrl: canonicalUrl || `https://www.thatvetguy.net/article/${slug}`,
+        sourceUrl: sourceUrl.trim() || undefined,
+        sourcePlatform: sourcePlatform.trim() || undefined,
+        importedAt,
+        importedBy,
+      };
+
+      const saved = await saveArticleToFirestore(payload, authorObj || undefined);
+      if (!id) {
+        setId(saved.id);
       }
-    }
 
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-    setLastSavedTime(timeStr);
-    setSaveStatus('saved');
+      setSaveStatus('saved');
+      const timeStr = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      setLastSavedTime(timeStr);
+    } catch (err) {
+      console.warn('Autosave warning:', err);
+      setSaveStatus('error');
+    }
     setIsDirty(false);
   }, [
     title,
     subtitle,
+    excerpt,
     slug,
     content,
     featuredImage,
@@ -209,11 +236,16 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
     category,
     selectedTags,
     selectedAuthorId,
+    reviewerId,
     status,
     references,
     seoTitle,
     seoDescription,
     canonicalUrl,
+    sourceUrl,
+    sourcePlatform,
+    importedAt,
+    importedBy,
     id,
     allAuthors,
     currentAuthor,
@@ -229,16 +261,42 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
     return () => clearTimeout(timer);
   }, [isDirty, performAutosave]);
 
-  // Mark dirty on changes
   const markDirty = () => {
     setIsDirty(true);
     setSaveStatus('idle');
   };
 
+  // Featured Image Upload handler with validation & canvas optimization
+  const handleFeaturedImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setFeaturedUploadError(null);
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      setFeaturedUploadError(validation.error || 'Invalid image file.');
+      return;
+    }
+
+    setIsUploadingFeatured(true);
+    try {
+      const res = await uploadImageFile(file, { folder: 'articles', id });
+      setFeaturedImage(res.url);
+      if (!imageAlt) {
+        setImageAlt(file.name.replace(/\.[^/.]+$/, ''));
+      }
+      markDirty();
+    } catch (err: any) {
+      setFeaturedUploadError(err.message || 'Image upload failed. Please try again.');
+    } finally {
+      setIsUploadingFeatured(false);
+    }
+  };
+
   // Explicit Save / Publish actions
   const handleSaveWithStatus = async (targetStatus: ArticleStatus) => {
     if (!title.trim()) {
-      alert('Please provide an article title.');
+      alert('Please provide an article title before saving.');
       return;
     }
 
@@ -249,15 +307,21 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
       const authorObj = allAuthors.find((a) => a.id === selectedAuthorId) || currentAuthor;
       const reviewerObj = allAuthors.find((a) => a.id === reviewerId);
 
+      const cleanTitle = sanitizePlainText(title.trim());
+      const cleanSubtitle = sanitizePlainText(subtitle.trim());
+      const cleanExcerpt = sanitizePlainText(excerpt.trim() || cleanSubtitle);
+      const cleanContent = sanitizeHtml(content);
+
       const payload: Partial<Article> = {
         id: id || undefined,
-        title: title.trim(),
-        subtitle: subtitle.trim(),
+        title: cleanTitle,
+        subtitle: cleanSubtitle,
+        excerpt: cleanExcerpt,
         slug: slug.trim() || generateSlug(title),
-        content,
+        content: cleanContent,
         featuredImage,
-        imageAlt: imageAlt.trim() || title.trim(),
-        imageCaption: imageCaption.trim(),
+        imageAlt: sanitizePlainText(imageAlt.trim() || cleanTitle),
+        imageCaption: sanitizePlainText(imageCaption.trim()),
         category,
         tags: selectedTags,
         authorId: selectedAuthorId,
@@ -272,9 +336,13 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
         reviewer: reviewerObj?.name || undefined,
         status: targetStatus,
         references,
-        seoTitle: seoTitle || `${title} | ThatVetGuy`,
-        seoDescription: seoDescription || subtitle || '',
+        seoTitle: sanitizePlainText(seoTitle || `${cleanTitle} | ThatVetGuy`),
+        seoDescription: sanitizePlainText(seoDescription || cleanExcerpt || cleanSubtitle),
         canonicalUrl: canonicalUrl || `https://www.thatvetguy.net/article/${slug}`,
+        sourceUrl: sourceUrl.trim() || undefined,
+        sourcePlatform: sourcePlatform.trim() || undefined,
+        importedAt,
+        importedBy,
       };
 
       const saved = await saveArticleToFirestore(payload, authorObj || undefined);
@@ -287,11 +355,18 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
       setLastSavedTime(timeStr);
 
       if (currentAuthor) {
-        const actionType = targetStatus === 'PUBLISHED' ? 'ARTICLE_PUBLISH' : targetStatus === 'SUBMITTED FOR REVIEW' ? 'ARTICLE_SUBMIT' : id ? 'ARTICLE_UPDATE' : 'ARTICLE_CREATE';
+        const actionType =
+          targetStatus === 'PUBLISHED'
+            ? 'ARTICLE_PUBLISH'
+            : targetStatus === 'SUBMITTED FOR REVIEW'
+            ? 'ARTICLE_SUBMIT'
+            : id
+            ? 'ARTICLE_UPDATE'
+            : 'ARTICLE_CREATE';
         await logAuditEvent(
           actionType,
           { id: currentAuthor.id, name: currentAuthor.name, role: currentAuthor.role },
-          `${actionType.replace('_', ' ')}: "${title.trim()}" (Status: ${targetStatus})`,
+          `${actionType.replace('_', ' ')}: "${cleanTitle}" (Status: ${targetStatus})`,
           { id: saved.id, title: saved.title }
         );
       }
@@ -302,51 +377,53 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
         title: saved.title,
       });
 
-      // Scroll top smoothly so user immediately sees the confirmation banner
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Auto-dismiss notification after 8 seconds
+      setTimeout(() => {
+        setPublishNotification(null);
+      }, 8000);
     } catch (err: any) {
       console.error('Error saving article:', err);
-      setSaveStatus('error');
       alert(`Failed to save: ${err.message || 'Unknown error'}`);
+      setSaveStatus('error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Delete article
   const handleDelete = async () => {
     if (!id) return;
-    if (!confirm('Are you sure you want to permanently delete this article? This action cannot be undone.')) {
-      return;
-    }
-    try {
+    if (confirm(`Are you sure you want to delete "${title || 'this article'}"? This action cannot be undone.`)) {
+      await deleteArticleFromFirestore(id);
       if (currentAuthor) {
         await logAuditEvent(
           'ARTICLE_DELETE',
           { id: currentAuthor.id, name: currentAuthor.name, role: currentAuthor.role },
-          `Deleted article "${title}" (${id})`,
-          { id, title }
+          `Deleted article "${title}"`,
+          { id }
         );
       }
-      await deleteArticleFromFirestore(id);
-      alert('Article deleted.');
-      navigateTo({ name: 'admin', section: 'all-articles' });
-    } catch (e: any) {
-      alert(`Error deleting article: ${e.message}`);
+      if (onClose) onClose();
+      else navigateTo({ name: 'admin', section: 'all-articles' });
     }
   };
 
+  // Add reference citation
   const handleAddReference = () => {
     if (!newRefCitation.trim() || !newRefSource.trim()) return;
+
     const newRef: ArticleReference = {
       id: `ref-${Date.now()}`,
-      citation: newRefCitation.trim(),
-      source: newRefSource.trim(),
-      year: newRefYear || undefined,
+      citation: sanitizePlainText(newRefCitation.trim()),
+      source: sanitizePlainText(newRefSource.trim()),
+      year: newRefYear,
       url: newRefUrl.trim() || undefined,
     };
+
     setReferences([...references, newRef]);
     setNewRefCitation('');
     setNewRefSource('');
+    setNewRefYear(2025);
     setNewRefUrl('');
     setShowRefModal(false);
     markDirty();
@@ -375,9 +452,13 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
     );
   }
 
+  const authorDetails = allAuthors.find((a) => a.id === selectedAuthorId) || currentAuthor;
+  const reviewerDetails = allAuthors.find((a) => a.id === reviewerId);
+  const activeCategory = CATEGORIES.find((c) => c.slug === category);
+
   return (
     <div className="max-w-5xl mx-auto pb-24">
-      {/* Top action and autosave banner */}
+      {/* Top sticky action & status bar */}
       <div className="sticky top-16 z-30 bg-white/95 backdrop-blur-md border-b border-stone-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 mb-6 flex flex-wrap items-center justify-between gap-3 shadow-xs">
         <div className="flex items-center gap-3">
           <button
@@ -386,22 +467,28 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
               if (onClose) onClose();
               else navigateTo({ name: 'admin', section: 'all-articles' });
             }}
-            className="p-2 text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
+            className="p-2 text-stone-600 hover:text-stone-900 hover:bg-stone-100 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors cursor-pointer"
             title="Back to dashboard"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
             <h2 className="font-serif font-bold text-base sm:text-lg text-stone-900 leading-none">
-              {id ? 'Edit Article' : 'Write New Clinical Article'}
+              {isPreviewMode
+                ? 'Publication Live Preview'
+                : id
+                ? 'Edit Article'
+                : 'Write New Clinical Article'}
             </h2>
             <div className="flex items-center gap-2 mt-1 text-[11px] text-stone-500 font-medium">
               <span>{readingTime} min read</span>
               <span>•</span>
-              <span className="capitalize">{status.toLowerCase()}</span>
+              <span className="capitalize font-semibold text-stone-700">
+                {status.toLowerCase()}
+              </span>
               <span>•</span>
               {saveStatus === 'saving' && (
-                <span className="text-amber-700 flex items-center gap-1">
+                <span className="text-amber-700 flex items-center gap-1 font-medium">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-ping" />
                   Saving...
                 </span>
@@ -419,51 +506,70 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Primary Action Buttons: Save Draft, Preview, Publish */}
         <div className="flex items-center gap-2">
           {/* Save Draft */}
           <button
             type="button"
             onClick={() => handleSaveWithStatus('DRAFT')}
             disabled={isSubmitting}
-            className="px-3.5 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-100 border border-stone-200 rounded-xl min-h-[44px] flex items-center gap-1.5 transition-colors"
+            className="px-3.5 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-100 border border-stone-200 rounded-xl min-h-[44px] flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Save as private draft (invisible on public blog)"
           >
             <Save className="w-4 h-4 text-stone-600" />
             <span className="hidden sm:inline">Save Draft</span>
             <span className="sm:hidden">Draft</span>
           </button>
 
-          {/* Submit for review (For Contributors, or Co-Founders requesting review) */}
+          {/* Preview Toggle Button */}
           <button
             type="button"
-            onClick={() => handleSaveWithStatus('SUBMITTED FOR REVIEW')}
-            disabled={isSubmitting}
-            className="px-3.5 py-2 text-xs font-semibold text-emerald-950 bg-emerald-100 hover:bg-emerald-200 rounded-xl min-h-[44px] flex items-center gap-1.5 transition-colors"
+            onClick={() => setIsPreviewMode(!isPreviewMode)}
+            className={`px-3.5 py-2 text-xs font-semibold rounded-xl min-h-[44px] flex items-center gap-1.5 transition-colors cursor-pointer border ${
+              isPreviewMode
+                ? 'bg-emerald-900 text-white border-emerald-900 shadow-xs'
+                : 'bg-white text-stone-800 border-stone-200 hover:bg-stone-50'
+            }`}
+            title="Preview how article renders publicly on ThatVetGuy"
           >
-            <Send className="w-4 h-4 text-emerald-900" />
-            <span className="hidden sm:inline">Submit for Review</span>
-            <span className="sm:hidden">Submit</span>
+            {isPreviewMode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4 text-emerald-900" />}
+            <span className="hidden sm:inline">{isPreviewMode ? 'Exit Preview' : 'Preview'}</span>
+            <span className="sm:hidden">{isPreviewMode ? 'Edit' : 'Preview'}</span>
           </button>
 
-          {/* Direct Publish (Available to all Co-Founders who have equal publishing authority) */}
+          {/* Submit for review (For Contributors) */}
+          {!isCoFounder && (
+            <button
+              type="button"
+              onClick={() => handleSaveWithStatus('SUBMITTED FOR REVIEW')}
+              disabled={isSubmitting}
+              className="px-3.5 py-2 text-xs font-semibold text-emerald-950 bg-emerald-100 hover:bg-emerald-200 rounded-xl min-h-[44px] flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Send className="w-4 h-4 text-emerald-900" />
+              <span className="hidden sm:inline">Submit for Review</span>
+              <span className="sm:hidden">Submit</span>
+            </button>
+          )}
+
+          {/* Direct Publish (Available to Co-Founders) */}
           {isCoFounder && (
             <button
               type="button"
               onClick={() => handleSaveWithStatus('PUBLISHED')}
               disabled={isSubmitting}
-              className="px-4 py-2 text-xs font-bold text-white bg-emerald-900 hover:bg-emerald-800 rounded-xl min-h-[44px] flex items-center gap-1.5 transition-colors shadow-xs"
+              className="px-4 py-2 text-xs font-bold text-white bg-emerald-900 hover:bg-emerald-800 rounded-xl min-h-[44px] flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
             >
               <Globe className="w-4 h-4" />
-              <span>{status === 'PUBLISHED' ? 'Update Published' : 'Publish Directly'}</span>
+              <span>{status === 'PUBLISHED' ? 'Update Published' : 'Publish'}</span>
             </button>
           )}
 
-          {/* Delete (if existing article and Co-Founder) */}
+          {/* Delete (Existing article & Co-Founder) */}
           {id && isCoFounder && (
             <button
               type="button"
               onClick={handleDelete}
-              className="p-2 text-red-600 hover:bg-red-50 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
+              className="p-2 text-red-600 hover:bg-red-50 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors cursor-pointer"
               title="Delete Article"
             >
               <Trash2 className="w-4 h-4" />
@@ -490,314 +596,143 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
                 </h3>
                 <p className="text-xs text-emerald-200/90 mt-0.5">
                   {publishNotification.status === 'PUBLISHED'
-                    ? 'Your changes are now live and visible on ThatVetGuy for all readers.'
+                    ? 'Your changes are now live and publicly readable on ThatVetGuy for all veterinarians, students, and readers.'
                     : publishNotification.status === 'SUBMITTED FOR REVIEW'
                     ? 'The manuscript has been queued for Co-Founder review.'
-                    : 'Your draft has been saved. Note: Drafts are private to the CMS and do not appear on the live blog until published.'}
+                    : 'Your draft has been saved. Drafts remain strictly private to the CMS and do not appear on the public blog.'}
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-              {publishNotification.status === 'PUBLISHED' && (
-                <button
-                  type="button"
-                  onClick={() => navigateTo({ name: 'article', slug: publishNotification.slug })}
-                  className="px-4 py-2.5 text-xs font-bold text-emerald-950 bg-white hover:bg-emerald-50 rounded-xl flex items-center gap-1.5 transition-colors shadow-xs"
-                >
-                  <span>View Live Article</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </button>
-              )}
+            {publishNotification.status === 'PUBLISHED' && (
               <button
                 type="button"
-                onClick={() => navigateTo({ name: 'admin', section: publishNotification.status === 'PUBLISHED' ? 'published' : 'all-articles' })}
-                className="px-4 py-2.5 text-xs font-semibold text-white bg-emerald-900/80 hover:bg-emerald-800 border border-emerald-700/60 rounded-xl transition-colors"
+                onClick={() => navigateTo({ name: 'article', slug: publishNotification.slug })}
+                className="px-4 py-2 bg-white text-emerald-950 hover:bg-emerald-50 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 transition-colors cursor-pointer"
               >
-                <span>Return to CMS List</span>
+                <span>View Live Blog</span>
+                <ExternalLink className="w-3.5 h-3.5" />
               </button>
-              <button
-                type="button"
-                onClick={() => setPublishNotification(null)}
-                className="px-3 py-2.5 text-xs text-emerald-300 hover:text-white"
-              >
-                Dismiss
-              </button>
-            </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Main Editorial Form */}
-      <div className="space-y-6">
-        {/* Title & Subtitle */}
-        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-stone-700 mb-1.5 uppercase tracking-wider">
-              Article Title <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                markDirty();
-              }}
-              placeholder="e.g. Parvovirus Enteritis in Canines: 2025 Clinical Protocols"
-              className="w-full text-xl sm:text-2xl font-serif font-bold text-stone-900 placeholder:text-stone-300 border border-stone-200 focus:border-emerald-800 focus:ring-1 focus:ring-emerald-800 rounded-xl px-4 py-3 min-h-[48px] outline-hidden"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-stone-700 mb-1.5 uppercase tracking-wider">
-              Subtitle / Clinical Summary
-            </label>
-            <textarea
-              rows={2}
-              value={subtitle}
-              onChange={(e) => {
-                setSubtitle(e.target.value);
-                markDirty();
-              }}
-              placeholder="Provide a concise 1-2 sentence clinical summary of the diagnostic, treatment, or management takeaways..."
-              className="w-full text-sm text-stone-700 border border-stone-200 focus:border-emerald-800 focus:ring-1 focus:ring-emerald-800 rounded-xl px-4 py-2.5 outline-hidden"
-            />
-          </div>
-
-          {/* Slug (Auto-generated, editable) */}
-          <div className="pt-2 border-t border-stone-100 flex flex-wrap items-center gap-2 text-xs">
-            <span className="font-semibold text-stone-500">Public URL:</span>
-            <span className="text-stone-400 font-mono">/article/</span>
-            <input
-              type="text"
-              value={slug}
-              onChange={(e) => {
-                setSlug(e.target.value);
-                setIsSlugManual(true);
-                markDirty();
-              }}
-              className="flex-1 min-w-[200px] font-mono text-emerald-950 font-semibold bg-stone-50 border border-stone-200 rounded-lg px-2 py-1 outline-hidden focus:bg-white"
-            />
-          </div>
-        </div>
-
-        {/* Author, Reviewer & Category Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Author Selection */}
-          <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs">
-            <label className="block text-xs font-bold text-stone-700 mb-1.5 uppercase tracking-wider">
-              Article Author
-            </label>
-            <select
-              value={selectedAuthorId}
-              onChange={(e) => {
-                setSelectedAuthorId(e.target.value);
-                markDirty();
-              }}
-              className="w-full text-xs sm:text-sm font-medium border border-stone-200 rounded-xl px-3 py-2.5 min-h-[44px] bg-white outline-hidden focus:border-emerald-800"
-            >
-              {allAuthors.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name} ({a.designation})
-                </option>
-              ))}
-            </select>
-            <p className="text-[11px] text-stone-500 mt-1">
-              All six Co-Founders have equal publishing authority.
-            </p>
-          </div>
-
-          {/* Clinical Peer Reviewer */}
-          <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs">
-            <label className="block text-xs font-bold text-stone-700 mb-1.5 uppercase tracking-wider">
-              Peer Reviewer (Optional)
-            </label>
-            <select
-              value={reviewerId}
-              onChange={(e) => {
-                setReviewerId(e.target.value);
-                markDirty();
-              }}
-              className="w-full text-xs sm:text-sm font-medium border border-stone-200 rounded-xl px-3 py-2.5 min-h-[44px] bg-white outline-hidden focus:border-emerald-800"
-            >
-              <option value="">-- Select Peer Reviewer --</option>
-              {allAuthors
-                .filter((a) => a.id !== selectedAuthorId)
-                .map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name} ({a.professionalRole})
-                  </option>
-                ))}
-            </select>
-            <p className="text-[11px] text-stone-500 mt-1">
-              Displays verified peer-review badge on published article.
-            </p>
-          </div>
-
-          {/* Category */}
-          <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs">
-            <label className="block text-xs font-bold text-stone-700 mb-1.5 uppercase tracking-wider">
-              Primary Category <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={category}
-              onChange={(e) => {
-                setCategory(e.target.value);
-                markDirty();
-              }}
-              className="w-full text-xs sm:text-sm font-medium border border-stone-200 rounded-xl px-3 py-2.5 min-h-[44px] bg-white outline-hidden focus:border-emerald-800"
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c.slug} value={c.slug}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            <p className="text-[11px] text-stone-500 mt-1">
-              Sections your article into the clinical library.
-            </p>
-          </div>
-        </div>
-
-        {/* Featured Image & Alt Text */}
-        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider">
-              Featured Clinical Image
-            </label>
-            <span className="text-[11px] text-stone-500">Provide direct image URL</span>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4 items-start">
-            <img
-              src={featuredImage}
-              alt={imageAlt || 'Featured preview'}
-              onError={(e) => {
-                (e.target as HTMLImageElement).src =
-                  'https://images.unsplash.com/photo-1576201836106-db1758fd1c97?auto=format&fit=crop&q=80&w=1200';
-              }}
-              className="w-full sm:w-44 h-28 object-cover rounded-xl border border-stone-200 shadow-xs shrink-0"
-            />
-            <div className="flex-1 w-full space-y-2.5">
-              <input
-                type="url"
-                value={featuredImage}
-                onChange={(e) => {
-                  setFeaturedImage(e.target.value);
-                  markDirty();
-                }}
-                placeholder="https://images.unsplash.com/photo-..."
-                className="w-full text-xs sm:text-sm border border-stone-200 rounded-xl px-3 py-2.5 min-h-[44px] outline-hidden focus:border-emerald-800"
-              />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <input
-                  type="text"
-                  value={imageAlt}
-                  onChange={(e) => {
-                    setImageAlt(e.target.value);
-                    markDirty();
-                  }}
-                  placeholder="Image Alt Text (e.g. Veterinarian examining canine abdomen)"
-                  className="w-full text-xs border border-stone-200 rounded-xl px-3 py-2 min-h-[44px] outline-hidden focus:border-emerald-800"
-                />
-                <input
-                  type="text"
-                  value={imageCaption}
-                  onChange={(e) => {
-                    setImageCaption(e.target.value);
-                    markDirty();
-                  }}
-                  placeholder="Image Caption (e.g. Clinical assessment at ThatVetGuy)"
-                  className="w-full text-xs border border-stone-200 rounded-xl px-3 py-2 min-h-[44px] outline-hidden focus:border-emerald-800"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tags Multi-select */}
-        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-stone-200 shadow-xs space-y-2.5">
-          <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider">
-            Clinical Topics & Tags
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {TAGS.map((t) => {
-              const active = selectedTags.includes(t.slug);
-              return (
-                <button
-                  key={t.slug}
-                  type="button"
-                  onClick={() => toggleTag(t.slug)}
-                  className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors min-h-[38px] flex items-center gap-1 ${
-                    active
-                      ? 'bg-emerald-900 text-white shadow-xs'
-                      : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
-                  }`}
-                >
-                  {active && <Check className="w-3 h-3" />}
-                  <span>#{t.name}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Rich Text Editor */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider">
-              Article Content <span className="text-red-500">*</span>
-            </label>
-            <span className="text-xs text-stone-500 font-medium">WYSIWYG No-Code Editor</span>
-          </div>
-          <RichTextEditor
-            value={content}
-            onChange={(val) => {
-              setContent(val);
-              markDirty();
-            }}
-            placeholder="Write clinical findings, veterinary protocols, diagnostic criteria, dosage notes, and patient advice..."
-            minHeight="420px"
-          />
-        </div>
-
-        {/* Scientific References */}
-        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-serif font-bold text-stone-900 text-base">
-                Peer-Reviewed References & Citations
-              </h4>
-              <p className="text-xs text-stone-500">
-                Ground clinical assertions with peer-reviewed veterinary literature.
-              </p>
+      {/* ========================================================================= */}
+      {/* PREVIEW MODE: True-to-life public rendering of the article               */}
+      {/* ========================================================================= */}
+      {isPreviewMode ? (
+        <div className="space-y-8 animate-fadeIn">
+          {/* Banner explaining preview state */}
+          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between gap-3 text-xs text-emerald-900">
+            <div className="flex items-center gap-2">
+              <Eye className="w-4 h-4 text-emerald-800 shrink-0" />
+              <span>
+                <strong>Live Preview Mode:</strong> This preview reflects exact public styling, sanitization, and typography as it will appear on ThatVetGuy.
+              </span>
             </div>
             <button
               type="button"
-              onClick={() => setShowRefModal(true)}
-              className="px-3 py-2 text-xs font-semibold text-emerald-950 bg-emerald-100 hover:bg-emerald-200 rounded-xl flex items-center gap-1.5 transition-colors min-h-[44px]"
+              onClick={() => setIsPreviewMode(false)}
+              className="px-3 py-1.5 bg-white text-emerald-900 hover:bg-emerald-100 font-semibold rounded-lg border border-emerald-300 shrink-0 cursor-pointer"
             >
-              <Plus className="w-4 h-4 text-emerald-900" />
-              <span>Add Citation</span>
+              Exit Preview & Edit
             </button>
           </div>
 
-          {references.length === 0 ? (
-            <p className="text-xs text-stone-400 italic py-2">
-              No references added yet. Click &quot;Add Citation&quot; to cite journal articles or veterinary texts.
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {references.map((ref, idx) => (
-                <div
-                  key={ref.id || idx}
-                  className="p-3 bg-stone-50 rounded-xl border border-stone-200 flex items-start justify-between gap-3 text-xs"
-                >
-                  <div>
-                    <span className="font-bold text-emerald-950 mr-1.5">[{idx + 1}]</span>
-                    <span className="text-stone-800 font-medium">{ref.citation}</span>
-                    <div className="text-[11px] text-stone-500 mt-0.5">
-                      <span>{ref.source}</span>
+          <article className="bg-white rounded-3xl border border-stone-200 p-6 sm:p-10 shadow-xs max-w-4xl mx-auto space-y-6">
+            {/* Category badge */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-emerald-900 tracking-wider uppercase bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                {activeCategory?.name || category}
+              </span>
+              <span className="text-xs text-stone-500 font-medium">
+                {readingTime} min read
+              </span>
+            </div>
+
+            {/* Title */}
+            <h1 className="font-serif font-extrabold text-3xl sm:text-4xl lg:text-5xl text-stone-900 leading-tight">
+              {title || 'Untitled Article'}
+            </h1>
+
+            {/* Subtitle */}
+            {subtitle && (
+              <p className="text-lg sm:text-xl text-stone-600 leading-relaxed font-normal">
+                {subtitle}
+              </p>
+            )}
+
+            {/* Excerpt callout */}
+            {excerpt && excerpt !== subtitle && (
+              <div className="p-4 bg-stone-50 border-l-4 border-emerald-900 rounded-r-xl text-sm text-stone-700 italic">
+                <span className="font-semibold not-italic text-stone-900 mr-2">Summary:</span>
+                {excerpt}
+              </div>
+            )}
+
+            {/* Author Profile Header */}
+            <div className="py-4 border-y border-stone-200 flex items-center gap-3">
+              {authorDetails?.avatarUrl && (
+                <img
+                  src={authorDetails.avatarUrl}
+                  alt={authorDetails.name}
+                  className="w-12 h-12 rounded-full object-cover border border-emerald-900/30"
+                />
+              )}
+              <div>
+                <p className="font-semibold text-stone-900 text-sm">
+                  {authorDetails?.name || 'ThatVetGuy Author'}
+                </p>
+                <p className="text-xs text-stone-500">
+                  {authorDetails?.designation || 'Contributor'} • Published on ThatVetGuy
+                </p>
+              </div>
+            </div>
+
+            {/* Featured Image */}
+            {featuredImage && (
+              <figure className="my-6">
+                <img
+                  src={featuredImage}
+                  alt={imageAlt || title || 'Featured article image'}
+                  className="w-full max-h-[460px] object-cover rounded-2xl border border-stone-200 shadow-sm"
+                />
+                {imageCaption && (
+                  <figcaption className="text-xs text-stone-500 mt-2 italic text-center">
+                    {imageCaption}
+                  </figcaption>
+                )}
+              </figure>
+            )}
+
+            {/* Sanitized Article Body Content */}
+            <div className="pt-4">
+              <ArticleContent contentHtml={content} />
+            </div>
+
+            {/* Peer Reviewer note if present */}
+            {reviewerDetails && (
+              <div className="mt-8 p-4 rounded-xl bg-emerald-50/60 border border-emerald-200/80 flex items-center gap-3">
+                <ShieldCheck className="w-5 h-5 text-emerald-800 shrink-0" />
+                <div className="text-xs text-emerald-950">
+                  <span className="font-bold">Peer-Reviewed:</span> Clinically verified by{' '}
+                  <span className="font-semibold">{reviewerDetails.name}</span> ({reviewerDetails.designation}).
+                </div>
+              </div>
+            )}
+
+            {/* References list */}
+            {references.length > 0 && (
+              <div className="pt-8 border-t border-stone-200 space-y-3">
+                <h3 className="font-serif font-bold text-stone-900 text-lg">
+                  Clinical References & Literature Citations
+                </h3>
+                <ol className="list-decimal pl-5 space-y-2 text-xs text-stone-600">
+                  {references.map((ref) => (
+                    <li key={ref.id}>
+                      <span className="font-medium text-stone-800">{ref.citation}</span>{' '}
+                      <span className="italic">{ref.source}</span>
                       {ref.year && <span> ({ref.year})</span>}
                       {ref.url && (
                         <a
@@ -810,80 +745,484 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
                           <span>Link</span>
                         </a>
                       )}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveReference(ref.id)}
-                    className="p-1.5 text-stone-400 hover:text-red-600 rounded-lg min-h-[36px] min-w-[36px] flex items-center justify-center transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
 
-        {/* SEO & Meta Details (Collapsible) */}
-        <details className="bg-white rounded-2xl border border-stone-200 p-4 sm:p-6 shadow-xs group">
-          <summary className="font-serif font-bold text-stone-900 text-sm sm:text-base cursor-pointer select-none flex items-center justify-between">
-            <span>Search Engine Optimization (SEO) & Metadata</span>
-            <span className="text-xs text-emerald-900 font-sans font-medium group-open:hidden">
-              Show SEO Fields ↓
-            </span>
-          </summary>
-          <div className="mt-4 space-y-3 pt-3 border-t border-stone-100">
+            {/* Tags */}
+            {selectedTags.length > 0 && (
+              <div className="pt-6 border-t border-stone-200 flex flex-wrap gap-2">
+                {selectedTags.map((tagSlug) => (
+                  <span
+                    key={tagSlug}
+                    className="text-xs bg-stone-100 text-stone-700 px-3 py-1 rounded-full font-medium"
+                  >
+                    #{tagSlug}
+                  </span>
+                ))}
+              </div>
+            )}
+          </article>
+        </div>
+      ) : (
+        /* ========================================================================= */
+        /* EDIT MODE: Complete CMS Editorial Workflow Form                           */
+        /* ========================================================================= */
+        <div className="space-y-6">
+          {/* Main Title & Subtitle Card */}
+          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-stone-700 mb-1">
-                Custom SEO Title
+              <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
+                Article Title <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                value={seoTitle}
+                value={title}
                 onChange={(e) => {
-                  setSeoTitle(e.target.value);
+                  setTitle(e.target.value);
                   markDirty();
                 }}
-                placeholder={title ? `${title} | ThatVetGuy` : 'Title | ThatVetGuy'}
-                className="w-full text-xs sm:text-sm border border-stone-200 rounded-xl px-3 py-2.5 min-h-[44px] outline-hidden focus:border-emerald-800"
+                placeholder="e.g. Canine Diabetic Ketoacidosis: Emergency Protocol and Electrolyte Management"
+                className="w-full text-lg sm:text-xl font-serif font-bold border border-stone-300 rounded-xl px-4 py-3 outline-hidden focus:border-emerald-800 focus:ring-1 focus:ring-emerald-800 transition-all min-h-[48px]"
+                autoFocus
               />
             </div>
+
             <div>
-              <label className="block text-xs font-semibold text-stone-700 mb-1">
-                SEO Meta Description
-              </label>
-              <textarea
-                rows={2}
-                value={seoDescription}
-                onChange={(e) => {
-                  setSeoDescription(e.target.value);
-                  markDirty();
-                }}
-                placeholder="150-160 characters summary for Google search snippet..."
-                className="w-full text-xs sm:text-sm border border-stone-200 rounded-xl px-3 py-2 outline-hidden focus:border-emerald-800"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-stone-700 mb-1">
-                Canonical URL
+              <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
+                Clinical Subtitle (Optional)
               </label>
               <input
-                type="url"
-                value={canonicalUrl}
+                type="text"
+                value={subtitle}
                 onChange={(e) => {
-                  setCanonicalUrl(e.target.value);
+                  setSubtitle(e.target.value);
                   markDirty();
                 }}
-                placeholder={`https://www.thatvetguy.net/article/${slug}`}
-                className="w-full text-xs font-mono border border-stone-200 rounded-xl px-3 py-2 min-h-[44px] outline-hidden focus:border-emerald-800"
+                placeholder="e.g. A step-by-step veterinary critical care guide for managing hydration, acid-base status, and regular insulin infusion."
+                className="w-full text-sm border border-stone-300 rounded-xl px-3 py-2.5 outline-hidden focus:border-emerald-800 min-h-[44px]"
               />
             </div>
-          </div>
-        </details>
-      </div>
 
-      {/* Add Reference Modal */}
+            {/* Excerpt field */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider">
+                  Article Excerpt / Teaser
+                </label>
+                <span className="text-[11px] text-stone-500">
+                  {excerpt.length} characters (140-160 recommended)
+                </span>
+              </div>
+              <textarea
+                rows={2}
+                value={excerpt}
+                onChange={(e) => {
+                  setExcerpt(e.target.value);
+                  markDirty();
+                }}
+                placeholder="Concise overview summarizing key clinical takeaways for article archive cards, social sharing, and search previews..."
+                className="w-full text-sm border border-stone-300 rounded-xl px-3 py-2 outline-hidden focus:border-emerald-800 leading-relaxed"
+              />
+            </div>
+
+            {/* Slug */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider">
+                  URL Slug
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsSlugManual(!isSlugManual)}
+                  className="text-xs text-emerald-900 font-semibold hover:underline"
+                >
+                  {isSlugManual ? 'Auto-generate from Title' : 'Edit Manually'}
+                </button>
+              </div>
+              <div className="flex items-center rounded-xl border border-stone-300 bg-stone-50 px-3 py-2 text-xs font-mono text-stone-600 min-h-[44px]">
+                <span className="shrink-0 text-stone-400">thatvetguy.net/article/</span>
+                <input
+                  type="text"
+                  value={slug}
+                  disabled={!isSlugManual}
+                  onChange={(e) => {
+                    setSlug(generateSlug(e.target.value));
+                    markDirty();
+                  }}
+                  className="w-full bg-transparent outline-hidden ml-1 font-mono text-stone-800 disabled:opacity-75"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Author, Peer Reviewer & Category Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Author */}
+            <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs">
+              <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                Author
+              </label>
+              <select
+                value={selectedAuthorId}
+                onChange={(e) => {
+                  setSelectedAuthorId(e.target.value);
+                  markDirty();
+                }}
+                className="w-full text-xs sm:text-sm border border-stone-300 rounded-xl px-3 py-2.5 outline-hidden focus:border-emerald-800 min-h-[44px] bg-white"
+              >
+                {allAuthors.map((author) => (
+                  <option key={author.id} value={author.id}>
+                    {author.name} ({author.role === 'CO_FOUNDER' ? 'Co-Founder' : 'Contributor'})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Clinical Peer Reviewer */}
+            <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs">
+              <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                Peer Reviewer (Optional)
+              </label>
+              <select
+                value={reviewerId}
+                onChange={(e) => {
+                  setReviewerId(e.target.value);
+                  markDirty();
+                }}
+                className="w-full text-xs sm:text-sm border border-stone-300 rounded-xl px-3 py-2.5 outline-hidden focus:border-emerald-800 min-h-[44px] bg-white"
+              >
+                <option value="">None (Pending Review)</option>
+                {allAuthors.map((author) => (
+                  <option key={author.id} value={author.id}>
+                    {author.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Category */}
+            <div className="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs">
+              <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                Clinical Category <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={category}
+                onChange={(e) => {
+                  setCategory(e.target.value);
+                  markDirty();
+                }}
+                className="w-full text-xs sm:text-sm border border-stone-300 rounded-xl px-3 py-2.5 outline-hidden focus:border-emerald-800 min-h-[44px] bg-white"
+              >
+                {CATEGORIES.map((c) => (
+                  <option key={c.slug} value={c.slug}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Featured Image Upload & Details */}
+          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider">
+                Featured Clinical Image
+              </label>
+              <span className="text-[11px] text-stone-500">
+                Upload image file or enter direct web URL
+              </span>
+            </div>
+
+            {featuredUploadError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
+                <span>{featuredUploadError}</span>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-4 items-start">
+              <div className="relative group shrink-0 w-full sm:w-52 h-36 rounded-xl border border-stone-200 overflow-hidden bg-stone-100">
+                <img
+                  src={featuredImage}
+                  alt={imageAlt || 'Featured preview'}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src =
+                      'https://images.unsplash.com/photo-1576201836106-db1758fd1c97?auto=format&fit=crop&q=80&w=1200';
+                  }}
+                  className="w-full h-full object-cover"
+                />
+                {isUploadingFeatured && (
+                  <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center text-white text-xs gap-1.5 backdrop-blur-xs">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Optimizing...</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-1 w-full space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="url"
+                    value={featuredImage}
+                    onChange={(e) => {
+                      setFeaturedImage(e.target.value);
+                      markDirty();
+                    }}
+                    placeholder="https://images.unsplash.com/photo-..."
+                    className="flex-1 text-xs sm:text-sm border border-stone-200 rounded-xl px-3 py-2.5 min-h-[44px] outline-hidden focus:border-emerald-800"
+                  />
+                  <input
+                    type="file"
+                    ref={featuredFileInputRef}
+                    onChange={handleFeaturedImageUpload}
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => featuredFileInputRef.current?.click()}
+                    disabled={isUploadingFeatured}
+                    className="px-3.5 py-2 text-xs font-semibold text-emerald-950 bg-emerald-100 hover:bg-emerald-200 rounded-xl min-h-[44px] flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+                    title="Upload image from device"
+                  >
+                    <Upload className="w-4 h-4 text-emerald-900" />
+                    <span className="hidden sm:inline">Upload Photo</span>
+                    <span className="sm:hidden">Upload</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={imageAlt}
+                    onChange={(e) => {
+                      setImageAlt(e.target.value);
+                      markDirty();
+                    }}
+                    placeholder="Image Alt Text (e.g. Veterinarian examining canine patient)"
+                    className="w-full text-xs border border-stone-200 rounded-xl px-3 py-2 min-h-[44px] outline-hidden focus:border-emerald-800"
+                  />
+                  <input
+                    type="text"
+                    value={imageCaption}
+                    onChange={(e) => {
+                      setImageCaption(e.target.value);
+                      markDirty();
+                    }}
+                    placeholder="Image Caption (e.g. Clinical assessment at ThatVetGuy)"
+                    className="w-full text-xs border border-stone-200 rounded-xl px-3 py-2 min-h-[44px] outline-hidden focus:border-emerald-800"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tags Multi-select */}
+          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-stone-200 shadow-xs space-y-2.5">
+            <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider">
+              Clinical Topics & Tags
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {TAGS.map((t) => {
+                const active = selectedTags.includes(t.slug);
+                return (
+                  <button
+                    key={t.slug}
+                    type="button"
+                    onClick={() => toggleTag(t.slug)}
+                    className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors min-h-[38px] flex items-center gap-1 cursor-pointer ${
+                      active
+                        ? 'bg-emerald-900 text-white shadow-xs'
+                        : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                    }`}
+                  >
+                    {active && <Check className="w-3 h-3" />}
+                    <span>#{t.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Rich Text Editor */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider">
+                Article Content <span className="text-red-500">*</span>
+              </label>
+              <span className="text-xs text-stone-500 font-medium">
+                WYSIWYG Rich Editor (Sanitized before publishing)
+              </span>
+            </div>
+            <RichTextEditor
+              value={content}
+              onChange={(val) => {
+                setContent(val);
+                markDirty();
+              }}
+              placeholder="Write clinical findings, veterinary protocols, diagnostic criteria, dosage notes, and patient advice..."
+              minHeight="440px"
+            />
+          </div>
+
+          {/* Clinical References & Citations */}
+          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-serif font-bold text-stone-900 text-base">
+                  Peer-Reviewed Citations & References
+                </h3>
+                <p className="text-xs text-stone-500">
+                  Accredit veterinary literature, peer-reviewed studies, and clinical protocols.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowRefModal(true)}
+                className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-semibold rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Citation</span>
+              </button>
+            </div>
+
+            {references.length === 0 ? (
+              <div className="p-6 border border-dashed border-stone-200 rounded-xl text-center text-xs text-stone-500">
+                No citations added yet. Click &quot;Add Citation&quot; to cite peer-reviewed veterinary journals.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {references.map((ref, idx) => (
+                  <div
+                    key={ref.id}
+                    className="p-3 bg-stone-50 rounded-xl border border-stone-200 text-xs flex items-center justify-between gap-3"
+                  >
+                    <div className="flex-1">
+                      <span className="font-bold text-stone-900 mr-1.5">[{idx + 1}]</span>
+                      <span className="font-medium text-stone-800">{ref.citation}</span> —{' '}
+                      <span className="italic text-stone-600">{ref.source}</span>
+                      {ref.year && <span className="text-stone-500"> ({ref.year})</span>}
+                      {ref.url && (
+                        <a
+                          href={ref.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ml-2 text-emerald-900 underline inline-flex items-center gap-0.5"
+                        >
+                          <Link className="w-3 h-3" />
+                          <span>Link</span>
+                        </a>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveReference(ref.id)}
+                      className="p-1.5 text-stone-400 hover:text-red-600 rounded-lg min-h-[36px] min-w-[36px] flex items-center justify-center transition-colors cursor-pointer"
+                      title="Remove Citation"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* SEO & Search Metadata (Collapsible) */}
+          <details className="bg-white rounded-2xl border border-stone-200 p-4 sm:p-6 shadow-xs group">
+            <summary className="font-serif font-bold text-stone-900 text-sm sm:text-base cursor-pointer select-none flex items-center justify-between">
+              <span>Search Engine Optimization (SEO) & Metadata</span>
+              <span className="text-xs text-emerald-900 font-sans font-medium group-open:hidden">
+                Show SEO Fields ↓
+              </span>
+            </summary>
+            <div className="mt-4 space-y-3 pt-3 border-t border-stone-100">
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  Custom SEO Title
+                </label>
+                <input
+                  type="text"
+                  value={seoTitle}
+                  onChange={(e) => {
+                    setSeoTitle(e.target.value);
+                    markDirty();
+                  }}
+                  placeholder={title ? `${title} | ThatVetGuy` : 'Title | ThatVetGuy'}
+                  className="w-full text-xs sm:text-sm border border-stone-200 rounded-xl px-3 py-2.5 min-h-[44px] outline-hidden focus:border-emerald-800"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  SEO Meta Description
+                </label>
+                <textarea
+                  rows={2}
+                  value={seoDescription}
+                  onChange={(e) => {
+                    setSeoDescription(e.target.value);
+                    markDirty();
+                  }}
+                  placeholder="150-160 characters summary for Google search snippet..."
+                  className="w-full text-xs sm:text-sm border border-stone-200 rounded-xl px-3 py-2 outline-hidden focus:border-emerald-800"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  Canonical URL
+                </label>
+                <input
+                  type="url"
+                  value={canonicalUrl}
+                  onChange={(e) => {
+                    setCanonicalUrl(e.target.value);
+                    markDirty();
+                  }}
+                  placeholder={`https://www.thatvetguy.net/article/${slug}`}
+                  className="w-full text-xs font-mono border border-stone-200 rounded-xl px-3 py-2 min-h-[44px] outline-hidden focus:border-emerald-800"
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                    Original Source URL (Optional)
+                  </label>
+                  <input
+                    type="url"
+                    value={sourceUrl}
+                    onChange={(e) => {
+                      setSourceUrl(e.target.value);
+                      markDirty();
+                    }}
+                    placeholder="https://..."
+                    className="w-full text-xs border border-stone-200 rounded-xl px-3 py-2 min-h-[44px] outline-hidden focus:border-emerald-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                    Source Platform (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={sourcePlatform}
+                    onChange={(e) => {
+                      setSourcePlatform(e.target.value);
+                      markDirty();
+                    }}
+                    placeholder="e.g. LinkedIn, Vet Journal, Internal"
+                    className="w-full text-xs border border-stone-200 rounded-xl px-3 py-2 min-h-[44px] outline-hidden focus:border-emerald-800"
+                  />
+                </div>
+              </div>
+            </div>
+          </details>
+        </div>
+      )}
+
+      {/* Add Reference Citation Modal */}
       {showRefModal && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 backdrop-blur-xs">
           <div className="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl border border-stone-200">
@@ -947,7 +1286,7 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
               <button
                 type="button"
                 onClick={() => setShowRefModal(false)}
-                className="px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-100 rounded-xl min-h-[44px]"
+                className="px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-100 rounded-xl min-h-[44px] cursor-pointer"
               >
                 Cancel
               </button>
@@ -955,7 +1294,7 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
                 type="button"
                 onClick={handleAddReference}
                 disabled={!newRefCitation.trim() || !newRefSource.trim()}
-                className="px-5 py-2 text-xs font-semibold text-white bg-emerald-900 hover:bg-emerald-800 disabled:opacity-50 rounded-xl min-h-[44px] shadow-xs"
+                className="px-5 py-2 text-xs font-semibold text-white bg-emerald-900 hover:bg-emerald-800 disabled:opacity-50 rounded-xl min-h-[44px] shadow-xs cursor-pointer"
               >
                 Add Citation
               </button>
