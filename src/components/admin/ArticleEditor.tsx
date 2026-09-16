@@ -28,6 +28,7 @@ import {
   saveArticleToFirestore,
   deleteArticleFromFirestore,
 } from '../../services/articleService';
+import { logAuditEvent } from '../../services/auditService';
 import { RichTextEditor } from './RichTextEditor';
 
 interface ArticleEditorProps {
@@ -278,6 +279,16 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
       const timeStr = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
       setLastSavedTime(timeStr);
 
+      if (currentAuthor) {
+        const actionType = targetStatus === 'PUBLISHED' ? 'ARTICLE_PUBLISH' : targetStatus === 'SUBMITTED FOR REVIEW' ? 'ARTICLE_SUBMIT' : id ? 'ARTICLE_UPDATE' : 'ARTICLE_CREATE';
+        await logAuditEvent(
+          actionType,
+          { id: currentAuthor.id, name: currentAuthor.name, role: currentAuthor.role },
+          `${actionType.replace('_', ' ')}: "${title.trim()}" (Status: ${targetStatus})`,
+          { id: saved.id, title: saved.title }
+        );
+      }
+
       if (targetStatus === 'PUBLISHED') {
         alert('Article published successfully to ThatVetGuy!');
         navigateTo({ name: 'admin', section: 'published' });
@@ -302,6 +313,14 @@ export const ArticleEditor: React.FC<ArticleEditorProps> = ({ articleId, onClose
       return;
     }
     try {
+      if (currentAuthor) {
+        await logAuditEvent(
+          'ARTICLE_DELETE',
+          { id: currentAuthor.id, name: currentAuthor.name, role: currentAuthor.role },
+          `Deleted article "${title}" (${id})`,
+          { id, title }
+        );
+      }
       await deleteArticleFromFirestore(id);
       alert('Article deleted.');
       navigateTo({ name: 'admin', section: 'all-articles' });

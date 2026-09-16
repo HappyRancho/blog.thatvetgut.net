@@ -25,6 +25,8 @@ import {
   ShieldAlert,
   AlertCircle,
   ExternalLink,
+  Linkedin,
+  Activity,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigation } from '../../context/NavigationContext';
@@ -34,6 +36,8 @@ import { ArticleEditor } from './ArticleEditor';
 import { ReviewQueue } from './ReviewQueue';
 import { ContributorsManager } from './ContributorsManager';
 import { AdminSettings } from './AdminSettings';
+import { LinkedInImporter } from './LinkedInImporter';
+import { AuditLogsViewer } from './AuditLogsViewer';
 import { getArticlesFromFirestore } from '../../services/articleService';
 
 export const AdminDashboard: React.FC = () => {
@@ -603,7 +607,9 @@ export const AdminDashboard: React.FC = () => {
     { id: 'drafts', label: 'Drafts', icon: Edit3 },
     { id: 'submitted', label: 'Submitted', icon: Send },
     { id: 'published', label: 'Published', icon: CheckCircle },
+    { id: 'linkedin-import', label: 'LinkedIn Importer', icon: Linkedin },
     { id: 'contributors', label: 'Contributors', icon: Users },
+    { id: 'audit-logs', label: 'Audit Logs', icon: Activity },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
@@ -852,8 +858,16 @@ export const AdminDashboard: React.FC = () => {
             />
           ) : activeSection === 'published' ? (
             <ArticleList initialStatusFilter="PUBLISHED" title="Published Articles" />
+          ) : activeSection === 'linkedin-import' ? (
+            <LinkedInImporter
+              onArticleImported={(newId) =>
+                navigateTo({ name: 'admin', section: 'edit', articleId: newId })
+              }
+            />
           ) : activeSection === 'contributors' ? (
             <ContributorsManager />
+          ) : activeSection === 'audit-logs' ? (
+            <AuditLogsViewer />
           ) : activeSection === 'settings' ? (
             <AdminSettings />
           ) : (

@@ -1,6 +1,7 @@
 import React from 'react';
 import { AlertCircle, CheckCircle2, Info, Lightbulb } from 'lucide-react';
 import { ArticleContentBlock } from '../../types';
+import { sanitizeHtml } from '../../lib/sanitizer';
 
 interface ArticleContentProps {
   blocks?: ArticleContentBlock[];
@@ -9,10 +10,11 @@ interface ArticleContentProps {
 
 export const ArticleContent: React.FC<ArticleContentProps> = ({ blocks, contentHtml }) => {
   if (contentHtml && contentHtml.trim().length > 0) {
+    const cleanHtml = sanitizeHtml(contentHtml);
     return (
       <div
         className="article-body article-html-content space-y-6 sm:space-y-8 text-stone-800 leading-relaxed [&>h2]:font-serif [&>h2]:font-bold [&>h2]:text-2xl sm:[&>h2]:text-3xl [&>h2]:text-stone-900 [&>h2]:tracking-tight [&>h2]:pt-6 [&>h2]:pb-2 [&>h2]:border-b [&>h2]:border-stone-200 [&>h3]:font-serif [&>h3]:font-bold [&>h3]:text-xl sm:[&>h3]:text-2xl [&>h3]:text-stone-900 [&>h3]:pt-4 [&>p]:text-base sm:[&>p]:text-[17px] [&>p]:text-stone-700 [&>p]:leading-relaxed [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:space-y-2 [&>ol]:list-decimal [&>ol]:pl-6 [&>ol]:space-y-2 [&>blockquote]:border-l-4 [&>blockquote]:border-emerald-800 [&>blockquote]:pl-4 [&>blockquote]:italic [&>blockquote]:my-6 [&>blockquote]:text-stone-800 [&>pre]:bg-stone-900 [&>pre]:text-emerald-300 [&>pre]:p-4 [&>pre]:rounded-xl [&>pre]:overflow-x-auto [&>table]:w-full [&>table]:border-collapse [&>table]:border [&>table]:border-stone-200 [&>table_th]:bg-stone-100 [&>table_th]:p-3 [&>table_td]:p-3 [&>table_td]:border [&>table_td]:border-stone-200 [&>img]:rounded-2xl [&>img]:my-6 [&>img]:shadow-sm"
-        dangerouslySetInnerHTML={{ __html: contentHtml }}
+        dangerouslySetInnerHTML={{ __html: cleanHtml }}
       />
     );
   }

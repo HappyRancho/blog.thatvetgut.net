@@ -12,6 +12,8 @@ import {
   AlertCircle,
   ExternalLink,
   BookOpen,
+  Linkedin,
+  Activity,
 } from 'lucide-react';
 import { Article, Author } from '../../types';
 import { useAuth } from '../../context/AuthContext';
@@ -249,6 +251,32 @@ export const DashboardOverview: React.FC = () => {
                 </div>
                 <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-stone-900 transition-colors" />
               </button>
+
+              <button
+                type="button"
+                onClick={() => navigateTo({ name: 'admin', section: 'linkedin-import' })}
+                className="w-full text-left p-3 rounded-xl hover:bg-[#0A66C2]/5 border border-stone-100 flex items-center justify-between group transition-colors min-h-[44px]"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Linkedin className="w-4 h-4 text-[#0A66C2]" />
+                  <span className="text-xs font-semibold text-stone-800">Import from LinkedIn</span>
+                </div>
+                <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-stone-900 transition-colors" />
+              </button>
+
+              {isCoFounder && (
+                <button
+                  type="button"
+                  onClick={() => navigateTo({ name: 'admin', section: 'audit-logs' })}
+                  className="w-full text-left p-3 rounded-xl hover:bg-stone-50 border border-stone-100 flex items-center justify-between group transition-colors min-h-[44px]"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Activity className="w-4 h-4 text-emerald-900" />
+                    <span className="text-xs font-semibold text-stone-800">Security Audit Logs</span>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-stone-900 transition-colors" />
+                </button>
+              )}
             </div>
           </div>
 

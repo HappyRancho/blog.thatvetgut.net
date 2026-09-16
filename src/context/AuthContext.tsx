@@ -28,6 +28,7 @@ import {
   DEFAULT_MEMBER_CREDENTIALS,
   MASTER_ADMIN_KEY,
 } from '../services/securityService';
+import { logAuditEvent } from '../services/auditService';
 
 // Initial pre-configured Co-Founder profiles based on official data
 export const INITIAL_CO_FOUNDERS: Author[] = [
@@ -320,6 +321,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // ignore
       }
 
+      // Security audit log
+      logAuditEvent(
+        'LOGIN',
+        { id: matched.id, name: matched.name, role: matched.role },
+        `User signed in with credentials as ${matched.role}`
+      ).catch(() => {});
+
       setAuthError(null);
       return {
         success: true,
@@ -348,7 +356,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!currentAuthor) {
         return { success: false, message: 'You must be signed in to change your password.' };
       }
-      return changeUserPassword(currentAuthor.id, currentPassword, newPassword);
+      const res = changeUserPassword(currentAuthor.id, currentPassword, newPassword);
+      if (res.success) {
+        logAuditEvent(
+          'PASSWORD_CHANGE',
+          { id: currentAuthor.id, name: currentAuthor.name, role: currentAuthor.role },
+          `User updated their personal password`
+        ).catch(() => {});
+      }
+      return res;
     },
     [currentAuthor]
   );
@@ -356,9 +372,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Admin changing password for any member
   const adminUpdateMemberPassword = useCallback(
     (authorId: string, newPassword: string): { success: boolean; message: string } => {
-      return adminSetUserPassword(authorId, newPassword);
+      const res = adminSetUserPassword(authorId, newPassword);
+      if (res.success && currentAuthor) {
+        logAuditEvent(
+          'PASSWORD_CHANGE',
+          { id: currentAuthor.id, name: currentAuthor.name, role: currentAuthor.role },
+          `Administrator updated password for member "${authorId}"`
+        ).catch(() => {});
+      }
+      return res;
     },
-    []
+    [currentAuthor]
   );
 
   const updatePasscode = useCallback((authorId: string, newPasscode: string): boolean => {
@@ -428,6 +452,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    if (currentAuthor) {
+      logAuditEvent(
+        'LOGOUT',
+        { id: currentAuthor.id, name: currentAuthor.name, role: currentAuthor.role },
+        `User signed out`
+      ).catch(() => {});
+    }
     try {
       localStorage.removeItem('tvg_active_author_id');
       localStorage.removeItem('tvg_active_author_email');

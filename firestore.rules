@@ -46,5 +46,12 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isCoFounder();
     }
+
+    // CMS Audit Logs
+    match /audit_logs/{logId} {
+      allow read: if isCoFounder();
+      allow create: if isAuthenticated();
+      allow update, delete: if false; // Audit logs are strictly immutable
+    }
   }
 }
