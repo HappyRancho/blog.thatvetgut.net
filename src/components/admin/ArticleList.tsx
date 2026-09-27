@@ -1,62 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Calendar,
-  CheckCircle,
-  Clock,
-  Edit2,
-  ExternalLink,
-  Eye,
-  Filter,
-  FileText,
-  Plus,
   Search,
+  Plus,
+  Edit2,
   Trash2,
+  Globe,
+  FileText,
+  Calendar,
   User,
   AlertCircle,
-  FolderOpen,
+  ExternalLink,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { Article, ArticleStatus } from '../../types';
-import { CATEGORIES } from '../../data/categories';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigation } from '../../context/NavigationContext';
 import {
   getArticlesFromFirestore,
   deleteArticleFromFirestore,
+  updateArticleStatusInFirestore,
 } from '../../services/articleService';
 
 interface ArticleListProps {
-  initialStatusFilter?: ArticleStatus | 'ALL' | 'MY_ARTICLES';
-  title?: string;
+  onNewArticle: () => void;
+  onEditArticle: (articleId: string) => void;
 }
 
 export const ArticleList: React.FC<ArticleListProps> = ({
-  initialStatusFilter = 'ALL',
-  title = 'All Articles',
+  onNewArticle,
+  onEditArticle,
 }) => {
-  const { currentAuthor, isCoFounder, allAuthors } = useAuth();
+  const { currentAuthor } = useAuth();
   const { navigateTo } = useNavigation();
 
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Filters
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>(
-    initialStatusFilter === 'MY_ARTICLES' ? 'ALL' : initialStatusFilter
-  );
-  const [authorFilter, setAuthorFilter] = useState<string>(
-    initialStatusFilter === 'MY_ARTICLES' ? currentAuthor?.id || 'ALL' : 'ALL'
-  );
-  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
-  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'title'>('newest');
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<'ALL' | 'DRAFTS' | 'PUBLISHED'>('ALL');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const fetchArticles = async () => {
     setLoading(true);
+    setActionError(null);
     try {
-      const data = await getArticlesFromFirestore();
+      const data = await getArticlesFromFirestore({ includeAllStatuses: true });
       setArticles(data);
-    } catch (err) {
-      console.error('Error fetching articles:', err);
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to load articles.');
     } finally {
       setLoading(false);
     }
@@ -66,317 +58,296 @@ export const ArticleList: React.FC<ArticleListProps> = ({
     fetchArticles();
   }, []);
 
-  const handleDelete = async (art: Article) => {
-    if (!isCoFounder && art.authorId !== currentAuthor?.id) {
-      alert('Only Co-Founders or the article author can delete this article.');
-      return;
-    }
-    if (!confirm(`Are you sure you want to permanently delete "${art.title}"?`)) {
-      return;
-    }
+  const handleTogglePublish = async (art: Article) => {
+    const newStatus: ArticleStatus = art.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED';
     try {
-      await deleteArticleFromFirestore(art.id);
-      await fetchArticles();
+      await updateArticleStatusInFirestore(art.id, newStatus, {
+        authorId: currentAuthor?.id,
+        authorName: currentAuthor?.name,
+      });
+      setArticles((prev) =>
+        prev.map((a) => (a.id === art.id ? { ...a, status: newStatus } : a))
+      );
     } catch (err: any) {
-      alert(`Error deleting: ${err.message}`);
+      setActionError(err.message || 'Could not update publication status.');
     }
   };
 
-  // Filter & Search computation
-  const filtered = articles
-    .filter((a) => {
-      // Search term
-      if (searchTerm) {
-        const query = searchTerm.toLowerCase();
-        const matchesTitle = a.title.toLowerCase().includes(query);
-        const matchesExcerpt = (a.subtitle || a.excerpt || '').toLowerCase().includes(query);
-        const matchesAuthor = (a.authorName || '').toLowerCase().includes(query);
-        if (!matchesTitle && !matchesExcerpt && !matchesAuthor) return false;
-      }
+  const handleDelete = async (articleId: string) => {
+    try {
+      await deleteArticleFromFirestore(articleId);
+      setArticles((prev) => prev.filter((a) => a.id !== articleId));
+      setDeleteConfirmId(null);
+    } catch (err: any) {
+      setActionError(err.message || 'Could not delete article.');
+    }
+  };
 
-      // Status
-      if (statusFilter !== 'ALL' && a.status !== statusFilter) {
-        return false;
-      }
+  // Filter & Search
+  const filtered = articles.filter((art) => {
+    // Search
+    if (search.trim()) {
+      const query = search.toLowerCase();
+      const matchTitle = (art.title || '').toLowerCase().includes(query);
+      const matchAuthor = (art.authorName || '').toLowerCase().includes(query);
+      const matchCategory = (art.category || '').toLowerCase().includes(query);
+      if (!matchTitle && !matchAuthor && !matchCategory) return false;
+    }
 
-      // Author
-      if (authorFilter !== 'ALL') {
-        const targetAuthor = authorFilter === 'dr-shivam' ? 'dr-shivam-singh-thakur' : authorFilter;
-        const artAuthor = a.authorId === 'dr-shivam' ? 'dr-shivam-singh-thakur' : a.authorId;
-        if (artAuthor !== targetAuthor) return false;
-      }
-
-      // Category
-      if (categoryFilter !== 'ALL' && a.category !== categoryFilter) {
-        return false;
-      }
-
-      return true;
-    })
-    .sort((a, b) => {
-      if (sortBy === 'newest') {
-        return new Date(b.updatedDate || b.publishedDate || 0).getTime() - new Date(a.updatedDate || a.publishedDate || 0).getTime();
-      }
-      if (sortBy === 'oldest') {
-        return new Date(a.updatedDate || a.publishedDate || 0).getTime() - new Date(b.updatedDate || b.publishedDate || 0).getTime();
-      }
-      return a.title.localeCompare(b.title);
-    });
+    // Filter status
+    if (filter === 'DRAFTS') {
+      return art.status !== 'PUBLISHED';
+    }
+    if (filter === 'PUBLISHED') {
+      return art.status === 'PUBLISHED';
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-6">
-      {/* Header with Title and "Write Article" Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-stone-200">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-serif font-bold text-xl sm:text-2xl text-stone-900">
-            {initialStatusFilter === 'MY_ARTICLES' ? 'My Articles' : title}
-          </h2>
-          <p className="text-xs sm:text-sm text-stone-600 mt-0.5">
-            Manage clinical manuscripts, drafts, submissions, and publications.
+          <h2 className="font-serif font-bold text-2xl text-stone-900">Articles</h2>
+          <p className="text-xs text-stone-500 mt-1">
+            Manage, edit, publish, and create clinical veterinary articles.
           </p>
         </div>
-
         <button
-          type="button"
-          onClick={() => navigateTo({ name: 'admin', section: 'edit' })}
-          className="px-4 py-2.5 text-xs font-bold text-white bg-emerald-900 hover:bg-emerald-800 rounded-xl min-h-[44px] flex items-center justify-center gap-2 transition-colors shadow-xs"
+          onClick={onNewArticle}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold rounded-xl transition-all shadow-sm shrink-0"
         >
-          <Plus className="w-4 h-4" />
-          <span>Write Article</span>
+          <Plus className="w-4 h-4 text-emerald-400" />
+          <span>New Article</span>
         </button>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200 shadow-xs space-y-3">
+      {actionError && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3 text-red-900 text-xs">
+          <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+          <p className="font-medium">{actionError}</p>
+        </div>
+      )}
+
+      {/* Search & Filter Controls */}
+      <div className="flex flex-col sm:flex-row gap-3">
         {/* Search */}
-        <div className="relative">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by title, clinical keyword, or author..."
-            className="w-full text-xs sm:text-sm pl-10 pr-4 py-2.5 border border-stone-200 rounded-xl min-h-[44px] outline-hidden focus:border-emerald-800"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search articles by title, author, or category..."
+            className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-emerald-600 focus:bg-white rounded-xl text-xs text-stone-900 focus:outline-hidden transition-all"
           />
         </div>
 
-        {/* Filter dropdowns */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-          {/* Status */}
-          <div>
-            <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1">
-              Status
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full text-xs font-medium border border-stone-200 rounded-xl px-2.5 py-2 min-h-[40px] bg-white outline-hidden focus:border-emerald-800"
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="DRAFT">Draft</option>
-              <option value="SUBMITTED FOR REVIEW">Submitted for Review</option>
-              <option value="UNDER REVIEW">Under Review</option>
-              <option value="CHANGES REQUESTED">Changes Requested</option>
-              <option value="APPROVED">Approved</option>
-              <option value="PUBLISHED">Published</option>
-              <option value="UNPUBLISHED">Unpublished</option>
-            </select>
-          </div>
-
-          {/* Author */}
-          <div>
-            <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1">
-              Author
-            </label>
-            <select
-              value={authorFilter}
-              onChange={(e) => setAuthorFilter(e.target.value)}
-              className="w-full text-xs font-medium border border-stone-200 rounded-xl px-2.5 py-2 min-h-[40px] bg-white outline-hidden focus:border-emerald-800"
-            >
-              <option value="ALL">All Authors</option>
-              {allAuthors.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Category */}
-          <div>
-            <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1">
-              Category
-            </label>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full text-xs font-medium border border-stone-200 rounded-xl px-2.5 py-2 min-h-[40px] bg-white outline-hidden focus:border-emerald-800"
-            >
-              <option value="ALL">All Categories</option>
-              {CATEGORIES.map((c) => (
-                <option key={c.slug} value={c.slug}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Sort */}
-          <div>
-            <label className="block text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1">
-              Sort By
-            </label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="w-full text-xs font-medium border border-stone-200 rounded-xl px-2.5 py-2 min-h-[40px] bg-white outline-hidden focus:border-emerald-800"
-            >
-              <option value="newest">Recently Updated</option>
-              <option value="oldest">Oldest First</option>
-              <option value="title">Title (A-Z)</option>
-            </select>
-          </div>
+        {/* Filter Tabs */}
+        <div className="flex rounded-xl bg-stone-100 p-1 text-xs font-semibold text-stone-600 shrink-0">
+          <button
+            onClick={() => setFilter('ALL')}
+            className={`px-3 py-1.5 rounded-lg transition-all ${
+              filter === 'ALL' ? 'bg-white text-stone-900 shadow-2xs' : 'hover:text-stone-900'
+            }`}
+          >
+            All ({articles.length})
+          </button>
+          <button
+            onClick={() => setFilter('DRAFTS')}
+            className={`px-3 py-1.5 rounded-lg transition-all ${
+              filter === 'DRAFTS' ? 'bg-white text-stone-900 shadow-2xs' : 'hover:text-stone-900'
+            }`}
+          >
+            Drafts ({articles.filter((a) => a.status !== 'PUBLISHED').length})
+          </button>
+          <button
+            onClick={() => setFilter('PUBLISHED')}
+            className={`px-3 py-1.5 rounded-lg transition-all ${
+              filter === 'PUBLISHED' ? 'bg-white text-stone-900 shadow-2xs' : 'hover:text-stone-900'
+            }`}
+          >
+            Published ({articles.filter((a) => a.status === 'PUBLISHED').length})
+          </button>
         </div>
       </div>
 
-      {/* List or Table */}
+      {/* Articles List / Table */}
       {loading ? (
-        <div className="py-16 text-center">
-          <div className="w-8 h-8 border-3 border-emerald-900 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-stone-500 text-xs">Loading articles from Firestore...</p>
+        <div className="py-20 text-center space-y-3">
+          <div className="w-8 h-8 border-2 border-emerald-900/30 border-t-emerald-900 rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-stone-500 font-medium">Loading articles...</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-stone-200 p-8 sm:p-12 text-center">
-          <FileText className="w-12 h-12 text-stone-300 mx-auto mb-3" />
-          <h3 className="font-serif font-bold text-stone-800 text-base">No Articles Found</h3>
-          <p className="text-stone-500 text-xs mt-1">
-            No articles match the current filter or search criteria.
+        <div className="py-16 text-center border border-dashed border-stone-200 rounded-3xl bg-stone-50/50 space-y-3 p-6">
+          <FileText className="w-8 h-8 text-stone-400 mx-auto" />
+          <h3 className="font-serif font-bold text-base text-stone-800">
+            No articles found
+          </h3>
+          <p className="text-xs text-stone-500 max-w-sm mx-auto">
+            {search
+              ? 'No articles match your current search query.'
+              : filter === 'DRAFTS'
+              ? 'There are no active draft articles.'
+              : filter === 'PUBLISHED'
+              ? 'There are no published articles yet.'
+              : 'Get started by creating your first veterinary article.'}
           </p>
           <button
-            type="button"
-            onClick={() => {
-              setSearchTerm('');
-              setStatusFilter('ALL');
-              setAuthorFilter('ALL');
-              setCategoryFilter('ALL');
-            }}
-            className="mt-4 px-3 py-1.5 text-xs font-semibold text-emerald-900 bg-emerald-50 rounded-xl inline-block"
+            onClick={onNewArticle}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-stone-900 text-white text-xs font-semibold rounded-xl hover:bg-stone-800 transition-colors shadow-xs"
           >
-            Reset Filters
+            <Plus className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Create Article</span>
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {filtered.map((art) => {
-            const isAuthor = art.authorId === currentAuthor?.id;
-            const canEdit = isCoFounder || isAuthor;
+        <div className="bg-white border border-stone-200 rounded-2xl overflow-hidden shadow-xs">
+          <div className="divide-y divide-stone-100">
+            {filtered.map((art) => {
+              const isPublished = art.status === 'PUBLISHED';
+              const updatedDateStr = art.updatedDate || art.updatedAt || art.publishedDate;
+              const formattedDate = updatedDateStr
+                ? new Date(updatedDateStr).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })
+                : 'Recently';
 
-            return (
-              <div
-                key={art.id}
-                className="bg-white p-4 sm:p-5 rounded-2xl border border-stone-200 shadow-xs hover:border-stone-300 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-              >
-                {/* Left info */}
-                <div className="space-y-1.5 flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${
-                        art.status === 'PUBLISHED'
-                          ? 'bg-emerald-100 text-emerald-950'
-                          : art.status === 'DRAFT'
-                          ? 'bg-stone-100 text-stone-700'
-                          : art.status === 'SUBMITTED FOR REVIEW'
-                          ? 'bg-amber-100 text-amber-900'
-                          : art.status === 'CHANGES REQUESTED'
-                          ? 'bg-red-100 text-red-900'
-                          : 'bg-blue-100 text-blue-900'
-                      }`}
-                    >
-                      {art.status}
-                    </span>
-                    <span className="text-xs text-stone-500 font-medium capitalize">
-                      {art.category.replace('-', ' ')}
-                    </span>
-                    <span className="text-stone-300">•</span>
-                    <span className="text-xs text-stone-400 font-mono">
-                      {art.readingTimeMinutes || 3} min read
-                    </span>
-                  </div>
-
-                  <h3
-                    onClick={() => {
-                      if (canEdit) {
-                        navigateTo({ name: 'admin', section: 'edit', articleId: art.id });
-                      }
-                    }}
-                    className={`font-serif font-bold text-stone-900 text-base sm:text-lg leading-snug line-clamp-1 ${
-                      canEdit ? 'hover:text-emerald-900 cursor-pointer' : ''
-                    }`}
-                  >
-                    {art.title}
-                  </h3>
-
-                  <div className="flex items-center gap-3 text-xs text-stone-500 flex-wrap">
-                    <span className="font-semibold text-stone-700">By {art.authorName}</span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 text-stone-400" />
-                      {new Date(art.updatedDate || art.publishedDate || 0).toLocaleDateString()}
-                    </span>
-                    {art.reviewer && (
-                      <>
-                        <span>•</span>
-                        <span className="text-emerald-950 font-medium">
-                          Reviewed by {art.reviewer}
+              return (
+                <div
+                  key={art.id}
+                  className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-stone-50/70 transition-colors"
+                >
+                  {/* Article Info */}
+                  <div className="space-y-1.5 min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                          isPublished
+                            ? 'bg-emerald-100 text-emerald-950'
+                            : 'bg-amber-100 text-amber-950'
+                        }`}
+                      >
+                        {isPublished ? 'Published' : 'Draft'}
+                      </span>
+                      <span className="text-[11px] text-stone-400 font-medium">
+                        • {art.category || 'General'}
+                      </span>
+                      {art.sourcePlatform === 'LinkedIn' && (
+                        <span className="text-[10px] font-semibold bg-[#0A66C2]/10 text-[#0A66C2] px-2 py-0.5 rounded-full">
+                          LinkedIn Import
                         </span>
-                      </>
-                    )}
+                      )}
+                    </div>
+
+                    <h3 className="font-serif font-bold text-stone-900 text-base leading-snug line-clamp-2">
+                      {art.title}
+                    </h3>
+
+                    <div className="flex flex-wrap items-center gap-4 text-xs text-stone-500 pt-0.5">
+                      <span className="flex items-center gap-1 font-medium text-stone-700">
+                        <User className="w-3.5 h-3.5 text-stone-400" />
+                        {art.authorName || 'ThatVetGuy Author'}
+                      </span>
+                      <span className="flex items-center gap-1 text-stone-400">
+                        <Calendar className="w-3.5 h-3.5" />
+                        Updated {formattedDate}
+                      </span>
+                      {isPublished && (
+                        <button
+                          onClick={() => navigateTo({ name: 'article', slug: art.slug })}
+                          className="text-emerald-800 hover:text-emerald-950 font-medium flex items-center gap-1 transition-colors"
+                          title="View live public article"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>View Live</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                  {/* Public preview link if published */}
-                  {art.status === 'PUBLISHED' && (
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-100">
                     <button
-                      type="button"
-                      onClick={() => navigateTo({ name: 'article', slug: art.slug })}
-                      className="p-2 text-stone-500 hover:text-emerald-950 hover:bg-stone-100 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
-                      title="View Public Article"
+                      onClick={() => handleTogglePublish(art)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+                        isPublished
+                          ? 'bg-stone-100 hover:bg-amber-50 text-stone-700 hover:text-amber-900'
+                          : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-950'
+                      }`}
+                      title={isPublished ? 'Unpublish back to Draft' : 'Publish Article'}
                     >
-                      <Eye className="w-4 h-4" />
+                      {isPublished ? (
+                        <>
+                          <EyeOff className="w-3.5 h-3.5" />
+                          <span>Unpublish</span>
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="w-3.5 h-3.5 text-emerald-800" />
+                          <span>Publish</span>
+                        </>
+                      )}
                     </button>
-                  )}
 
-                  {/* Edit */}
-                  {canEdit && (
                     <button
-                      type="button"
-                      onClick={() =>
-                        navigateTo({ name: 'admin', section: 'edit', articleId: art.id })
-                      }
-                      className="px-3.5 py-2 text-xs font-semibold text-emerald-950 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl min-h-[44px] flex items-center gap-1.5 transition-colors"
+                      onClick={() => onEditArticle(art.id)}
+                      className="px-3 py-1.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs"
                     >
-                      <Edit2 className="w-3.5 h-3.5 text-emerald-900" />
+                      <Edit2 className="w-3.5 h-3.5 text-emerald-400" />
                       <span>Edit</span>
                     </button>
-                  )}
 
-                  {/* Delete (Co-Founders or author) */}
-                  {(isCoFounder || isAuthor) && (
                     <button
-                      type="button"
-                      onClick={() => handleDelete(art)}
-                      className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
+                      onClick={() => setDeleteConfirmId(art.id)}
+                      className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
                       title="Delete Article"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
-                  )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl border border-stone-200 space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <div className="text-center space-y-1">
+              <h3 className="font-serif font-bold text-lg text-stone-900">
+                Delete Article?
+              </h3>
+              <p className="text-xs text-stone-500 leading-relaxed">
+                Are you sure you want to permanently delete this article? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmId(null)}
+                className="flex-1 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDelete(deleteConfirmId)}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-xl transition-colors shadow-sm"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

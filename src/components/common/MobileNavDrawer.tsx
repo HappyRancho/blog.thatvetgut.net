@@ -117,24 +117,6 @@ export const MobileNavDrawer: React.FC<MobileNavDrawerProps> = ({ isOpen, onClos
               <Mail className="w-4 h-4 text-emerald-800 shrink-0" />
               Contact & Inquiries
             </button>
-
-            <button
-              id="mobile-nav-staff-signin"
-              onClick={() => handleNav(() => navigateTo({ name: 'admin' }))}
-              className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl bg-stone-100 hover:bg-emerald-50 text-emerald-950 hover:text-emerald-900 text-sm font-semibold border border-stone-200 transition-colors min-h-[44px] mt-1"
-            >
-              {isAuthorized ? (
-                <>
-                  <Lock className="w-4 h-4 text-emerald-700 shrink-0" />
-                  <span>Editorial Portal ({currentAuthor?.name?.split(' ')[0] || 'Staff'})</span>
-                </>
-              ) : (
-                <>
-                  <LogIn className="w-4 h-4 text-emerald-800 shrink-0" />
-                  <span>Editorial Staff Sign In</span>
-                </>
-              )}
-            </button>
           </div>
 
           {/* Quick Categories Section */}

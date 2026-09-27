@@ -5,8 +5,7 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Keep this roster in sync with APPROVED_EMAILS_MAP in the client. Do not
-    // authorize an entire email domain: a domain account is not a CMS role.
+    // Explicit authorized Co-Founder email roster
     function isCoFounderEmail() {
       return isAuthenticated() && request.auth.token.email in [
         'chiragpatidar0369@gmail.com', 'chirag@thatvetguy.net', 'drchiragpatidar@gmail.com',
@@ -17,44 +16,49 @@ service cloud.firestore {
       ];
     }
 
-    function userDocExists() {
-      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    function isRegisteredCmsUser() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/cms_users/$(request.auth.uid));
     }
 
-    function isCoFounder() {
-      return isCoFounderEmail() ||
-        (userDocExists() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'CO_FOUNDER');
+    function isAuthorizedCMSUser() {
+      return isCoFounderEmail() || isRegisteredCmsUser();
     }
 
-    function isContributor() {
-      return isAuthenticated() && userDocExists() &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'CONTRIBUTOR';
-    }
-
+    // Public can ONLY read published articles. Drafts are private to authorized CMS users.
     match /articles/{articleId} {
-      allow read: if resource.data.status == 'PUBLISHED' || isCoFounder() || (isAuthenticated() && resource.data.authorId == request.auth.uid);
-      allow create: if isCoFounder() || isContributor();
-      allow update: if isCoFounder() || (isContributor() && resource.data.authorId == request.auth.uid && request.resource.data.status != 'PUBLISHED');
-      allow delete: if isCoFounder();
+      allow read: if resource.data.status == 'PUBLISHED' || isAuthorizedCMSUser();
+      allow create, update, delete: if isAuthorizedCMSUser();
+    }
+
+    // Public reads authors; only authorized Co-Founders can write/update author profiles.
+    match /authors/{authorId} {
+      allow read: if true;
+      allow write: if isAuthorizedCMSUser();
+    }
+
+    // CMS user mappings
+    match /cms_users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAuthorizedCMSUser());
+      allow write: if isAuthenticated() && (request.auth.uid == userId || isAuthorizedCMSUser());
     }
 
     match /users/{userId} {
       allow read: if true;
-      // A user may only create/update their UID-keyed profile after their
-      // allowlisted Google login; other user records are founder-managed.
-      allow create, update: if isCoFounder() || (isCoFounderEmail() && request.auth.uid == userId);
-      allow delete: if isCoFounder();
+      allow write: if isAuthorizedCMSUser();
     }
 
-    match /categories/{categoryId} { allow read: if true; allow write: if isCoFounder(); }
-    match /tags/{tagId} { allow read: if true; allow write: if isCoFounder(); }
-
-    match /audit_logs/{logId} {
-      allow read: if isCoFounder();
-      allow create: if isAuthenticated();
-      allow update, delete: if false;
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAuthorizedCMSUser();
     }
 
-    match /test/{docId} { allow read: if true; }
+    match /tags/{tagId} {
+      allow read: if true;
+      allow write: if isAuthorizedCMSUser();
+    }
+
+    match /test/{docId} {
+      allow read: if true;
+    }
   }
 }

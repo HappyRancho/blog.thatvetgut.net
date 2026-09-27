@@ -25,20 +25,29 @@ function parsePath(pathname: string, searchStr: string): PageRoute {
 
   const parts = cleanPath.split('/');
 
-  if (
-    parts[0] === 'admin' ||
-    parts[0] === 'login' ||
-    parts[0] === 'signin' ||
-    parts[0] === 'portal' ||
-    parts[0] === 'cms'
-  ) {
+  if (parts[0] === 'admin') {
+    // /admin/articles/new
+    if (parts[1] === 'articles' && parts[2] === 'new') {
+      return { name: 'admin', section: 'edit', articleId: 'new' };
+    }
+    // /admin/articles/edit/:id
+    if (parts[1] === 'articles' && (parts[2] === 'edit' || parts[2]) && (parts[3] || parts[2])) {
+      const id = parts[2] === 'edit' ? parts[3] : parts[2];
+      return { name: 'admin', section: 'edit', articleId: id };
+    }
+    // /admin/edit/:id
     if (parts[1] === 'edit' && parts[2]) {
       return { name: 'admin', section: 'edit', articleId: parts[2] };
     }
-    if (parts[1] === 'review' && parts[2]) {
-      return { name: 'admin', section: 'review', articleId: parts[2] };
+    // /admin/articles
+    if (parts[1] === 'articles') {
+      return { name: 'admin', section: 'articles' };
     }
-    return { name: 'admin', section: parts[1] || 'dashboard' };
+    // /admin/profile
+    if (parts[1] === 'profile') {
+      return { name: 'admin', section: 'profile' };
+    }
+    return { name: 'admin', section: 'dashboard' };
   }
 
   if (parts[0] === 'article' && parts[1]) {
@@ -109,14 +118,17 @@ function routeToPath(route: PageRoute): string {
     case 'contact':
       return '/contact';
     case 'admin':
-      if (route.articleId && route.section === 'edit') {
-        return `/admin/edit/${route.articleId}`;
+      if (route.section === 'edit') {
+        if (route.articleId && route.articleId !== 'new') {
+          return `/admin/articles/edit/${route.articleId}`;
+        }
+        return '/admin/articles/new';
       }
-      if (route.articleId && route.section === 'review') {
-        return `/admin/review/${route.articleId}`;
+      if (route.section === 'articles') {
+        return '/admin/articles';
       }
-      if (route.section && route.section !== 'dashboard') {
-        return `/admin/${route.section}`;
+      if (route.section === 'profile') {
+        return '/admin/profile';
       }
       return '/admin';
     default:

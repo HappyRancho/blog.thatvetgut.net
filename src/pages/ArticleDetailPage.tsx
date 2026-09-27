@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { getArticleBySlug } from '../data/articles';
 import { getAuthorById } from '../data/authors';
+import { getAuthorByIdOrSlug } from '../services/authorService';
 import { getCategoryBySlug } from '../data/categories';
 import { getArticleBySlugFromFirestore } from '../services/articleService';
 import { Article } from '../types';
@@ -106,18 +107,13 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({ slug }) =>
           >
             Return to Articles Archive
           </button>
-          <button
-            onClick={() => navigateTo({ name: 'admin' })}
-            className="w-full sm:w-auto px-5 py-2.5 bg-stone-100 text-stone-800 text-xs font-semibold rounded-xl hover:bg-stone-200 transition-colors min-h-[44px]"
-          >
-            Staff Login
-          </button>
         </div>
       </div>
     );
   }
 
-  const staticAuthor = getAuthorById(article.authorId);
+  const { allAuthors } = useAuth();
+  const staticAuthor = getAuthorByIdOrSlug(article.authorId, allAuthors) || getAuthorById(article.authorId);
   const author = staticAuthor || (article.authorProfile ? {
     id: article.authorId,
     slug: article.authorId,
@@ -159,21 +155,13 @@ export const ArticleDetailPage: React.FC<ArticleDetailPageProps> = ({ slug }) =>
 
       {/* Staff Draft Preview Banner */}
       {isDraftOrUnpublished && currentAuthor && (
-        <div className="p-4 bg-amber-50 border border-amber-300 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-950 shadow-xs">
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 bg-amber-200 text-amber-900 rounded font-bold uppercase tracking-wider text-[10px]">
-              {article.status || 'DRAFT'}
-            </span>
-            <span>
-              <strong>Staff View:</strong> This publication is an unpublished draft. It is strictly private to ThatVetGuy editors and not visible to public visitors.
-            </span>
-          </div>
-          <button
-            onClick={() => navigateTo({ name: 'admin', section: 'all-articles', articleId: article.id })}
-            className="px-3 py-1.5 bg-amber-900 hover:bg-amber-800 text-white font-semibold rounded-lg shrink-0 transition-colors"
-          >
-            Edit in CMS
-          </button>
+        <div className="p-4 bg-amber-50 border border-amber-300 rounded-2xl flex items-center gap-2 text-xs text-amber-950 shadow-xs">
+          <span className="px-2 py-0.5 bg-amber-200 text-amber-900 rounded font-bold uppercase tracking-wider text-[10px]">
+            {article.status || 'DRAFT'}
+          </span>
+          <span>
+            <strong>Draft View:</strong> This publication is an unpublished draft. It is strictly private to ThatVetGuy editors and not visible to public visitors.
+          </span>
         </div>
       )}
 

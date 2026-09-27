@@ -27,6 +27,7 @@ export interface Author {
   role: UserRole;
   qualifications: string; // e.g. "BVSc & AH"
   bio: string;
+  fullBio?: string;
   avatarUrl: string;
   expertise: string[];
   clinicOrAffiliation?: string;

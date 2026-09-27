@@ -12,12 +12,14 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { getAuthorBySlug } from '../data/authors';
+import { getAuthorByIdOrSlug } from '../services/authorService';
 import { getArticlesByAuthor } from '../data/articles';
 import { getArticlesFromFirestore } from '../services/articleService';
 import { Article } from '../types';
 import { ArticleCard } from '../components/article/ArticleCard';
 import { SEOHead } from '../components/common/SEOHead';
 import { useNavigation } from '../context/NavigationContext';
+import { useAuth } from '../context/AuthContext';
 
 interface AuthorDetailPageProps {
   slug: string;
@@ -25,7 +27,8 @@ interface AuthorDetailPageProps {
 
 export const AuthorDetailPage: React.FC<AuthorDetailPageProps> = ({ slug }) => {
   const { navigateTo } = useNavigation();
-  const author = getAuthorBySlug(slug);
+  const { allAuthors } = useAuth();
+  const author = getAuthorByIdOrSlug(slug, allAuthors) || getAuthorBySlug(slug);
   const [articles, setArticles] = useState<Article[]>(() => getArticlesByAuthor(author?.id || slug));
 
   useEffect(() => {

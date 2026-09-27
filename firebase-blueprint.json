@@ -30,7 +30,7 @@
         },
         "status": {
           "type": "string",
-          "enum": ["DRAFT", "SUBMITTED FOR REVIEW", "UNDER REVIEW", "CHANGES REQUESTED", "APPROVED", "PUBLISHED", "ARCHIVED"],
+          "enum": ["DRAFT", "PUBLISHED", "ARCHIVED"],
           "description": "Editorial workflow lifecycle state"
         },
         "authorId": {
@@ -99,73 +99,104 @@
         },
         "importedAt": {
           "type": "string",
-          "description": "Import timestamp"
+          "description": "Timestamp when imported"
         },
         "importedBy": {
           "type": "string",
-          "description": "Author ID who initiated import"
+          "description": "Author ID who imported"
         }
       },
-      "required": ["id", "title", "slug", "status", "authorId"]
+      "required": ["id", "title", "slug", "content", "status", "authorId"]
     },
-    "User": {
-      "title": "User",
-      "description": "Staff profile and author credentials",
-      "type": "object",
-      "properties": {
-        "uid": {
-          "type": "string",
-          "description": "Firebase Auth user identifier"
-        },
-        "email": {
-          "type": "string",
-          "description": "Contact email address"
-        },
-        "role": {
-          "type": "string",
-          "enum": ["CO_FOUNDER", "CONTRIBUTOR", "PEER_REVIEWER"],
-          "description": "Role in editorial system"
-        }
-      },
-      "required": ["uid", "email"]
-    },
-    "AuditLog": {
-      "title": "AuditLog",
-      "description": "Immutable audit record for compliance and editorial governance",
+    "Author": {
+      "title": "Author",
+      "description": "ThatVetGuy Co-Founder clinical author profile",
       "type": "object",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Log record ID"
+          "description": "Unique author slug identifier"
         },
-        "action": {
+        "name": {
           "type": "string",
-          "description": "Action performed"
+          "description": "Full name with Dr. prefix"
+        },
+        "role": {
+          "type": "string",
+          "description": "Role, always CO_FOUNDER"
+        },
+        "designation": {
+          "type": "string",
+          "description": "Co-Founder, ThatVetGuy"
+        },
+        "professionalRole": {
+          "type": "string",
+          "description": "Clinical specialty role"
+        },
+        "qualifications": {
+          "type": "string",
+          "description": "Veterinary degrees"
+        },
+        "bio": {
+          "type": "string",
+          "description": "Short bio"
+        },
+        "fullBio": {
+          "type": "string",
+          "description": "Full bio"
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "Profile photo URL"
+        },
+        "clinicOrAffiliation": {
+          "type": "string",
+          "description": "Clinic or affiliation"
+        },
+        "expertise": {
+          "type": "array",
+          "description": "List of clinical expertise areas"
+        }
+      },
+      "required": ["id", "name", "role"]
+    },
+    "CMSUser": {
+      "title": "CMSUser",
+      "description": "Authorized ThatVetGuy Co-Founder CMS identity",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth user UID"
+        },
+        "email": {
+          "type": "string",
+          "description": "Co-Founder email address"
         },
         "authorId": {
           "type": "string",
-          "description": "Author or user ID who performed the action"
+          "description": "Associated author profile ID"
         },
-        "timestamp": {
+        "role": {
           "type": "string",
-          "description": "ISO timestamp of event"
+          "description": "CO_FOUNDER"
         }
       },
-      "required": ["id", "action", "timestamp"]
+      "required": ["uid", "email", "authorId", "role"]
     }
   },
   "firestore": {
     "/articles/{articleId}": {
       "schema": "Article",
-      "description": "Collection of veterinary articles, guides, and research pieces"
+      "description": "Collection of veterinary articles and clinical guides"
     },
-    "/users/{userId}": {
-      "schema": "User",
-      "description": "Author profiles and authorization metadata"
+    "/authors/{authorId}": {
+      "schema": "Author",
+      "description": "Collection of the six Co-Founder author profiles"
     },
-    "/audit_logs/{logId}": {
-      "schema": "AuditLog",
-      "description": "Immutable log of editorial and security events"
+    "/cms_users/{userId}": {
+      "schema": "CMSUser",
+      "description": "Authorized CMS user associations"
     }
   }
 }
