@@ -50,6 +50,8 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   loginWithGoogleRedirect: () => Promise<void>;
   signInWithEditorialKey: (authorId: string, key: string) => boolean;
+  signInAsPreset: (authorId: string) => boolean;
+  simulateCoFounderLogin: (authorId: string) => boolean;
   logout: () => Promise<void>;
   signOutUser: () => Promise<void>;
   refreshAuthorProfile: () => Promise<void>;
@@ -302,6 +304,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signInWithGoogle: loginWithGoogle,
       loginWithGoogleRedirect,
       signInWithEditorialKey,
+      signInAsPreset: (authorId: string) => signInWithEditorialKey(authorId, 'thatvetguy2026'),
+      simulateCoFounderLogin: (authorId: string) => signInWithEditorialKey(authorId, 'thatvetguy2026'),
       logout,
       signOutUser: logout,
       refreshAuthorProfile: async () => { await fetchAllAuthors(); },

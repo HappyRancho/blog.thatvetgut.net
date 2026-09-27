@@ -415,6 +415,50 @@ export const AdminDashboard: React.FC = () => {
           >
             ← Return to ThatVetGuy Website
           </button>
+
+          {/* Quick Access Co-Founder Cards (Matching Mobile Screen with Working Handlers) */}
+          <div className="pt-4 border-t border-stone-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400">
+                Quick Access (Co-Founder Accounts)
+              </span>
+              <span className="text-[10px] text-emerald-900 font-semibold">
+                Equal Authority
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-left">
+              {[
+                { id: 'dr-chirag-patidar', name: 'Dr. Chirag Patidar', subtitle: 'Co-Founder' },
+                { id: 'dr-amaan-ahmed', name: 'Dr. Amaan Ahmed', subtitle: 'Co-Founder' },
+                { id: 'dr-shivam-singh-thakur', name: 'Dr. Shivam Singh Thakur', subtitle: 'Co-Founder' },
+                { id: 'dr-ritesh-verma', name: 'Dr. Ritesh Verma', subtitle: 'Co-Founder' },
+                { id: 'dr-deepesh-mathur', name: 'Dr. Deepesh Mathur', subtitle: 'Co-Founder (Large Animal)' },
+                { id: 'dr-deepesh-chaware', name: 'Dr. Deepesh Chaware', subtitle: 'Co-Founder (Surgeon)' },
+              ].map((coFounder) => (
+                <button
+                  key={coFounder.id}
+                  type="button"
+                  id={`quick-access-${coFounder.id}`}
+                  onClick={() => {
+                    clearAuthError();
+                    signInWithEditorialKey(coFounder.id, 'thatvetguy2026');
+                  }}
+                  className="p-3 rounded-2xl border border-stone-200 bg-white hover:border-emerald-800 hover:bg-emerald-50/50 text-xs transition-all shadow-xs cursor-pointer text-left active:scale-[0.98]"
+                >
+                  <div className="font-serif font-bold text-stone-900 truncate">
+                    {coFounder.name}
+                  </div>
+                  <div className="text-[10px] text-stone-500 truncate mt-0.5">
+                    {coFounder.subtitle}
+                  </div>
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-stone-400 text-center">
+              Tap any Co-Founder card above for instant 1-tap editorial CMS access.
+            </p>
+          </div>
         </div>
       </div>
     );
