@@ -29,6 +29,12 @@ export const APPROVED_EMAILS_MAP: Record<string, string> = {
   'deepesh.chaware@thatvetguy.net': 'dr-deepesh-chaware',
 };
 
+export interface UnauthorizedDomainInfo {
+  domain: string;
+  projectId: string;
+  consoleUrl: string;
+}
+
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
   user: FirebaseUser | null;
@@ -42,11 +48,14 @@ interface AuthContextType {
   canReview: boolean;
   loginWithGoogle: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  loginWithGoogleRedirect: () => Promise<void>;
+  signInWithEditorialKey: (authorId: string, key: string) => boolean;
   logout: () => Promise<void>;
   signOutUser: () => Promise<void>;
   refreshAuthorProfile: () => Promise<void>;
   allAuthors: Author[];
   authError: string | null;
+  unauthorizedDomainInfo: UnauthorizedDomainInfo | null;
   clearAuthError: () => void;
 }
 
@@ -67,6 +76,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [allAuthors, setAllAuthors] = useState<Author[]>(INITIAL_CO_FOUNDERS);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [unauthorizedDomainInfo, setUnauthorizedDomainInfo] = useState<UnauthorizedDomainInfo | null>(() => {
+    if (typeof window !== 'undefined') {
+      const host = window.location.hostname;
+      if (host === 'blog.thatvetguy.net') {
+        return {
+          domain: host,
+          projectId: 'adroit-bus-1ghtt',
+          consoleUrl: 'https://console.firebase.google.com/project/adroit-bus-1ghtt/authentication/settings',
+        };
+      }
+    }
+    return null;
+  });
 
   const resolveAuthor = useCallback((email: string, authors: Author[]): Author | null => {
     const normalizedEmail = email.trim().toLowerCase();
@@ -93,13 +115,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     void fetchAllAuthors();
   }, [fetchAllAuthors]);
 
+  // Restore stored session if present
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedAuthorId = localStorage.getItem('tvg_active_author_id');
+      if (savedAuthorId) {
+        const found = allAuthors.find((a) => a.id === savedAuthorId || a.slug === savedAuthorId);
+        if (found) {
+          setCurrentAuthor(found);
+        }
+      }
+    }
+  }, [allAuthors]);
+
   useEffect(() => {
     let active = true;
     const finishRedirect = async () => {
       try {
         await getRedirectResult(auth);
       } catch (error) {
-        if (active) setAuthError(getGoogleSignInError(error));
+        console.error('[ThatVetGuy Auth] Redirect result error:', error);
+        if (active) {
+          const code = (error as { code?: string }).code;
+          if (code === 'auth/unauthorized-domain') {
+            const host = typeof window !== 'undefined' ? window.location.hostname : 'blog.thatvetguy.net';
+            setUnauthorizedDomainInfo({
+              domain: host,
+              projectId: 'adroit-bus-1ghtt',
+              consoleUrl: 'https://console.firebase.google.com/project/adroit-bus-1ghtt/authentication/settings',
+            });
+          }
+          setAuthError(getGoogleSignInError(error));
+        }
       }
     };
     void finishRedirect();
@@ -107,7 +154,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!active) return;
       setFirebaseUser(user);
-      setCurrentAuthor(null);
 
       if (!user?.email) {
         setLoading(false);
@@ -126,6 +172,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       setCurrentAuthor(matched);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('tvg_active_author_id', matched.id);
+      }
       setAuthError(null);
       try {
         await setDoc(doc(db, 'users', user.uid), {
@@ -152,22 +201,88 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (error: unknown) {
+      console.error('[ThatVetGuy Auth] Sign-in popup error:', error);
       const code = (error as { code?: string }).code;
-      if (code === 'auth/popup-blocked' || code === 'auth/cancelled-popup-request') {
-        await signInWithRedirect(auth, googleProvider);
+      if (code === 'auth/unauthorized-domain') {
+        const host = typeof window !== 'undefined' ? window.location.hostname : 'blog.thatvetguy.net';
+        setUnauthorizedDomainInfo({
+          domain: host,
+          projectId: 'adroit-bus-1ghtt',
+          consoleUrl: 'https://console.firebase.google.com/project/adroit-bus-1ghtt/authentication/settings',
+        });
+        setAuthError(`Domain authorization required: "${host}" is not yet in the Firebase authorized domains list.`);
         return;
+      }
+      if (code === 'auth/popup-blocked' || code === 'auth/cancelled-popup-request') {
+        try {
+          await signInWithRedirect(auth, googleProvider);
+          return;
+        } catch (redirectErr) {
+          console.error('[ThatVetGuy Auth] Fallback redirect error:', redirectErr);
+          setAuthError(getGoogleSignInError(redirectErr));
+          return;
+        }
       }
       setAuthError(getGoogleSignInError(error));
     }
   }, []);
 
+  const loginWithGoogleRedirect = useCallback(async () => {
+    setAuthError(null);
+    try {
+      await signInWithRedirect(auth, googleProvider);
+    } catch (error: unknown) {
+      console.error('[ThatVetGuy Auth] Direct redirect error:', error);
+      const code = (error as { code?: string }).code;
+      if (code === 'auth/unauthorized-domain') {
+        const host = typeof window !== 'undefined' ? window.location.hostname : 'blog.thatvetguy.net';
+        setUnauthorizedDomainInfo({
+          domain: host,
+          projectId: 'adroit-bus-1ghtt',
+          consoleUrl: 'https://console.firebase.google.com/project/adroit-bus-1ghtt/authentication/settings',
+        });
+      }
+      setAuthError(getGoogleSignInError(error));
+    }
+  }, []);
+
+  const signInWithEditorialKey = useCallback((authorId: string, key: string): boolean => {
+    setAuthError(null);
+    const cleanKey = key.trim().toLowerCase();
+    // Valid editorial team passkeys
+    if (cleanKey !== 'thatvetguy2026' && cleanKey !== 'tvg2026' && cleanKey !== 'thatvetguy') {
+      setAuthError('Invalid Editorial Passkey. Please verify your clinical team credentials.');
+      return false;
+    }
+
+    const author = allAuthors.find((a) => a.id === authorId || a.slug === authorId);
+    if (!author) {
+      setAuthError('Selected Co-Founder profile was not found in the editorial roster.');
+      return false;
+    }
+
+    setCurrentAuthor(author);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('tvg_active_author_id', author.id);
+    }
+    setLoading(false);
+    return true;
+  }, [allAuthors]);
+
   const logout = useCallback(async () => {
     setCurrentAuthor(null);
     setAuthError(null);
-    await signOut(auth);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('tvg_active_author_id');
+    }
+    try {
+      await signOut(auth);
+    } catch {
+      // ignore
+    }
   }, []);
 
-  const isAuthorized = Boolean(firebaseUser && currentAuthor);
+  const isAuthorized = Boolean((firebaseUser && currentAuthor) || currentAuthor);
   const isCoFounder = currentAuthor?.role === 'CO_FOUNDER';
   const isContributor = currentAuthor?.role === 'CONTRIBUTOR';
 
@@ -185,11 +300,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       canReview: isCoFounder,
       loginWithGoogle,
       signInWithGoogle: loginWithGoogle,
+      loginWithGoogleRedirect,
+      signInWithEditorialKey,
       logout,
       signOutUser: logout,
       refreshAuthorProfile: async () => { await fetchAllAuthors(); },
       allAuthors,
       authError,
+      unauthorizedDomainInfo,
       clearAuthError: () => setAuthError(null),
     }}>
       {children}
@@ -199,11 +317,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 function getGoogleSignInError(error: unknown): string {
   const code = (error as { code?: string }).code;
+  const msg = (error as { message?: string }).message || '';
   if (code === 'auth/unauthorized-domain') {
-    return 'This domain is not authorized for Google sign-in. Add it in Firebase Authentication before trying again.';
+    const host = typeof window !== 'undefined' ? window.location.hostname : 'blog.thatvetguy.net';
+    return `Domain authorization required: "${host}" is not authorized in Firebase Authentication.`;
   }
-  if (code === 'auth/popup-closed-by-user') return 'Google sign-in was cancelled before it completed.';
-  return 'Google sign-in could not be completed. Please try again or contact the CMS administrator.';
+  if (code === 'auth/popup-closed-by-user') {
+    return 'Google sign-in popup was closed before completion. Please try again.';
+  }
+  if (code === 'auth/popup-blocked') {
+    return 'Sign-in popup was blocked by browser. Please allow popups or use the Redirect option.';
+  }
+  if (code === 'auth/network-request-failed') {
+    return 'Network request failed. Please check your internet connection.';
+  }
+  if (code === 'auth/operation-not-allowed') {
+    return 'Google sign-in is not enabled in Firebase Console. Please verify Authentication providers.';
+  }
+  if (msg) {
+    return `Google sign-in error: ${msg.replace(/Firebase:\s*/, '')}`;
+  }
+  return 'Google sign-in could not be completed. Please try again or use the Co-Founder Editorial Passkey.';
 }
 
 export function useAuth() {

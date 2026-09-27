@@ -18,9 +18,20 @@ function parsePath(pathname: string, searchStr: string): PageRoute {
     return { name: 'home' };
   }
 
+  const pageParam = searchParams.get('page');
+  if (pageParam === 'admin' || pageParam === 'login' || pageParam === 'signin') {
+    return { name: 'admin' };
+  }
+
   const parts = cleanPath.split('/');
 
-  if (parts[0] === 'admin') {
+  if (
+    parts[0] === 'admin' ||
+    parts[0] === 'login' ||
+    parts[0] === 'signin' ||
+    parts[0] === 'portal' ||
+    parts[0] === 'cms'
+  ) {
     if (parts[1] === 'edit' && parts[2]) {
       return { name: 'admin', section: 'edit', articleId: parts[2] };
     }
