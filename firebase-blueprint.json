@@ -160,29 +160,71 @@
       },
       "required": ["id", "name", "role"]
     },
+    "AuthorizedPhone": {
+      "title": "AuthorizedPhone",
+      "description": "Allowlist record for authorized ThatVetGuy Co-Founder phone number",
+      "type": "object",
+      "properties": {
+        "authorId": {
+          "type": "string",
+          "description": "Associated Co-Founder author ID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the Co-Founder"
+        },
+        "role": {
+          "type": "string",
+          "description": "CO_FOUNDER"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["ACTIVE", "SUSPENDED"],
+          "description": "Authorization state"
+        },
+        "maskedPhone": {
+          "type": "string",
+          "description": "Masked representation for display"
+        },
+        "phoneHash": {
+          "type": "string",
+          "description": "SHA-256 hash of normalized E.164 phone number"
+        }
+      },
+      "required": ["authorId", "name", "role", "status"]
+    },
     "CMSUser": {
       "title": "CMSUser",
-      "description": "Authorized ThatVetGuy Co-Founder CMS identity",
+      "description": "Authorized ThatVetGuy Co-Founder CMS identity verified by Firebase UID and Phone Auth",
       "type": "object",
       "properties": {
         "uid": {
           "type": "string",
           "description": "Firebase Auth user UID"
         },
-        "email": {
+        "phoneNumber": {
           "type": "string",
-          "description": "Co-Founder email address"
+          "description": "Verified E.164 phone number from Firebase Auth"
         },
         "authorId": {
           "type": "string",
           "description": "Associated author profile ID"
         },
+        "name": {
+          "type": "string",
+          "description": "Co-Founder name"
+        },
         "role": {
           "type": "string",
           "description": "CO_FOUNDER"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["ACTIVE", "SUSPENDED"],
+          "description": "Authorization status"
         }
       },
-      "required": ["uid", "email", "authorId", "role"]
+      "required": ["uid", "authorId", "role", "status"]
     }
   },
   "firestore": {
@@ -194,9 +236,13 @@
       "schema": "Author",
       "description": "Collection of the six Co-Founder author profiles"
     },
+    "/authorized_phones/{phoneId}": {
+      "schema": "AuthorizedPhone",
+      "description": "Protected allowlist of authorized Co-Founder phone numbers"
+    },
     "/cms_users/{userId}": {
       "schema": "CMSUser",
-      "description": "Authorized CMS user associations"
+      "description": "Authorized CMS user associations keyed by Firebase UID"
     }
   }
 }

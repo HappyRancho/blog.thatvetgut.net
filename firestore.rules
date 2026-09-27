@@ -5,23 +5,33 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Explicit authorized Co-Founder email roster
-    function isCoFounderEmail() {
-      return isAuthenticated() && request.auth.token.email in [
-        'chiragpatidar0369@gmail.com', 'chirag@thatvetguy.net', 'drchiragpatidar@gmail.com',
-        'amaan@thatvetguy.net', 'amaan.ahmed@thatvetguy.net',
-        'shivam@thatvetguy.net', 'shivam.singh@thatvetguy.net',
-        'ritesh@thatvetguy.net', 'ritesh.verma@thatvetguy.net',
-        'deepesh.mathur@thatvetguy.net', 'deepesh.chaware@thatvetguy.net'
-      ];
-    }
-
-    function isRegisteredCmsUser() {
-      return isAuthenticated() && exists(/databases/$(database)/documents/cms_users/$(request.auth.uid));
-    }
-
+    // Explicit verification: Firebase UID + authorized CMS user record + active status
     function isAuthorizedCMSUser() {
-      return isCoFounderEmail() || isRegisteredCmsUser();
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/cms_users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/cms_users/$(request.auth.uid)).data.status == 'ACTIVE' &&
+        get(/databases/$(database)/documents/cms_users/$(request.auth.uid)).data.role == 'CO_FOUNDER';
+    }
+
+    // Protected phone allowlist:
+    // Individual get permitted so unauthenticated login flow can check authorization before sending OTP
+    // Listing the collection is strictly FORBIDDEN to prevent enumerating or scraping phone numbers
+    // Modifying the collection from client is strictly FORBIDDEN
+    match /authorized_phones/{phoneId} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if false;
+    }
+
+    // CMS user records keyed by Firebase UID
+    match /cms_users/{userId} {
+      allow get: if isAuthenticated() && (request.auth.uid == userId || isAuthorizedCMSUser());
+      allow list: if isAuthorizedCMSUser();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && request.auth.uid == userId &&
+        request.resource.data.role == resource.data.role &&
+        request.resource.data.authorId == resource.data.authorId;
+      allow delete: if false;
     }
 
     // Public can ONLY read published articles. Drafts are private to authorized CMS users.
@@ -34,12 +44,6 @@ service cloud.firestore {
     match /authors/{authorId} {
       allow read: if true;
       allow write: if isAuthorizedCMSUser();
-    }
-
-    // CMS user mappings
-    match /cms_users/{userId} {
-      allow read: if isAuthenticated() && (request.auth.uid == userId || isAuthorizedCMSUser());
-      allow write: if isAuthenticated() && (request.auth.uid == userId || isAuthorizedCMSUser());
     }
 
     match /users/{userId} {

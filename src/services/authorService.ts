@@ -12,45 +12,6 @@ import { AUTHORS } from '../data/authors';
 const AUTHORS_COLLECTION = 'authors';
 const LOCAL_AUTHORS_KEY = 'tvg_authors_cache';
 
-// Mapping of verified email addresses to authorIds
-export const AUTHORIZED_CO_FOUNDERS_ROSTER: Record<string, string> = {
-  // Dr. Chirag Patidar
-  'chirag@thatvetguy.net': 'dr-chirag-patidar',
-  'chiragpatidar0369@gmail.com': 'dr-chirag-patidar',
-  'drchiragpatidar@gmail.com': 'dr-chirag-patidar',
-
-  // Dr. Amaan Ahmed
-  'amaan@thatvetguy.net': 'dr-amaan-ahmed',
-  'amaan.ahmed@thatvetguy.net': 'dr-amaan-ahmed',
-
-  // Dr. Shivam Singh Thakur
-  'shivam@thatvetguy.net': 'dr-shivam-singh-thakur',
-  'shivam.singh@thatvetguy.net': 'dr-shivam-singh-thakur',
-
-  // Dr. Ritesh Verma
-  'ritesh@thatvetguy.net': 'dr-ritesh-verma',
-  'ritesh.verma@thatvetguy.net': 'dr-ritesh-verma',
-
-  // Dr. Deepesh Mathur
-  'deepesh.mathur@thatvetguy.net': 'dr-deepesh-mathur',
-
-  // Dr. Deepesh Chaware
-  'deepesh.chaware@thatvetguy.net': 'dr-deepesh-chaware',
-};
-
-// Check if an email is authorized in the Co-Founder roster
-export function getAuthorIdForEmail(email: string): string | null {
-  const normalized = email.trim().toLowerCase();
-  if (AUTHORIZED_CO_FOUNDERS_ROSTER[normalized]) {
-    return AUTHORIZED_CO_FOUNDERS_ROSTER[normalized];
-  }
-  // Also check if any author in AUTHORS has this email in socials
-  const matched = AUTHORS.find(
-    (a) => a.socials?.email?.toLowerCase() === normalized
-  );
-  return matched ? matched.id : null;
-}
-
 // Get cached authors from local storage
 export function getCachedAuthors(): Author[] {
   try {

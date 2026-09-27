@@ -1,22 +1,25 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import {
   User as FirebaseUser,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signInWithPopup,
-  sendPasswordResetEmail,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  ConfirmationResult,
   signOut,
   onAuthStateChanged,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, db, googleProvider } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
 import { Author } from '../types';
 import {
-  getAuthorIdForEmail,
   getAuthorsFromFirestore,
   getCachedAuthors,
   updateAuthorProfileInFirestore,
 } from '../services/authorService';
+import {
+  checkPhoneAuthorization,
+  maskPhoneNumber,
+  normalizePhoneNumber,
+} from '../services/phoneAuthService';
 
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
@@ -25,10 +28,13 @@ interface AuthContextType {
   isAuthorized: boolean;
   authError: string | null;
   allAuthors: Author[];
-  loginWithEmail: (email: string, password: string) => Promise<void>;
-  registerCoFounder: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
-  sendPasswordReset: (email: string) => Promise<void>;
+  pendingPhone: string | null;
+  maskedPhone: string | null;
+  confirmationResult: ConfirmationResult | null;
+  sendPhoneOtp: (phoneNumber: string, containerId?: string) => Promise<{ confirmationResult: ConfirmationResult; maskedPhone: string }>;
+  verifyPhoneOtp: (otp: string) => Promise<void>;
+  resendPhoneOtp: (containerId?: string) => Promise<void>;
+  resetPhoneAuth: () => void;
   logout: () => Promise<void>;
   updateCurrentAuthorProfile: (updates: Partial<Author>) => Promise<Author>;
   refreshAuthors: () => Promise<void>;
@@ -44,12 +50,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
 
+  // Phone OTP Flow State
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [pendingPhone, setPendingPhone] = useState<string | null>(null);
+  const [maskedPhone, setMaskedPhone] = useState<string | null>(null);
+
   // Refresh authors catalog from Firestore
   const refreshAuthors = useCallback(async () => {
     try {
       const authors = await getAuthorsFromFirestore();
       setAllAuthors(authors);
-      // If current author is set, update with freshest data
       if (currentAuthor) {
         const fresh = authors.find((a) => a.id === currentAuthor.id);
         if (fresh) setCurrentAuthor(fresh);
@@ -79,61 +89,73 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setFirebaseUser(user);
 
-      // Verify that this Firebase User belongs to an authorized Co-Founder
-      const userEmail = (user.email || '').trim().toLowerCase();
-      let authorId = getAuthorIdForEmail(userEmail);
+      // Verify Firebase UID + authorized CMS user record + active status
+      try {
+        const cmsUserDoc = await getDoc(doc(db, 'cms_users', user.uid));
+        let authorId: string | null = null;
+        let isRecordActive = false;
 
-      // Also check Firestore /cms_users/{uid} in case of custom account association
-      if (!authorId && user.uid) {
-        try {
-          const cmsUserDoc = await getDoc(doc(db, 'cms_users', user.uid));
-          if (cmsUserDoc.exists()) {
-            authorId = cmsUserDoc.data().authorId || null;
+        if (cmsUserDoc.exists()) {
+          const data = cmsUserDoc.data();
+          if (data.status === 'ACTIVE' && data.role === 'CO_FOUNDER') {
+            authorId = data.authorId || null;
+            isRecordActive = true;
           }
-        } catch (err) {
-          console.warn('[Auth] cms_users lookup notice:', err);
         }
-      }
 
-      if (!authorId) {
-        // User is authenticated with Firebase, but NOT in the authorized Co-Founder roster
-        console.warn(`[Auth] User ${user.email} (${user.uid}) is not authorized.`);
+        // If not found in cms_users yet, verify phone number against authorized phone allowlist
+        if (!authorId && user.phoneNumber) {
+          const authCheck = await checkPhoneAuthorization(user.phoneNumber);
+          if (authCheck.authorized && authCheck.record) {
+            authorId = authCheck.record.authorId;
+            isRecordActive = true;
+
+            // Link UID to cms_users
+            try {
+              await setDoc(
+                doc(db, 'cms_users', user.uid),
+                {
+                  uid: user.uid,
+                  phoneNumber: user.phoneNumber,
+                  authorId: authorId,
+                  name: authCheck.record.name,
+                  role: 'CO_FOUNDER',
+                  status: 'ACTIVE',
+                  lastLoginAt: serverTimestamp(),
+                },
+                { merge: true }
+              );
+            } catch (err) {
+              console.warn('[Auth] cms_users record creation notice:', err);
+            }
+          }
+        }
+
+        if (!authorId || !isRecordActive) {
+          // User is authenticated in Firebase, but NOT an authorized active Co-Founder
+          console.warn(`[Auth] User ${user.phoneNumber || user.uid} is not authorized.`);
+          setAuthError('Your account does not have access to the CMS.');
+          setCurrentAuthor(null);
+          setLoading(false);
+          try {
+            await signOut(auth);
+          } catch {
+            // ignore
+          }
+          return;
+        }
+
+        // Fetch latest authors to match profile
+        const authors = await getAuthorsFromFirestore();
+        const matched = authors.find((a) => a.id === authorId);
+
+        if (matched && isMounted) {
+          setCurrentAuthor(matched);
+          setAuthError(null);
+        }
+      } catch (err) {
+        console.warn('[Auth] Authorization verification notice:', err);
         setAuthError('Your account does not have access to the CMS.');
-        setCurrentAuthor(null);
-        setLoading(false);
-        try {
-          await signOut(auth);
-        } catch {
-          // ignore
-        }
-        return;
-      }
-
-      // Fetch latest authors to match profile
-      const authors = await getAuthorsFromFirestore();
-      const matched = authors.find((a) => a.id === authorId);
-
-      if (matched && isMounted) {
-        setCurrentAuthor(matched);
-        setAuthError(null);
-
-        // Record/sync session in Firestore cms_users collection
-        try {
-          await setDoc(
-            doc(db, 'cms_users', user.uid),
-            {
-              uid: user.uid,
-              authorId: matched.id,
-              email: userEmail,
-              name: matched.name,
-              role: 'CO_FOUNDER',
-              lastLoginAt: serverTimestamp(),
-            },
-            { merge: true }
-          );
-        } catch {
-          // Optional sync failure does not block session
-        }
       }
 
       if (isMounted) {
@@ -147,135 +169,228 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  // Sign in with Email and Password
-  const loginWithEmail = useCallback(async (email: string, password: string) => {
-    setAuthError(null);
-    setLoading(true);
+  // Send Firebase Phone Authentication OTP
+  const sendPhoneOtp = useCallback(
+    async (rawPhone: string, containerId = 'recaptcha-container') => {
+      setAuthError(null);
+      setLoading(true);
 
-    const cleanEmail = email.trim().toLowerCase();
-    const authorId = getAuthorIdForEmail(cleanEmail);
-
-    if (!authorId) {
-      setLoading(false);
-      setAuthError('Your account does not have access to the CMS.');
-      throw new Error('Your account does not have access to the CMS.');
-    }
-
-    try {
-      await signInWithEmailAndPassword(auth, cleanEmail, password);
-    } catch (err: any) {
-      setLoading(false);
-      let userFriendlyMessage = 'Sign in failed. Please check your credentials.';
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-        userFriendlyMessage = 'Invalid email or password. If you have not created your password yet, use "Set Password".';
-      } else if (err.code === 'auth/wrong-password') {
-        userFriendlyMessage = 'Incorrect password. You can reset your password below.';
-      } else if (err.code === 'auth/too-many-requests') {
-        userFriendlyMessage = 'Too many failed login attempts. Please wait a few moments or reset your password.';
-      } else if (err.code === 'auth/network-request-failed') {
-        userFriendlyMessage = 'Network error. Please verify your internet connection.';
+      const normalized = normalizePhoneNumber(rawPhone);
+      if (!normalized || normalized.length < 8) {
+        setLoading(false);
+        const err = 'Please enter a valid phone number.';
+        setAuthError(err);
+        throw new Error(err);
       }
-      setAuthError(userFriendlyMessage);
-      throw new Error(userFriendlyMessage);
-    }
-  }, []);
 
-  // Register a new password for an authorized Co-Founder
-  const registerCoFounder = useCallback(async (email: string, password: string) => {
-    setAuthError(null);
-    setLoading(true);
+      // CRITICAL: Check whether the phone number belongs to an authorized Co-Founder BEFORE sending OTP
+      const authCheck = await checkPhoneAuthorization(normalized);
+      if (!authCheck.authorized || !authCheck.record) {
+        setLoading(false);
+        const err = 'Your phone number is not authorized to access this CMS.';
+        setAuthError(err);
+        throw new Error(err);
+      }
 
-    const cleanEmail = email.trim().toLowerCase();
-    const authorId = getAuthorIdForEmail(cleanEmail);
+      try {
+        // Setup reCAPTCHA verifier
+        let verifier = (window as any).recaptchaVerifier;
+        if (!verifier) {
+          verifier = new RecaptchaVerifier(auth, containerId, {
+            size: 'invisible',
+            callback: () => {
+              // reCAPTCHA solved
+            },
+            'expired-callback': () => {
+              console.warn('reCAPTCHA expired, please try again.');
+            },
+          });
+          (window as any).recaptchaVerifier = verifier;
+        }
 
-    if (!authorId) {
-      setLoading(false);
-      const msg = 'Registration is restricted strictly to authorized ThatVetGuy Co-Founders.';
-      setAuthError(msg);
-      throw new Error(msg);
-    }
+        // Send OTP via Firebase Authentication
+        const confirmation = await signInWithPhoneNumber(auth, normalized, verifier);
+        setConfirmationResult(confirmation);
+        setPendingPhone(normalized);
+        const masked = maskPhoneNumber(normalized);
+        setMaskedPhone(masked);
+        setLoading(false);
+        return { confirmationResult: confirmation, maskedPhone: masked };
+      } catch (err: any) {
+        setLoading(false);
+        console.error('[Auth] signInWithPhoneNumber error:', err);
 
-    if (password.length < 6) {
-      setLoading(false);
-      const msg = 'Password must be at least 6 characters long.';
-      setAuthError(msg);
-      throw new Error(msg);
-    }
+        // Reset verifier on error
+        try {
+          (window as any).recaptchaVerifier?.clear();
+          (window as any).recaptchaVerifier = null;
+        } catch {
+          // ignore
+        }
 
-    try {
-      await createUserWithEmailAndPassword(auth, cleanEmail, password);
-    } catch (err: any) {
-      setLoading(false);
-      if (err.code === 'auth/email-already-in-use') {
-        // If already exists, advise logging in or resetting password
-        const msg = 'An account already exists for this email. Please sign in or use "Reset Password".';
+        let userFriendlyMsg = 'Failed to send OTP. Please check the phone number and try again.';
+        if (err.code === 'auth/invalid-phone-number') {
+          userFriendlyMsg = 'The phone number format is invalid.';
+        } else if (err.code === 'auth/too-many-requests') {
+          userFriendlyMsg = 'Too many requests. Please wait a few moments before trying again.';
+        } else if (err.code === 'auth/quota-exceeded') {
+          userFriendlyMsg = 'SMS quota exceeded. Please contact the administrator.';
+        } else if (err.code === 'auth/captcha-check-failed') {
+          userFriendlyMsg = 'Security verification failed. Please refresh the page and try again.';
+        } else if (err.code === 'auth/unauthorized-domain') {
+          userFriendlyMsg = 'This domain is not yet authorized in Firebase Console for Phone Authentication.';
+        } else if (err.message) {
+          userFriendlyMsg = err.message;
+        }
+
+        setAuthError(userFriendlyMsg);
+        throw new Error(userFriendlyMsg);
+      }
+    },
+    []
+  );
+
+  // Verify entered OTP code
+  const verifyPhoneOtp = useCallback(
+    async (otp: string) => {
+      setAuthError(null);
+      setLoading(true);
+
+      if (!confirmationResult) {
+        setLoading(false);
+        const err = 'No active OTP verification session. Please request a new OTP.';
+        setAuthError(err);
+        throw new Error(err);
+      }
+
+      const cleanOtp = otp.trim().replace(/\D/g, '');
+      if (cleanOtp.length !== 6) {
+        setLoading(false);
+        const err = 'Please enter a valid 6-digit OTP code.';
+        setAuthError(err);
+        throw new Error(err);
+      }
+
+      try {
+        // Firebase verifies OTP
+        const userCredential = await confirmationResult.confirm(cleanOtp);
+        const user = userCredential.user;
+
+        // Verify authenticated Firebase UID + authorized CMS user record + active status
+        const verifiedPhone = user.phoneNumber || pendingPhone;
+        if (!verifiedPhone) {
+          throw new Error('Phone number could not be verified.');
+        }
+
+        const authCheck = await checkPhoneAuthorization(verifiedPhone);
+        if (!authCheck.authorized || !authCheck.record) {
+          await signOut(auth);
+          throw new Error('Your account does not have access to the CMS.');
+        }
+
+        const { authorId, name } = authCheck.record;
+
+        // Verify or create cms_users/{uid}
+        const cmsUserRef = doc(db, 'cms_users', user.uid);
+        const cmsUserSnap = await getDoc(cmsUserRef);
+
+        if (cmsUserSnap.exists()) {
+          const cmsData = cmsUserSnap.data();
+          if (cmsData.status !== 'ACTIVE' || cmsData.role !== 'CO_FOUNDER') {
+            await signOut(auth);
+            throw new Error('Your account does not have access to the CMS.');
+          }
+        } else {
+          // Bind Firebase UID to authorized Co-Founder record
+          await setDoc(
+            cmsUserRef,
+            {
+              uid: user.uid,
+              phoneNumber: verifiedPhone,
+              authorId: authorId,
+              name: name,
+              role: 'CO_FOUNDER',
+              status: 'ACTIVE',
+              createdAt: serverTimestamp(),
+              lastLoginAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+        }
+
+        // Match current author
+        const authors = await getAuthorsFromFirestore();
+        const matchedAuthor = authors.find((a) => a.id === authorId);
+        if (matchedAuthor) {
+          setCurrentAuthor(matchedAuthor);
+        }
+
+        setFirebaseUser(user);
+        setConfirmationResult(null);
+        setLoading(false);
+      } catch (err: any) {
+        setLoading(false);
+        let msg = 'Failed to verify OTP. Please check the code and try again.';
+        if (err.code === 'auth/invalid-verification-code') {
+          msg = 'Invalid OTP code. Please enter the correct 6-digit code.';
+        } else if (err.code === 'auth/code-expired') {
+          msg = 'This OTP code has expired. Please click Resend OTP to get a new code.';
+        } else if (err.message) {
+          msg = err.message;
+        }
         setAuthError(msg);
         throw new Error(msg);
       }
-      const msg = err.message || 'Could not complete registration.';
-      setAuthError(msg);
-      throw new Error(msg);
-    }
-  }, []);
+    },
+    [confirmationResult, pendingPhone]
+  );
 
-  // Sign in with Google (SSO)
-  const loginWithGoogle = useCallback(async () => {
+  // Resend OTP
+  const resendPhoneOtp = useCallback(
+    async (containerId = 'recaptcha-container') => {
+      if (!pendingPhone) {
+        throw new Error('No phone number specified to resend OTP.');
+      }
+      await sendPhoneOtp(pendingPhone, containerId);
+    },
+    [pendingPhone, sendPhoneOtp]
+  );
+
+  // Reset phone authentication flow back to Screen 1
+  const resetPhoneAuth = useCallback(() => {
+    setConfirmationResult(null);
+    setPendingPhone(null);
+    setMaskedPhone(null);
     setAuthError(null);
-    setLoading(true);
     try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (err: any) {
-      setLoading(false);
-      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
-        return; // User intentionally closed popup
-      }
-      if (err.code === 'auth/unauthorized-domain') {
-        const host = typeof window !== 'undefined' ? window.location.hostname : 'blog.thatvetguy.net';
-        const msg = `Domain authorization needed: "${host}" is not yet registered in Firebase Authentication. Please use email & password login.`;
-        setAuthError(msg);
-        throw new Error(msg);
-      }
-      const msg = err.message || 'Google sign-in could not be completed.';
-      setAuthError(msg);
-      throw new Error(msg);
-    }
-  }, []);
-
-  // Send Password Reset Email
-  const sendPasswordReset = useCallback(async (email: string) => {
-    const cleanEmail = email.trim().toLowerCase();
-    const authorId = getAuthorIdForEmail(cleanEmail);
-
-    if (!authorId) {
-      throw new Error('Your account does not have access to the CMS.');
-    }
-
-    try {
-      await sendPasswordResetEmail(auth, cleanEmail);
-    } catch (err: any) {
-      throw new Error(err.message || 'Failed to send password reset email.');
-    }
-  }, []);
-
-  // Complete Logout
-  const logout = useCallback(async () => {
-    setLoading(true);
-    try {
-      await signOut(auth);
+      (window as any).recaptchaVerifier?.clear();
+      (window as any).recaptchaVerifier = null;
     } catch {
       // ignore
     }
-    setFirebaseUser(null);
-    setCurrentAuthor(null);
-    setAuthError(null);
-    setLoading(false);
   }, []);
 
-  // Update Co-Founder's OWN author profile
+  // Logout - completely ends CMS session
+  const logout = useCallback(async () => {
+    setLoading(true);
+    resetPhoneAuth();
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.warn('Sign out notice:', e);
+    } finally {
+      setFirebaseUser(null);
+      setCurrentAuthor(null);
+      setAuthError(null);
+      setLoading(false);
+    }
+  }, [resetPhoneAuth]);
+
+  // Update current author profile
   const updateCurrentAuthorProfile = useCallback(
     async (updates: Partial<Author>): Promise<Author> => {
       if (!currentAuthor) {
-        throw new Error('You must be signed in to edit your author profile.');
+        throw new Error('No authenticated author to update.');
       }
       const updated = await updateAuthorProfileInFirestore(currentAuthor.id, updates);
       setCurrentAuthor(updated);
@@ -284,6 +399,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     },
     [currentAuthor]
   );
+
+  const clearAuthError = useCallback(() => {
+    setAuthError(null);
+  }, []);
 
   const isAuthorized = Boolean(firebaseUser && currentAuthor);
 
@@ -296,14 +415,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthorized,
         authError,
         allAuthors,
-        loginWithEmail,
-        registerCoFounder,
-        loginWithGoogle,
-        sendPasswordReset,
+        pendingPhone,
+        maskedPhone,
+        confirmationResult,
+        sendPhoneOtp,
+        verifyPhoneOtp,
+        resendPhoneOtp,
+        resetPhoneAuth,
         logout,
         updateCurrentAuthorProfile,
         refreshAuthors,
-        clearAuthError: () => setAuthError(null),
+        clearAuthError,
       }}
     >
       {children}
@@ -311,10 +433,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export function useAuth() {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
+};
