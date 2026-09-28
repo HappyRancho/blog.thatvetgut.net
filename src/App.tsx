@@ -34,9 +34,18 @@ const AppContent: React.FC = () => {
       case 'home':
         return <HomePage />;
       case 'articles':
-        return <ArticlesPage initialCategory={route.category} initialTag={route.tag} />;
+        // Query-string filters are part of the page state. A key ensures a direct
+        // navigation between filtered archive URLs does not retain stale filters.
+        return (
+          <ArticlesPage
+            key={`${route.category || ''}:${route.tag || ''}`}
+            initialCategory={route.category}
+            initialTag={route.tag}
+          />
+        );
       case 'article':
-        return <ArticleDetailPage slug={route.slug} />;
+        // Detail pages initialize local data from the slug, so remount when it changes.
+        return <ArticleDetailPage key={route.slug} slug={route.slug} />;
       case 'categories':
         return <CategoriesPage />;
       case 'category':
@@ -44,9 +53,10 @@ const AppContent: React.FC = () => {
       case 'contributors':
         return <ContributorsPage />;
       case 'author':
-        return <AuthorDetailPage slug={route.slug} />;
+        return <AuthorDetailPage key={route.slug} slug={route.slug} />;
       case 'search':
-        return <SearchPage initialQuery={route.initialQuery} />;
+        // Preserve URL-driven searches when navigating between /search?q=... URLs.
+        return <SearchPage key={route.initialQuery} initialQuery={route.initialQuery} />;
       case 'about':
         return <AboutPage />;
       case 'contact':
