@@ -74,6 +74,16 @@ npm run lint
 npm run build
 ```
 
+### CMS phone allowlist
+
+CMS phone sign-in checks the deployed Firestore `authorized_phones` collection; changing the seed script alone does not update an already deployed database. To apply the configured Co-Founder allowlist, use a trusted Google IAM access token with permission to write to the configured Firestore database:
+
+```bash
+GOOGLE_OAUTH_ACCESS_TOKEN="$(gcloud auth print-access-token)" npm run seed:authorized-phones
+```
+
+The script deliberately rejects API-key-only requests because Firestore security rules block client writes to the allowlist. Each canonical allowlist record is written with its normalized E.164 phone number as its document ID.
+
 ---
 
 ## 5. Deployment Guide (Cloudflare Pages & Custom Domain)

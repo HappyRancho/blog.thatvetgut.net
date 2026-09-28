@@ -3,36 +3,45 @@ import crypto from 'crypto';
 
 // Load Firebase configuration
 const config = JSON.parse(fs.readFileSync('firebase-applet-config.json', 'utf8'));
+const accessToken = process.env.GOOGLE_OAUTH_ACCESS_TOKEN;
 
-// Initial test numbers for the 6 Co-Founders (can also be configured via environment variables or Firebase Console)
+if (!accessToken) {
+  throw new Error(
+    'GOOGLE_OAUTH_ACCESS_TOKEN is required to seed authorized phones. Use a trusted Google IAM access token; API-key requests are blocked by Firestore security rules.'
+  );
+}
+
+// Authorized phone numbers for the 6 Co-Founders. Keep these in normalized
+// E.164 format because the Firestore rules use the phone number as the
+// allowlist document ID.
 const INITIAL_CO_FOUNDER_PHONES = [
   {
-    phone: '+919876543210',
+    phone: '+919826337391',
     authorId: 'dr-chirag-patidar',
     name: 'Dr. Chirag Patidar',
   },
   {
-    phone: '+919876543211',
+    phone: '+919893087892',
     authorId: 'dr-amaan-ahmed',
     name: 'Dr. Amaan Ahmed',
   },
   {
-    phone: '+919876543212',
+    phone: '+918305969001',
     authorId: 'dr-shivam-singh-thakur',
     name: 'Dr. Shivam Singh Thakur',
   },
   {
-    phone: '+919876543213',
+    phone: '+918823058797',
     authorId: 'dr-ritesh-verma',
     name: 'Dr. Ritesh Verma',
   },
   {
-    phone: '+919876543214',
+    phone: '+918239487081',
     authorId: 'dr-deepesh-mathur',
     name: 'Dr. Deepesh Mathur',
   },
   {
-    phone: '+919876543215',
+    phone: '+916263275093',
     authorId: 'dr-deepesh-chaware',
     name: 'Dr. Deepesh Chaware',
   },
@@ -54,15 +63,16 @@ async function seed() {
     const phoneHash = hashPhone(item.phone);
     const masked = maskPhone(item.phone);
 
-    // Save with normalized phone as ID (URL-encoded) and by hash
+    // Save under the canonical E.164 document ID required by Firestore rules,
+    // with legacy aliases retained for existing client lookups.
     const targets = [
-      encodeURIComponent(item.phone),
+      item.phone,
       phoneHash,
       `p_${item.phone.replace('+', '')}`,
     ];
 
     for (const docId of targets) {
-      const url = `https://firestore.googleapis.com/v1/projects/${config.projectId}/databases/${config.firestoreDatabaseId}/documents/authorized_phones/${docId}?key=${config.apiKey}`;
+      const url = `https://firestore.googleapis.com/v1/projects/${config.projectId}/databases/${config.firestoreDatabaseId}/documents/authorized_phones/${encodeURIComponent(docId)}`;
       const body = {
         fields: {
           authorId: { stringValue: item.authorId },
@@ -77,7 +87,10 @@ async function seed() {
       try {
         const res = await fetch(url, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
           body: JSON.stringify(body),
         });
         if (res.ok) {
