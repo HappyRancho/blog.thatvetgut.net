@@ -4,35 +4,37 @@ import crypto from 'crypto';
 // Load Firebase configuration
 const config = JSON.parse(fs.readFileSync('firebase-applet-config.json', 'utf8'));
 
-// Initial test numbers for the 6 Co-Founders (can also be configured via environment variables or Firebase Console)
+// Authorized phone numbers for the 6 Co-Founders. Keep these in normalized
+// E.164 format because the Firestore rules use the phone number as the
+// allowlist document ID.
 const INITIAL_CO_FOUNDER_PHONES = [
   {
-    phone: '+919876543210',
+    phone: '+919826337391',
     authorId: 'dr-chirag-patidar',
     name: 'Dr. Chirag Patidar',
   },
   {
-    phone: '+919876543211',
+    phone: '+919893087892',
     authorId: 'dr-amaan-ahmed',
     name: 'Dr. Amaan Ahmed',
   },
   {
-    phone: '+919876543212',
+    phone: '+918305969001',
     authorId: 'dr-shivam-singh-thakur',
     name: 'Dr. Shivam Singh Thakur',
   },
   {
-    phone: '+919876543213',
+    phone: '+918823058797',
     authorId: 'dr-ritesh-verma',
     name: 'Dr. Ritesh Verma',
   },
   {
-    phone: '+919876543214',
+    phone: '+918239487081',
     authorId: 'dr-deepesh-mathur',
     name: 'Dr. Deepesh Mathur',
   },
   {
-    phone: '+919876543215',
+    phone: '+916263275093',
     authorId: 'dr-deepesh-chaware',
     name: 'Dr. Deepesh Chaware',
   },
@@ -54,9 +56,10 @@ async function seed() {
     const phoneHash = hashPhone(item.phone);
     const masked = maskPhone(item.phone);
 
-    // Save with normalized phone as ID (URL-encoded) and by hash
+    // Save under the canonical E.164 document ID required by Firestore rules,
+    // with legacy aliases retained for existing client lookups.
     const targets = [
-      encodeURIComponent(item.phone),
+      item.phone,
       phoneHash,
       `p_${item.phone.replace('+', '')}`,
     ];

@@ -512,19 +512,18 @@ export async function saveArticleToFirestore(
     importedBy: articleData.importedBy || existing?.importedBy,
   };
 
-  // 1. Immediately persist to Local Unified Store so changes reflect everywhere on the live blog
-  saveLocalArticle(fullArticle);
-
-  // 2. Persist to Firestore Cloud Database
+  // Persist to Firestore before updating the browser cache. The CMS must not
+  // report a publish/save as successful when the cloud write was denied or
+  // unavailable; otherwise a draft only appears on the editor's device.
   try {
     const docRef = doc(db, ARTICLES_COLLECTION, articleId);
     await setDoc(docRef, fullArticle, { merge: true });
     console.log(`[Firestore] Article ${articleId} synced successfully to cloud.`);
   } catch (err) {
-    console.warn(`[Firestore] Cloud sync pending: ${err instanceof Error ? err.message : String(err)}`);
-    // Do not throw so local persistence ensures immediate live appearance
+    throw new Error(`Failed to save article to the cloud: ${err instanceof Error ? err.message : String(err)}`);
   }
 
+  saveLocalArticle(fullArticle);
   return fullArticle;
 }
 
@@ -567,23 +566,19 @@ export async function updateArticleStatusInFirestore(
       };
       updated.internalNotes = [...(existing.internalNotes || []), newNote];
     }
+    try {
+      const docRef = doc(db, ARTICLES_COLLECTION, articleId);
+      // setDoc also supports the static baseline articles which may not have
+      // been seeded to Firestore yet; updateDoc would fail with not-found.
+      await setDoc(docRef, updated, { merge: true });
+    } catch (err) {
+      throw new Error(`Failed to update article status: ${err instanceof Error ? err.message : String(err)}`);
+    }
     saveLocalArticle(updated);
+    return;
   }
 
-  try {
-    const docRef = doc(db, ARTICLES_COLLECTION, articleId);
-    const updatePayload: any = {
-      status: newStatus,
-      updatedDate: nowIso,
-    };
-    if (newStatus === 'PUBLISHED') {
-      updatePayload.publishedAt = nowIso;
-      updatePayload.publishedDate = nowIso;
-    }
-    await updateDoc(docRef, updatePayload);
-  } catch (err) {
-    console.warn('Firestore status update error:', err);
-  }
+  throw new Error('Article could not be found. Refresh the CMS and try again.');
 }
 
 // Add an internal review note (never exposed publicly)
@@ -627,14 +622,13 @@ export async function addInternalNoteToArticle(
 
 // Delete article from Firestore & Local Storage
 export async function deleteArticleFromFirestore(articleId: string): Promise<void> {
-  // 1. Delete from local storage and mark as deleted
-  deleteLocalArticle(articleId);
-
-  // 2. Delete from Firestore
   try {
     const docRef = doc(db, ARTICLES_COLLECTION, articleId);
     await deleteDoc(docRef);
   } catch (err) {
-    console.warn('Firestore delete error:', err);
+    throw new Error(`Failed to delete article from the cloud: ${err instanceof Error ? err.message : String(err)}`);
   }
+
+  // Mark it deleted locally only after the cloud deletion succeeds.
+  deleteLocalArticle(articleId);
 }
