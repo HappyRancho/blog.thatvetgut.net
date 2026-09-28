@@ -81,8 +81,9 @@ export async function checkPhoneAuthorization(
     const cleanKey = `p_${normalized.replace('+', '')}`;
     const encoded = encodeURIComponent(normalized);
 
-    // Check candidate doc keys in /authorized_phones
-    const candidateKeys = [cleanKey, hash, encoded, normalized];
+    // New records use the normalized E.164 number as their document ID. Keep
+    // the legacy keys as a migration fallback for existing allowlist records.
+    const candidateKeys = [normalized, cleanKey, hash, encoded];
 
     for (const key of candidateKeys) {
       try {

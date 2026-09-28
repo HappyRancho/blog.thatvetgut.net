@@ -122,14 +122,14 @@ export async function updateAuthorProfileInFirestore(
     },
   };
 
-  // 1. Immediately update local cache so changes appear instantly on public pages
+  // Prepare the local cache update, but do not apply it until Firestore accepts
+  // the write. This avoids showing a profile as saved when a CMS permission or
+  // network error prevented it from reaching the shared publication.
   const updatedList = currentList.map((a) => (a.id === authorId ? updatedAuthor : a));
   if (!updatedList.some((a) => a.id === authorId)) {
     updatedList.push(updatedAuthor);
   }
-  setCachedAuthors(updatedList);
 
-  // 2. Persist to Firestore
   try {
     const docRef = doc(db, AUTHORS_COLLECTION, authorId);
     await setDoc(docRef, updatedAuthor, { merge: true });
@@ -139,5 +139,6 @@ export async function updateAuthorProfileInFirestore(
     throw new Error(`Failed to save author profile to cloud database: ${err instanceof Error ? err.message : String(err)}`);
   }
 
+  setCachedAuthors(updatedList);
   return updatedAuthor;
 }
