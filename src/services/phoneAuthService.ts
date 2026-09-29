@@ -57,10 +57,17 @@ export function maskPhoneNumber(phone: string): string {
  */
 export async function hashPhoneNumber(phone: string): Promise<string> {
   const normalized = normalizePhoneNumber(phone);
-  const msgUint8 = new TextEncoder().encode(normalized);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+  try {
+    if (typeof crypto !== 'undefined' && crypto.subtle) {
+      const msgUint8 = new TextEncoder().encode(normalized);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+    }
+  } catch {
+    // Browser environment without crypto.subtle
+  }
+  return '';
 }
 
 /**
@@ -83,7 +90,7 @@ export async function checkPhoneAuthorization(
 
     // New records use the normalized E.164 number as their document ID. Keep
     // the legacy keys as a migration fallback for existing allowlist records.
-    const candidateKeys = [normalized, cleanKey, hash, encoded];
+    const candidateKeys = [normalized, cleanKey, hash, encoded].filter(Boolean);
 
     for (const key of candidateKeys) {
       try {

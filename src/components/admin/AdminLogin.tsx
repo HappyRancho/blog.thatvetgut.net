@@ -56,6 +56,12 @@ export const AdminLogin: React.FC = () => {
     setSuccessNotice(null);
     clearAuthError();
 
+    const digitsOnly = phoneNumber.trim().replace(/\D/g, '');
+    if (digitsOnly.length < 10) {
+      setLocalError('Please enter your 10-digit registered mobile number.');
+      return;
+    }
+
     const normalized = normalizePhoneNumber(phoneNumber);
     if (!normalized || normalized.length < 10) {
       setLocalError('Please enter a valid 10-digit mobile number.');
@@ -169,9 +175,6 @@ export const AdminLogin: React.FC = () => {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center px-4 py-8 sm:py-12">
-      {/* Invisible reCAPTCHA container for Firebase Phone Auth */}
-      <div id="recaptcha-container" />
-
       <div className="w-full max-w-md bg-white border border-stone-200/90 rounded-3xl shadow-xl p-6 sm:p-10 space-y-7">
         {/* Header */}
         <div className="text-center space-y-2">
@@ -337,7 +340,9 @@ export const AdminLogin: React.FC = () => {
         )}
 
         {/* Security Notice Footer */}
-        <div className="pt-2 border-t border-stone-100 text-center">
+        <div className="pt-2 border-t border-stone-100 text-center space-y-3">
+          {/* Dedicated Firebase reCAPTCHA target container */}
+          <div id="recaptcha-container" className="flex justify-center" />
           <p className="text-[11px] text-stone-500 leading-relaxed">
             Only authorized ThatVetGuy Co-Founders can access the CMS. OTP verification is processed securely via Firebase Authentication.
           </p>

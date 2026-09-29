@@ -176,11 +176,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const sendPhoneOtp = useCallback(
     async (rawPhone: string, containerId = 'recaptcha-container') => {
       setAuthError(null);
-      setLoading(true);
+      // Note: Do not toggle the global `loading` state here, as AdminDashboard replaces
+      // AdminLogin with a loading spinner when `loading` is true, destroying the reCAPTCHA DOM node.
+      // AdminLogin tracks its own `isSendingOtp` local state.
 
       const normalized = normalizePhoneNumber(rawPhone);
       if (!normalized || normalized.length < 8) {
-        setLoading(false);
         const err = 'Please enter a valid phone number.';
         setAuthError(err);
         throw new Error(err);
@@ -189,27 +190,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // CRITICAL: Check whether the phone number belongs to an authorized Co-Founder BEFORE sending OTP
       const authCheck = await checkPhoneAuthorization(normalized);
       if (!authCheck.authorized || !authCheck.record) {
-        setLoading(false);
         const err = 'Your phone number is not authorized to access this CMS.';
         setAuthError(err);
         throw new Error(err);
       }
 
       try {
-        // Setup reCAPTCHA verifier
-        let verifier = (window as any).recaptchaVerifier;
-        if (!verifier) {
-          verifier = new RecaptchaVerifier(auth, containerId, {
-            size: 'invisible',
-            callback: () => {
-              // reCAPTCHA solved
-            },
-            'expired-callback': () => {
-              console.warn('reCAPTCHA expired, please try again.');
-            },
-          });
-          (window as any).recaptchaVerifier = verifier;
+        // Clean any existing verifier first to release prior widget instances
+        if ((window as any).recaptchaVerifier) {
+          try {
+            (window as any).recaptchaVerifier.clear();
+          } catch {
+            // ignore
+          }
+          (window as any).recaptchaVerifier = null;
         }
+
+        // Replace any existing container element with a fresh, clean DOM node.
+        // This prevents "reCAPTCHA has already been rendered in this element"
+        // and eliminates "argument-error" caused by corrupted widget bindings.
+        const existingEl = document.getElementById(containerId);
+        if (existingEl) {
+          existingEl.remove();
+        }
+
+        const containerEl = document.createElement('div');
+        containerEl.id = containerId;
+        document.body.appendChild(containerEl);
+
+        // Setup reCAPTCHA verifier passing the fresh DOM element
+        const verifier = new RecaptchaVerifier(auth, containerEl, {
+          size: 'invisible',
+          callback: () => {
+            // reCAPTCHA solved
+          },
+          'expired-callback': () => {
+            console.warn('[Auth] reCAPTCHA expired, please try again.');
+          },
+        });
+        (window as any).recaptchaVerifier = verifier;
 
         // Send OTP via Firebase Authentication
         const confirmation = await signInWithPhoneNumber(auth, normalized, verifier);
@@ -217,16 +236,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setPendingPhone(normalized);
         const masked = maskPhoneNumber(normalized);
         setMaskedPhone(masked);
-        setLoading(false);
         return { confirmationResult: confirmation, maskedPhone: masked };
       } catch (err: any) {
-        setLoading(false);
         console.error('[Auth] signInWithPhoneNumber error:', err);
 
-        // Reset verifier on error
+        // Reset verifier and clean container on error so next attempt gets a clean slate
         try {
           (window as any).recaptchaVerifier?.clear();
           (window as any).recaptchaVerifier = null;
+        } catch {
+          // ignore
+        }
+        try {
+          const el = document.getElementById(containerId);
+          if (el) el.remove();
         } catch {
           // ignore
         }
@@ -241,7 +264,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else if (err.code === 'auth/captcha-check-failed') {
           userFriendlyMsg = 'Security verification failed. Please refresh the page and try again.';
         } else if (err.code === 'auth/unauthorized-domain') {
-          userFriendlyMsg = 'This domain is not yet authorized in Firebase Console for Phone Authentication.';
+          userFriendlyMsg = 'This domain is not authorized for Phone Auth. Please add it under Authentication > Settings in Firebase Console.';
+        } else if (err.code === 'auth/argument-error') {
+          userFriendlyMsg = 'Security verification initialization error. Please retry in a moment.';
         } else if (err.message) {
           userFriendlyMsg = err.message;
         }
@@ -257,10 +282,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const verifyPhoneOtp = useCallback(
     async (otp: string) => {
       setAuthError(null);
-      setLoading(true);
+      // Note: AdminLogin tracks its own `isVerifyingOtp` state.
 
       if (!confirmationResult) {
-        setLoading(false);
         const err = 'No active OTP verification session. Please request a new OTP.';
         setAuthError(err);
         throw new Error(err);
@@ -268,7 +292,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const cleanOtp = otp.trim().replace(/\D/g, '');
       if (cleanOtp.length !== 6) {
-        setLoading(false);
         const err = 'Please enter a valid 6-digit OTP code.';
         setAuthError(err);
         throw new Error(err);
@@ -381,6 +404,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       (window as any).recaptchaVerifier?.clear();
       (window as any).recaptchaVerifier = null;
+    } catch {
+      // ignore
+    }
+    try {
+      const el = document.getElementById('recaptcha-container');
+      if (el) el.remove();
     } catch {
       // ignore
     }
