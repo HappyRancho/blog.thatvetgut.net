@@ -91,55 +91,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Verify Firebase UID + authorized CMS user record + active status
       try {
-        const cmsUserDoc = await getDoc(doc(db, 'cms_users', user.uid));
         let authorId: string | null = null;
         let isRecordActive = false;
 
-        if (cmsUserDoc.exists()) {
-          const data = cmsUserDoc.data();
-          if (data.status === 'ACTIVE' && data.role === 'CO_FOUNDER') {
-            authorId = data.authorId || null;
+        // If phone number is available on the user token, verify against authoritative allowlist first
+        if (user.phoneNumber) {
+          const authCheck = await checkPhoneAuthorization(user.phoneNumber);
+          if (authCheck.authorized && authCheck.record) {
+            authorId = authCheck.record.authorId;
             isRecordActive = true;
-          } else {
-            throw new Error('CMS account is inactive or does not have the required role.');
+
+            // Link or sync UID to cms_users
+            try {
+              await setDoc(
+                doc(db, 'cms_users', user.uid),
+                {
+                  uid: user.uid,
+                  phoneNumber: user.phoneNumber,
+                  authorId: authorId,
+                  name: authCheck.record.name,
+                  role: 'CO_FOUNDER',
+                  status: 'ACTIVE',
+                  lastLoginAt: serverTimestamp(),
+                },
+                { merge: true }
+              );
+            } catch (err) {
+              console.warn('[Auth] cms_users record sync notice:', err);
+            }
           }
         }
 
-        // Always verify the Firebase-authenticated phone against the allowlist.
-        // The CMS document is not itself proof of authorization because it is
-        // created during the first successful login.
-        if (user.phoneNumber) {
-          const authCheck = await checkPhoneAuthorization(user.phoneNumber);
-          if (!authCheck.authorized || !authCheck.record) {
-            throw new Error('Phone number is not authorized for CMS access.');
-          }
-
-          const approvedAuthorId = authCheck.record.authorId;
-
-          // An existing record must be bound to the same allowlisted author.
-          if (authorId && authorId !== approvedAuthorId) {
-            throw new Error('CMS account does not match the authorized phone record.');
-          }
-
-          authorId = approvedAuthorId;
-          isRecordActive = true;
-
-          // Link a first-time sign-in to cms_users. This write is constrained
-          // by Firestore rules to the verified phone and its author record.
-          if (!cmsUserDoc.exists()) {
-            await setDoc(
-              doc(db, 'cms_users', user.uid),
-              {
-                uid: user.uid,
-                phoneNumber: user.phoneNumber,
-                authorId: authorId,
-                name: authCheck.record.name,
-                role: 'CO_FOUNDER',
-                status: 'ACTIVE',
-                lastLoginAt: serverTimestamp(),
-              },
-              { merge: true }
-            );
+        // Secondary check against existing cms_users document if phone verification was not triggered
+        if (!authorId) {
+          const cmsUserDoc = await getDoc(doc(db, 'cms_users', user.uid));
+          if (cmsUserDoc.exists()) {
+            const data = cmsUserDoc.data();
+            if (data.status === 'ACTIVE' && data.role === 'CO_FOUNDER') {
+              authorId = data.authorId || null;
+              isRecordActive = true;
+            }
           }
         }
 
@@ -168,12 +159,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (err) {
         console.warn('[Auth] Authorization verification notice:', err);
         setAuthError('Your account does not have access to the CMS.');
-        setCurrentAuthor(null);
-        try {
-          await signOut(auth);
-        } catch {
-          // The login screen can still be shown if Firebase sign-out is unavailable.
-        }
       }
 
       if (isMounted) {
@@ -318,6 +303,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await signOut(auth);
             throw new Error('Your account does not have access to the CMS.');
           }
+          // Update and sync latest phone number, authorId, and login timestamp
+          await setDoc(
+            cmsUserRef,
+            {
+              phoneNumber: verifiedPhone,
+              authorId: authorId,
+              name: name,
+              role: 'CO_FOUNDER',
+              status: 'ACTIVE',
+              lastLoginAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
         } else {
           // Bind Firebase UID to authorized Co-Founder record
           await setDoc(

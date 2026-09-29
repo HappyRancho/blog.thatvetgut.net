@@ -4,41 +4,47 @@ import crypto from 'crypto';
 // Load Firebase configuration
 const config = JSON.parse(fs.readFileSync('firebase-applet-config.json', 'utf8'));
 
-// Authorized phone numbers for the 6 Co-Founders. Keep these in normalized
-// E.164 format because the Firestore rules use the phone number as the
-// allowlist document ID.
-const INITIAL_CO_FOUNDER_PHONES = [
+// The official 6 Co-Founders of ThatVetGuy with their authorized mobile numbers
+const CO_FOUNDER_PHONES = [
   {
-    phone: '+919826337391',
+    phone: process.env.CHIRAG_PHONE || '+919826337391',
     authorId: 'dr-chirag-patidar',
     name: 'Dr. Chirag Patidar',
   },
   {
-    phone: '+919893087892',
+    phone: process.env.AMAAN_PHONE || '+919893087892',
     authorId: 'dr-amaan-ahmed',
     name: 'Dr. Amaan Ahmed',
   },
   {
-    phone: '+918305969001',
+    phone: process.env.SHIVAM_PHONE || '+918305969001',
     authorId: 'dr-shivam-singh-thakur',
     name: 'Dr. Shivam Singh Thakur',
   },
   {
-    phone: '+918823058797',
+    phone: process.env.RITESH_PHONE || '+918823058797',
     authorId: 'dr-ritesh-verma',
     name: 'Dr. Ritesh Verma',
   },
   {
-    phone: '+918239487081',
+    phone: process.env.MATHUR_PHONE || '+918239487081',
     authorId: 'dr-deepesh-mathur',
     name: 'Dr. Deepesh Mathur',
   },
   {
-    phone: '+916263275093',
+    phone: process.env.CHAWARE_PHONE || '+916263275093',
     authorId: 'dr-deepesh-chaware',
     name: 'Dr. Deepesh Chaware',
   },
 ];
+
+function normalize(raw) {
+  let cleaned = raw.trim().replace(/[\s\-\(\)\.]/g, '');
+  if (!cleaned.startsWith('+')) {
+    cleaned = '+' + cleaned;
+  }
+  return cleaned;
+}
 
 function hashPhone(phone) {
   return crypto.createHash('sha256').update(phone).digest('hex');
@@ -51,21 +57,38 @@ function maskPhone(phone) {
 }
 
 async function seed() {
-  console.log('Seeding authorized phone numbers to Firestore...');
-  for (const item of INITIAL_CO_FOUNDER_PHONES) {
-    const phoneHash = hashPhone(item.phone);
-    const masked = maskPhone(item.phone);
+  console.log('Updating authorized phone numbers in Firestore...');
 
-    // Save under the canonical E.164 document ID required by Firestore rules,
-    // with legacy aliases retained for existing client lookups.
+  const token = process.env.GOOGLE_OAUTH_ACCESS_TOKEN;
+  if (token) {
+    console.log('Using GOOGLE_OAUTH_ACCESS_TOKEN for Firestore authentication.');
+  }
+
+  for (const item of CO_FOUNDER_PHONES) {
+    const normalizedPhone = normalize(item.phone);
+    const phoneHash = hashPhone(normalizedPhone);
+    const masked = maskPhone(normalizedPhone);
+
+    // Save with normalized phone as ID (URL-encoded), by clean key, and by SHA-256 hash
     const targets = [
-      item.phone,
+      encodeURIComponent(normalizedPhone),
       phoneHash,
-      `p_${item.phone.replace('+', '')}`,
+      `p_${normalizedPhone.replace('+', '')}`,
     ];
 
     for (const docId of targets) {
-      const url = `https://firestore.googleapis.com/v1/projects/${config.projectId}/databases/${config.firestoreDatabaseId}/documents/authorized_phones/${docId}?key=${config.apiKey}`;
+      let url = `https://firestore.googleapis.com/v1/projects/${config.projectId}/databases/${config.firestoreDatabaseId}/documents/authorized_phones/${docId}`;
+      if (!token && config.apiKey) {
+        url += `?key=${config.apiKey}`;
+      }
+
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const body = {
         fields: {
           authorId: { stringValue: item.authorId },
@@ -80,20 +103,20 @@ async function seed() {
       try {
         const res = await fetch(url, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify(body),
         });
         if (res.ok) {
-          console.log(`✓ Seeded ${item.name} (${docId})`);
+          console.log(`✓ Updated ${item.name} (${docId})`);
         } else {
           console.warn(`! Notice for ${docId}:`, res.status, await res.text());
         }
       } catch (err) {
-        console.error(`✗ Error seeding ${docId}:`, err);
+        console.error(`✗ Error updating ${docId}:`, err);
       }
     }
   }
-  console.log('Finished seeding authorized phone numbers.');
+  console.log('Finished updating authorized phone numbers.');
 }
 
 seed();
