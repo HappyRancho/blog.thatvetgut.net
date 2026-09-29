@@ -230,6 +230,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         (window as any).recaptchaVerifier = verifier;
 
+        // Ensure invisible reCAPTCHA widget is initialized
+        await verifier.render();
+
         // Send OTP via Firebase Authentication
         const confirmation = await signInWithPhoneNumber(auth, normalized, verifier);
         setConfirmationResult(confirmation);

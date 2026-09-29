@@ -71,8 +71,53 @@ export async function hashPhoneNumber(phone: string): Promise<string> {
 }
 
 /**
+ * Official ThatVetGuy Co-Founders with their registered phone numbers.
+ * Provides immediate verification and ensures staff are never locked out
+ * due to network latency, offline mode, or Firestore connection issues.
+ */
+export const OFFICIAL_CO_FOUNDERS: Record<string, AuthorizedPhoneRecord> = {
+  '+919826337391': {
+    authorId: 'dr-chirag-patidar',
+    name: 'Dr. Chirag Patidar',
+    role: 'CO_FOUNDER',
+    status: 'ACTIVE',
+  },
+  '+919893087892': {
+    authorId: 'dr-amaan-ahmed',
+    name: 'Dr. Amaan Ahmed',
+    role: 'CO_FOUNDER',
+    status: 'ACTIVE',
+  },
+  '+918305969001': {
+    authorId: 'dr-shivam-singh-thakur',
+    name: 'Dr. Shivam Singh Thakur',
+    role: 'CO_FOUNDER',
+    status: 'ACTIVE',
+  },
+  '+918823058797': {
+    authorId: 'dr-ritesh-verma',
+    name: 'Dr. Ritesh Verma',
+    role: 'CO_FOUNDER',
+    status: 'ACTIVE',
+  },
+  '+918239487081': {
+    authorId: 'dr-deepesh-mathur',
+    name: 'Dr. Deepesh Mathur',
+    role: 'CO_FOUNDER',
+    status: 'ACTIVE',
+  },
+  '+916263275093': {
+    authorId: 'dr-deepesh-chaware',
+    name: 'Dr. Deepesh Chaware',
+    role: 'CO_FOUNDER',
+    status: 'ACTIVE',
+  },
+};
+
+/**
  * Checks whether an entered phone number belongs to an authorized Co-Founder
- * by querying the protected Firestore authorization structure (`/authorized_phones`).
+ * by querying the built-in Co-Founder registry and the protected Firestore
+ * authorization collection (`/authorized_phones`).
  * Returns authorization status and author profile binding.
  */
 export async function checkPhoneAuthorization(
@@ -83,13 +128,41 @@ export async function checkPhoneAuthorization(
     return { authorized: false };
   }
 
+  // 1. Instant check against official ThatVetGuy Co-Founders registry
+  if (OFFICIAL_CO_FOUNDERS[normalized]) {
+    const record = OFFICIAL_CO_FOUNDERS[normalized];
+    return {
+      authorized: true,
+      record: {
+        ...record,
+        maskedPhone: maskPhoneNumber(normalized),
+      },
+    };
+  }
+
+  // Also match by 10-digit suffix in case of international carrier formatting variations
+  const digitsOnly = normalized.replace(/\D/g, '');
+  if (digitsOnly.length >= 10) {
+    const last10 = digitsOnly.slice(-10);
+    for (const [phone, record] of Object.entries(OFFICIAL_CO_FOUNDERS)) {
+      if (phone.endsWith(last10)) {
+        return {
+          authorized: true,
+          record: {
+            ...record,
+            maskedPhone: maskPhoneNumber(normalized),
+          },
+        };
+      }
+    }
+  }
+
+  // 2. Query Firestore /authorized_phones for dynamic/custom accounts
   try {
     const hash = await hashPhoneNumber(normalized);
     const cleanKey = `p_${normalized.replace('+', '')}`;
     const encoded = encodeURIComponent(normalized);
 
-    // New records use the normalized E.164 number as their document ID. Keep
-    // the legacy keys as a migration fallback for existing allowlist records.
     const candidateKeys = [normalized, cleanKey, hash, encoded].filter(Boolean);
 
     for (const key of candidateKeys) {
@@ -112,7 +185,7 @@ export async function checkPhoneAuthorization(
       }
     }
   } catch (err) {
-    console.warn('[PhoneAuthService] Verification error:', err);
+    console.warn('[PhoneAuthService] Firestore verification error:', err);
   }
 
   return { authorized: false };
