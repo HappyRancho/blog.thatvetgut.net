@@ -1,123 +1,46 @@
-# ThatVetGuy — Veterinary Medicine • Animal Health • Pet Education
+# ThatVetGuy · Veterinary Collaborative
 
-A collaborative veterinary publication created and operated collectively by a team of veterinary professionals.
+A complete replacement publication and editorial workspace designed for Firebase's no-cost Spark plan. React 18, TypeScript, Vite, Tailwind v4, Firebase Authentication/Firestore and DOMPurify.
 
-**Production Domain:** `blog.thatvetguy.net`  
-**Platform Target:** Cloudflare Pages / Static SPA + Firebase Ready  
-**Operating Principle:** Equal collaborative authority among all ThatVetGuy Co-Founders. Zero corporate hierarchy.
+## Run locally
 
----
+Use Node 22 or later:
 
-## 1. Brand & Team Identity
-
-ThatVetGuy is a collective veterinary publication, not a personal blog or corporate hierarchy.
-- **Brand:** ThatVetGuy
-- **Tagline:** Veterinary Medicine • Animal Health • Pet Education
-- **Design:** Deep emerald, dark charcoal, off-white, muted teal, and clean typography with Manrope and Inter.
-- **Core Team Title:** **ThatVetGuy Co-Founders**
-- **Equal Standing:** All core clinicians are Co-Founders with equal visual presentation, equal content authority, and equal peer review responsibility. No individual is labeled "Owner", "Sole Founder", "Administrator", or "Boss".
-
-### Initial Co-Founders:
-1. **Dr. Chirag Patidar** — BVSc & AH, MVSc (Veterinary Surgery & Radiology)
-2. **Dr. Amaan Ahmed** — BVSc & AH, MVSc (Small Animal Internal Medicine)
-3. **Dr. Shivam** — BVSc & AH (Clinical Nutrition & Companion Animal Health)
-4. **Dr. Ritesh Verma** — BVSc & AH (Emergency & Critical Care, Anesthesiology)
-5. **Dr. Deepesh Mathur** — BVSc & AH, MVSc (Veterinary Microbiology & One Health)
-
----
-
-## 2. Public Pages & Clean URLs
-
-| Route | Page | Purpose |
-| :--- | :--- | :--- |
-| `/` | Homepage | Featured clinical article, latest insights, specialties, Co-Founders showcase, newsletter |
-| `/articles` | All Articles Archive | Search, category filters, tag filter, sorting, reading time, saved articles |
-| `/article/:slug` | Article Detail | Scientific breakdown, clinical takeaways, data tables, references, author bio, social sharing |
-| `/categories` | Categories Overview | 8 clinical veterinary disciplines with descriptions and article counts |
-| `/category/:slug` | Category Page | Curated articles within a specific veterinary discipline |
-| `/contributors` | Meet the Team | All ThatVetGuy Co-Founders with equal visual weight, qualifications, and bios |
-| `/author/:slug` | Author Profile | Detailed background, clinical expertise, qualifications, and published articles |
-| `/search` | Search Library | Real-time multi-field search across titles, excerpts, content, authors, and tags |
-| `/about` | About ThatVetGuy | Founding philosophy, equal co-authorship model, and peer-review methodology |
-| `/contact` | Contact & Inquiries | Inquiries, clinical case study submissions, and veterinary contributor interest |
-
----
-
-## 3. Mobile-First Optimization for Android
-
-The application is engineered from the ground up to be comfortable on Android devices across viewports (360px, 390px, 412px, 430px):
-- Touch targets strictly maintain minimum 44px height and width.
-- Slide-out mobile navigation drawer with quick access to disciplines and search.
-- Sticky bottom reading action bar for single-handed reading, bookmarking, sharing, and navigation on smartphones.
-- High contrast, eye-friendly typography using responsive scaling and optional font-size enlargement for reading comfort.
-
----
-
-## 4. Local Development
-
-### Prerequisites:
-- Node.js 18+ or 20+
-- npm or bun
-
-### Setup:
-```bash
-# Install dependencies
+```sh
 npm install
-
-# Start local development server
 npm run dev
-
-# Run linter and type-checking
-npm run lint
-
-# Production build test
+npm test
 npm run build
 ```
 
----
+Without Firebase configuration the application is an explicitly labelled, non-indexable design preview. It displays eight original launch manuscripts, **not clinically reviewed publications**. No submissions or logins are simulated. Copy `.env.example` to `.env.local` to connect a project.
 
-## 5. Deployment Guide (Cloudflare Pages & Custom Domain)
+## What is included
 
-### GitHub Repository:
-1. Push this repository to GitHub:
-   ```bash
-   git init
-   git add .
-   git commit -m "feat: ThatVetGuy collaborative veterinary publication"
-   git remote add origin https://github.com/your-username/thatvetguy.git
-   git push -u origin main
-   ```
+- Responsive emerald/cream editorial design, eight specialty collections, fuzzy search, reader-size controls, device bookmarks, sharing and source lists.
+- Six founding veterinary profiles, editorial standards, corrections/contact and privacy pages.
+- Google sign-in with manually provisioned, active co-founder records. No phone numbers embedded in the application, client role grants, SMS billing or paid Cloud Functions.
+- Draft → submission → independent review → approval → publication workflow. Content edits increment a revision and invalidate approval. Publishing and withdrawal are atomic Firestore transactions. Concurrent edits are rejected instead of silently overwriting.
+- Rich text with clinical callouts and tables, metadata and source editors, profiles, manuscript exports, inbox and durable newsletter-interest records.
+- Best-effort public LinkedIn URL extraction, optional explicitly consented external reader, duplicate-source checks and a text/HTML paste fallback. All imported HTML is sanitized. Clinical review is mandatory.
+- Firestore security rules and emulator regression tests; Firebase Hosting configuration; CI checks and a manual deployment workflow.
 
-### Deploying to Cloudflare Pages:
-1. Log in to your [Cloudflare Dashboard](https://dash.cloudflare.com/).
-2. Navigate to **Workers & Pages** &rarr; **Create application** &rarr; **Pages** &rarr; **Connect to Git**.
-3. Select your `thatvetguy` repository.
-4. Set Build Settings:
-   - **Framework preset:** `Vite`
-   - **Build command:** `npm run build`
-   - **Build output directory:** `dist`
-5. Click **Save and Deploy**.
+## Deployment and editorial setup
 
-### Configuring Custom Domain (`blog.thatvetguy.net`):
-1. In Cloudflare Pages, go to **Custom Domains**.
-2. Click **Set up a custom domain**.
-3. Enter `blog.thatvetguy.net`.
-4. Cloudflare automatically generates SSL/TLS certificates and configures DNS routing.
+The existing Cloudflare Workers hosting integration is supported by `wrangler.jsonc`. See [Cloudflare hosting](docs/CLOUDFLARE.md) for build/deploy settings. Firebase Hosting remains an alternative; Cloudflare can host the public site while Firebase handles authentication and the database.
 
----
+Read [Firebase Spark setup](docs/FIREBASE-SPARK.md), [Launch checklist](docs/LAUNCH.md) and [Editorial guide](docs/EDITORIAL.md). The deployment workflow is manual and requires your own Firebase/Google Cloud authorization; this repository does not contain credentials.
 
-## 6. Architecture & Future Firebase Roadmap
+## Important boundaries
 
-The current public application runs as an ultra-fast, zero-latency client-side application with structured data, clean URL synchronization, and local storage bookmarks.
+- Eight manuscripts are **drafts requiring verification, source checking and acceptance by the named contributors**. They are never silently seeded as live articles. Photos of unrelated people are not used as founder portraits.
+- Images use public HTTPS or `/images/...` assets committed to GitHub. There is no Firebase Storage upload feature because it would conflict with the no-billing requirement.
+- Newsletter interest and contact submissions reach the editorial inbox. This does not include an email newsletter delivery service or promise automatic replies.
+- LinkedIn may refuse automated retrieval. The paste fallback retains the normalized source URL and the same draft/review workflow.
+- Search covers loaded articles (48 per page), with an explicit load-more control. Popularity tracking is intentionally absent: writing a view counter per visit would add free-tier costs and unreliable rankings.
+- Metadata is updated client-side. Social crawlers that do not execute JavaScript may see the homepage metadata. SSR/prerendering for live content is not claimed; static article snapshots were avoided so withdrawals cannot be undermined by stale published content.
+- Free-tier quotas and provider terms apply. This implementation does not enable billing or automatically upgrade a project.
 
-When ready to enable the collaborative CMS authoring system:
-1. **Firebase Authentication:** Google Sign-In with an invite-approval list.
-2. **Firestore Database:** Collections for `articles`, `authors`, `categories`, `tags`, `revisions`, and `reviews`.
-3. **Security Rules:** Enforcing equal Co-Founder publishing authority so no single user has administrative dominance.
-4. **Firebase Storage:** WebP optimized storage for clinical photographs, radiographs, and author headshots.
+## Security architecture
 
----
-
-## 7. Veterinary Disclaimer
-
-Information published by ThatVetGuy is intended strictly for educational purposes and should not replace professional veterinary consultation, physical examination, or in-person emergency hospital care.
+`cms_users/{uid}` is provisioned by a Firebase project administrator, never by the browser. `manuscripts` contains private drafts; `publications` contains only reviewed public snapshots. The rules bind published snapshots to the exact reviewed revision and require an independent reviewer. Revoking the CMS member stops protected reads and writes. Legacy `articles`, `authorized_phones`, and Storage access are denied by the new rules; export and migrate existing data before replacing production rules.

@@ -1,90 +1,90 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import React from 'react';
-import { NavigationProvider, useNavigation } from './context/NavigationContext';
-import { BookmarksProvider } from './context/BookmarksContext';
-import { AuthProvider } from './context/AuthContext';
-import { Header } from './components/common/Header';
-import { Footer } from './components/common/Footer';
-import { HomePage } from './pages/HomePage';
-import { ArticlesPage } from './pages/ArticlesPage';
-import { ArticleDetailPage } from './pages/ArticleDetailPage';
-import { CategoriesPage } from './pages/CategoriesPage';
-import { CategoryDetailPage } from './pages/CategoryDetailPage';
-import { ContributorsPage } from './pages/ContributorsPage';
-import { AuthorDetailPage } from './pages/AuthorDetailPage';
-import { SearchPage } from './pages/SearchPage';
-import { AboutPage } from './pages/AboutPage';
-import { ContactPage } from './pages/ContactPage';
-import { AdminDashboard } from './components/admin/AdminDashboard';
-
-const AppContent: React.FC = () => {
-  const { route } = useNavigation();
-
-  // If on admin route, render the full-screen mobile-optimized Admin CMS
-  if (route.name === 'admin') {
-    return <AdminDashboard />;
+import { lazy, Suspense, Component, type ReactNode } from "react";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { AuthProvider, CatalogProvider } from "./lib/contexts";
+import { Layout, Loading, SEO } from "./components/Layout";
+import Home from "./pages/Home";
+const Archive = lazy(() => import("./pages/Archive"));
+const Article = lazy(() => import("./pages/Article"));
+const Admin = lazy(() => import("./pages/Admin"));
+const Categories = lazy(() =>
+  import("./pages/Information").then((m) => ({ default: m.Categories })),
+);
+const Contributors = lazy(() =>
+  import("./pages/Information").then((m) => ({ default: m.Contributors })),
+);
+const Author = lazy(() =>
+  import("./pages/Information").then((m) => ({ default: m.AuthorPage })),
+);
+const About = lazy(() =>
+  import("./pages/Information").then((m) => ({ default: m.About })),
+);
+const Contact = lazy(() =>
+  import("./pages/Information").then((m) => ({ default: m.Contact })),
+);
+const Privacy = lazy(() =>
+  import("./pages/Information").then((m) => ({ default: m.Privacy })),
+);
+class ErrorBoundary extends Component<
+  { children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
   }
-
-  const renderPage = () => {
-    switch (route.name) {
-      case 'home':
-        return <HomePage />;
-      case 'articles':
-        // Query-string filters are part of the page state. A key ensures a direct
-        // navigation between filtered archive URLs does not retain stale filters.
-        return (
-          <ArticlesPage
-            key={`${route.category || ''}:${route.tag || ''}`}
-            initialCategory={route.category}
-            initialTag={route.tag}
-          />
-        );
-      case 'article':
-        // Detail pages initialize local data from the slug, so remount when it changes.
-        return <ArticleDetailPage key={route.slug} slug={route.slug} />;
-      case 'categories':
-        return <CategoriesPage />;
-      case 'category':
-        return <CategoryDetailPage slug={route.slug} />;
-      case 'contributors':
-        return <ContributorsPage />;
-      case 'author':
-        return <AuthorDetailPage key={route.slug} slug={route.slug} />;
-      case 'search':
-        // Preserve URL-driven searches when navigating between /search?q=... URLs.
-        return <SearchPage key={route.initialQuery} initialQuery={route.initialQuery} />;
-      case 'about':
-        return <AboutPage />;
-      case 'contact':
-        return <ContactPage />;
-      default:
-        return <HomePage />;
-    }
-  };
-
-  return (
-    <div className="min-h-screen flex flex-col bg-[#FAF9F6] text-[#1C1917]">
-      <Header />
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-        {renderPage()}
-      </main>
-      <Footer />
-    </div>
-  );
-};
-
+  render() {
+    return this.state.failed ? (
+      <div className="container section">
+        <h1>Something interrupted this page.</h1>
+        <p>Please reload. Unsaved edits may need to be entered again.</p>
+        <button onClick={() => location.reload()}>Reload</button>
+      </div>
+    ) : (
+      this.props.children
+    );
+  }
+}
 export default function App() {
   return (
-    <NavigationProvider>
-      <AuthProvider>
-        <BookmarksProvider>
-          <AppContent />
-        </BookmarksProvider>
-      </AuthProvider>
-    </NavigationProvider>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <CatalogProvider>
+            <Layout>
+              <Suspense fallback={<Loading />}>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/articles" element={<Archive />} />
+                  <Route path="/search" element={<Archive />} />
+                  <Route path="/category/:slug" element={<Archive />} />
+                  <Route path="/article/:slug" element={<Article />} />
+                  <Route path="/categories" element={<Categories />} />
+                  <Route path="/contributors" element={<Contributors />} />
+                  <Route path="/author/:slug" element={<Author />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/admin" element={<Admin />} />
+                  <Route
+                    path="*"
+                    element={
+                      <div className="container section">
+                        <SEO
+                          title="Page not found"
+                          description="The requested page does not exist."
+                          noindex
+                        />
+                        <h1>This page is not in the journal.</h1>
+                        <Link to="/">Return to the homepage</Link>
+                      </div>
+                    }
+                  />
+                </Routes>
+              </Suspense>
+            </Layout>
+          </CatalogProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }

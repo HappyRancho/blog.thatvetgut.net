@@ -1,0 +1,187 @@
+import { useMemo } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
+import Fuse from "fuse.js";
+import { Search } from "lucide-react";
+import { categories, categoryName } from "../data/editorial";
+import { useCatalog } from "../lib/contexts";
+import { ArticleCard } from "../components/ArticleCard";
+import { Empty, SEO, Loading } from "../components/Layout";
+export default function Archive() {
+  const { slug } = useParams();
+  const [params, setParams] = useSearchParams();
+  const { items, authors, loading, error, more, loadMore, reload } =
+    useCatalog();
+  const q = params.get("q") || "";
+  const category = slug || params.get("category") || "";
+  const tag = params.get("tag") || "";
+  const audience = params.get("audience") || "";
+  const sort = params.get("sort") || "newest";
+  const bookmarked = params.get("saved") === "1";
+  let saved: string[] = [];
+  try {
+    const value = JSON.parse(localStorage.getItem("tvg-bookmarks") || "[]");
+    if (Array.isArray(value)) saved = value;
+  } catch {
+    /* Device preference only. */
+  }
+  const results = useMemo(() => {
+    let list = items.filter(
+      (p) =>
+        (!category || p.article.category === category) &&
+        (!tag || p.article.tags.includes(tag)) &&
+        (!audience || p.article.audience === audience),
+    );
+    if (q) {
+      const indexed = list.map((p) => ({
+        ...p,
+        text: p.article.content.replace(/<[^>]*>/g, " "),
+        author: authors.find((a) => a.id === p.article.authorId)?.name,
+      }));
+      list = new Fuse(indexed, {
+        keys: [
+          { name: "article.title", weight: 3 },
+          "article.subtitle",
+          "article.tags",
+          "text",
+          "author",
+        ],
+        threshold: 0.35,
+        ignoreLocation: true,
+      })
+        .search(q)
+        .map((r) => r.item);
+    }
+    if (sort === "title")
+      list = [...list].sort((a, b) =>
+        a.article.title.localeCompare(b.article.title),
+      );
+    return list;
+  }, [items, category, tag, audience, q, sort, authors]);
+  const filtered = bookmarked
+    ? results.filter((p) => saved.includes(p.article.id))
+    : results;
+  const set = (key: string, value: string) => {
+    const next = new URLSearchParams(params);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    setParams(next, { replace: true });
+  };
+  const title = category ? categoryName(category) : "The reading room";
+  return (
+    <div className="container section">
+      <SEO
+        title={title}
+        description="Explore the ThatVetGuy veterinary journal by specialty, topic and audience."
+      />
+      <span className="eyebrow">
+        The journal / {category ? "Specialty collection" : "All articles"}
+      </span>
+      <h1>
+        {title}
+        <span className="brand-dot">.</span>
+      </h1>
+      <p className="intro-text">
+        Find the context behind the question. Read at your own pace.
+      </p>
+      <div className="filter-bar">
+        <label className="search-field">
+          <Search size={19} />
+          <span className="sr-only">Search articles</span>
+          <input
+            value={q}
+            onChange={(e) => set("q", e.target.value)}
+            placeholder="Search symptoms, topics, authors…"
+          />
+        </label>
+        {!slug && (
+          <label>
+            Specialty
+            <select
+              value={category}
+              onChange={(e) => set("category", e.target.value)}
+            >
+              <option value="">All specialties</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        <label>
+          Audience
+          <select
+            value={audience}
+            onChange={(e) => set("audience", e.target.value)}
+          >
+            <option value="">Everyone</option>
+            <option>Pet parents</option>
+            <option>Veterinary professionals</option>
+          </select>
+        </label>
+        <label>
+          Order
+          <select value={sort} onChange={(e) => set("sort", e.target.value)}>
+            <option value="newest">Newest first</option>
+            <option value="title">Title A–Z</option>
+          </select>
+        </label>
+      </div>
+      <div className="results-bar">
+        <span>
+          {filtered.length} {filtered.length === 1 ? "article" : "articles"}
+          {more ? " in loaded results" : ""}
+        </span>
+        <label className="check-label">
+          <input
+            type="checkbox"
+            checked={bookmarked}
+            onChange={(e) => set("saved", e.target.checked ? "1" : "")}
+          />
+          Saved on this device
+        </label>
+        {tag && (
+          <button className="link-button" onClick={() => set("tag", "")}>
+            Clear tag: {tag}
+          </button>
+        )}
+      </div>
+      {error && (
+        <div className="error" role="alert">
+          {error}
+          <button onClick={() => void reload()}>Try again</button>
+        </div>
+      )}
+      {loading && !items.length ? (
+        <Loading />
+      ) : filtered.length ? (
+        <div className="article-grid">
+          {filtered.map((p) => (
+            <ArticleCard key={p.article.id} item={p} />
+          ))}
+        </div>
+      ) : (
+        <Empty
+          title="No matching articles yet."
+          text="Try a broader search, clear a filter, or return as the journal grows."
+        />
+      )}
+      {more && (
+        <div className="center">
+          <button disabled={loading} onClick={() => void loadMore()}>
+            {loading ? "Loading…" : "Load more articles"}
+          </button>
+          <p>
+            Search applies to loaded articles. Load more to include older
+            publications.
+          </p>
+        </div>
+      )}
+      <p className="muted">
+        Looking for a different field?{" "}
+        <Link to="/categories">Explore all eight specialties.</Link>
+      </p>
+    </div>
+  );
+}

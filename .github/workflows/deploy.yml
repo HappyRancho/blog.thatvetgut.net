@@ -1,0 +1,47 @@
+name: Deploy Firebase Spark
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  deploy:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check free-tier configuration
+        env:
+          PROJECT: ${{ vars.FIREBASE_PROJECT_ID }}
+          PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          ACCOUNT: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+        run: test -n "$PROJECT" && test -n "$PROVIDER" && test -n "$ACCOUNT"
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+      - run: npm ci --no-fund --no-audit
+      - run: npm test
+      - name: Validate web configuration and build
+        run: |
+          test -n "$VITE_FIREBASE_API_KEY"
+          test -n "$VITE_FIREBASE_AUTH_DOMAIN"
+          test -n "$VITE_FIREBASE_APP_ID"
+          test -n "$VITE_SITE_URL"
+          npm run build
+        env:
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+          VITE_FIREBASE_DATABASE_ID: ${{ vars.VITE_FIREBASE_DATABASE_ID || '(default)' }}
+          VITE_SITE_URL: ${{ vars.VITE_SITE_URL }}
+          VITE_APPCHECK_SITE_KEY: ${{ vars.VITE_APPCHECK_SITE_KEY }}
+      - run: node scripts/deploy.mjs
+        env:
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_DATABASE_ID: ${{ vars.VITE_FIREBASE_DATABASE_ID || '(default)' }}
