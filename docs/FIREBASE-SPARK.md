@@ -4,7 +4,9 @@
 
 The original repository references `adroit-bus-1ghtt`, an AI Studio Starter-tier project with a named Firestore database. Starter tier is not the same as a regular Firebase Spark project. Do not click a paid upgrade merely to launch this rebuild.
 
-Create a separate project at https://console.firebase.google.com/ without linking a Cloud Billing account. Confirm the project is on the no-cost **Spark** plan. Disable optional Google Analytics if it is not needed. If the console only offers a billing-required action, stop that action; this code does not need it.
+First check whether the existing Starter project permits Google sign-in and the database/Hosting features needed here without upgrading. If it does, keep the current no-cost plan and configure VITE_FIREBASE_DATABASE_ID with the actual database ID. The default deploy configuration targets (default); a named database requires a matching database entry in firebase.json. Back up existing data and review legacy-rule impact before deployment.
+
+If a required feature is unavailable without billing, create a separate project at https://console.firebase.google.com/ without linking a Cloud Billing account. Confirm the project is on the no-cost **Spark** plan. Disable optional Google Analytics if it is not needed. If the console only offers a billing-required action, stop that action; this code does not need it.
 
 The new project isolates the rebuild from the existing application's data and rules. No Firebase project has been created or modified by this repository.
 
