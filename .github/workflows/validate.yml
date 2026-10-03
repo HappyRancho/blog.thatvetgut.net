@@ -16,6 +16,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - run: npm install --package-lock-only --ignore-scripts --no-fund --no-audit
       - run: npm ci --no-fund --no-audit
       - run: npm run format
       - run: npm test

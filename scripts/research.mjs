@@ -1,7 +1,7 @@
 import { chromium } from 'playwright';
 import { mkdir, writeFile } from 'node:fs/promises';
 const dir='research'; await mkdir(dir,{recursive:true});
-const sites=[['public','https://www.thatvetguy.net/'],['cms','https://blog.thatvetguy.net/admin'],['petmd','https://www.petmd.com/'],['vca','https://vcahospitals.com/know-your-pet'],['akc','https://www.akc.org/expert-advice/'],['spruce','https://www.thesprucepets.com/'],['preventive','https://www.preventivevet.com/'],['dailypaws','https://www.dailypaws.com/'],['happypet','https://www.happypet.care/blog'],['dogsee','https://www.dogseechew.in/blog'],['wip','https://www.worksinprogress.co/'],['ghost','https://ghost.org/help/using-the-editor/'],['tiptap','https://tiptap.dev/docs/editor/getting-started/overview']];
+const sites=[['public','https://www.thatvetguy.net/'],['cms','https://blog.thatvetguy.net/admin'],['public-about','https://www.thatvetguy.net/about'],['public-team','https://www.thatvetguy.net/team'],['petmd','https://www.petmd.com/'],['vca','https://vcahospitals.com/know-your-pet'],['akc','https://www.akc.org/expert-advice/'],['spruce','https://www.thesprucepets.com/'],['preventive','https://www.preventivevet.com/'],['dailypaws','https://www.dailypaws.com/'],['happypet','https://www.happypet.care/blog'],['dogsee','https://www.dogseechew.in/blog'],['wip','https://www.worksinprogress.co/'],['ghost','https://ghost.org/help/using-the-editor/'],['tiptap','https://tiptap.dev/docs/editor/getting-started/overview']];
 const browser=await chromium.launch({headless:true});
 const summary=[];
 for(const [id,url] of sites){
@@ -10,7 +10,7 @@ for(const [id,url] of sites){
  const data=await page.evaluate(()=>({url:location.href,title:document.title,canonical:document.querySelector('link[rel=canonical]')?.href,headings:[...document.querySelectorAll('h1,h2,h3')].slice(0,60).map(n=>n.textContent.trim()),text:document.body.innerText.slice(0,25000),links:[...document.querySelectorAll('a[href]')].map(a=>({text:a.innerText.trim().slice(0,100),url:a.href})).filter(a=>a.text).slice(0,180),font:getComputedStyle(document.querySelector('h1')||document.body).fontFamily}));
  data.status=response?.status();await writeFile(`${dir}/${id}.json`,JSON.stringify(data,null,2));await page.screenshot({path:`${dir}/${id}.png`,fullPage:false});summary.push({id,url:data.url,status:data.status,title:data.title});
  // Inspect a real article when accessible, rather than relying on homepages alone.
- if(!['public','cms','ghost','tiptap'].includes(id)){const link=data.links.find(a=>a.url.startsWith(new URL(data.url).origin)&&a.text.length>30&&!/privacy|cookie|terms|contact|newsletter/i.test(a.text)&&a.url!==data.url);if(link){await page.goto(link.url,{waitUntil:'domcontentloaded',timeout:15000});await writeFile(`${dir}/${id}-article.txt`,`${page.url()}\n${await page.locator('body').innerText()}`);await page.screenshot({path:`${dir}/${id}-article.png`});}}
+ if(!['cms','ghost','tiptap'].includes(id)){const link=data.links.find(a=>a.url.startsWith(new URL(data.url).origin)&&a.text.length>30&&!/privacy|cookie|terms|contact|newsletter/i.test(a.text)&&a.url!==data.url);if(link){await page.goto(link.url,{waitUntil:'domcontentloaded',timeout:15000});await writeFile(`${dir}/${id}-article.txt`,`${page.url()}\n${await page.locator('body').innerText()}`);await page.screenshot({path:`${dir}/${id}-article.png`});}}
  }catch(e){summary.push({id,url,error:e.message});}finally{await page.close();}
 }
 await browser.close();
