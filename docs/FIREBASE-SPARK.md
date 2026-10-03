@@ -4,7 +4,7 @@
 
 The original repository references `adroit-bus-1ghtt`, an AI Studio Starter-tier project with a named Firestore database. Starter tier is not the same as a regular Firebase Spark project. Do not click a paid upgrade merely to launch this rebuild.
 
-First check whether the existing Starter project permits Google sign-in and the database/Hosting features needed here without upgrading. If it does, keep the current no-cost plan and configure VITE_FIREBASE_DATABASE_ID with the actual database ID. The default deploy configuration targets (default); a named database requires a matching database entry in firebase.json. Back up existing data and review legacy-rule impact before deployment.
+First check whether the existing Starter project permits Google sign-in and the database/Hosting features needed here without upgrading. If it does, keep the current no-cost plan and configure VITE_FIREBASE_DATABASE_ID with the actual database ID. The deploy script uses VITE_FIREBASE_DATABASE_ID for the rules target as well as the web app, including a named Starter database. Back up existing data and review legacy-rule impact before deployment.
 
 If a required feature is unavailable without billing, create a separate project at https://console.firebase.google.com/ without linking a Cloud Billing account. Confirm the project is on the no-cost **Spark** plan. Disable optional Google Analytics if it is not needed. If the console only offers a billing-required action, stop that action; this code does not need it.
 
@@ -63,10 +63,10 @@ npm install
 npx firebase login
 npm test
 npm run build
-npx firebase deploy --project YOUR_PROJECT_ID --only hosting,firestore:rules,firestore:indexes
+npm run deploy
 ```
 
-The login happens in your browser. No password or token needs to be shared in chat. The command deploys no Cloud Functions or Storage service. Ensure `.env.local` points to the same project named in the deploy command.
+The login happens in your browser. No password or token needs to be shared in chat. The command deploys no Cloud Functions or Storage service. The deploy script reads the project and database from `.env.local`, matching the web build.
 
 If you only have a phone, use GitHub Actions after configuring keyless Google Cloud access below, or perform the same browser login in your own development environment. Do not paste service-account keys into chat.
 
@@ -83,6 +83,7 @@ Configure a GitHub `production` environment with a required reviewer and the fol
 - `GCP_DEPLOY_SERVICE_ACCOUNT` (service-account email)
 - `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_APP_ID`
 - `VITE_SITE_URL`
+- `VITE_FIREBASE_DATABASE_ID` when using a named database; omit for `(default)`
 - Optional `VITE_APPCHECK_SITE_KEY`
 
 Run the manual workflow from the reviewed branch. No automatic production deployment is triggered by a PR. The account owner must configure IAM; the GitHub connector does not provide Firebase administration access.

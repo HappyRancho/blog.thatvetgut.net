@@ -7,3 +7,4 @@ dist/
 .firebase/
 playwright-report/
 test-results/
+.firebase.deploy.json

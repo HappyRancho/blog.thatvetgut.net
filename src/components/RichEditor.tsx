@@ -1,4 +1,123 @@
-import { useEffect, useRef } from 'react';
-import { sanitize } from '../lib/sanitize';
-import { safeUrl } from '../lib/domain';
-export function RichEditor({value,onChange}:{value:string;onChange:(v:string)=>void}) {const ref=useRef<HTMLDivElement>(null);useEffect(()=>{if(ref.current&&sanitize(ref.current.innerHTML)!==value)ref.current.innerHTML=sanitize(value);},[value]);const exec=(command:string,arg?:string)=>{ref.current?.focus();document.execCommand(command,false,arg);if(ref.current)onChange(sanitize(ref.current.innerHTML));};const insert=(html:string)=>exec('insertHTML',sanitize(html));return <div className="rich-editor"><div className="editor-toolbar" role="toolbar" aria-label="Article formatting">{[['H2','formatBlock','h2'],['H3','formatBlock','h3'],['Bold','bold',''],['Italic','italic',''],['Bullets','insertUnorderedList',''],['Numbered','insertOrderedList',''],['Quote','formatBlock','blockquote']].map(([label,cmd,arg])=><button key={label} type="button" onMouseDown={e=>e.preventDefault()} onClick={()=>exec(cmd,arg)}>{label}</button>)}<button type="button" onMouseDown={e=>e.preventDefault()} onClick={()=>{const url=window.prompt('Link URL (https://…)');if(url&&safeUrl(url))exec('createLink',safeUrl(url));}}>Link</button>{[['Alert','clinical-alert'],['Clinical pearl','pro-tip'],['Dosage warning','dosage-warning'],['Takeaways','key-takeaways']].map(([label,cls])=><button type="button" key={cls} onMouseDown={e=>e.preventDefault()} onClick={()=>insert(`<aside class="${cls}"><p><strong>${label}</strong></p><p>Add clinically verified guidance here.</p></aside><p><br></p>`)}>{label}</button>)}<button type="button" onMouseDown={e=>e.preventDefault()} onClick={()=>{const rows=Math.min(12,Math.max(1,Number(window.prompt('Number of body rows','3'))||3));const cols=Math.min(6,Math.max(2,Number(window.prompt('Number of columns','3'))||3));insert(`<table><thead><tr>${'<th scope="col">Heading</th>'.repeat(cols)}</tr></thead><tbody>${(`<tr>${'<td>Value</td>'.repeat(cols)}</tr>`).repeat(rows)}</tbody></table><p><br></p>`);}}>Table</button></div><div ref={ref} className="prose editor-body" contentEditable role="textbox" aria-label="Article body" aria-multiline="true" suppressContentEditableWarning onInput={()=>{if(ref.current)onChange(sanitize(ref.current.innerHTML));}} onPaste={e=>{e.preventDefault();const html=e.clipboardData.getData('text/html');if(html)insert(html);else{const span=document.createElement('div');span.textContent=e.clipboardData.getData('text/plain');insert(span.innerHTML.replace(/\n/g,'<br>'));}}}/></div>}
+import { useEffect, useRef } from "react";
+import { sanitize } from "../lib/sanitize";
+import { safeUrl } from "../lib/domain";
+export function RichEditor({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (ref.current && sanitize(ref.current.innerHTML) !== value)
+      ref.current.innerHTML = sanitize(value);
+  }, [value]);
+  const exec = (command: string, arg?: string) => {
+    ref.current?.focus();
+    document.execCommand(command, false, arg);
+    if (ref.current) onChange(sanitize(ref.current.innerHTML));
+  };
+  const insert = (html: string) => exec("insertHTML", sanitize(html));
+  return (
+    <div className="rich-editor">
+      <div
+        className="editor-toolbar"
+        role="toolbar"
+        aria-label="Article formatting"
+      >
+        {[
+          ["H2", "formatBlock", "h2"],
+          ["H3", "formatBlock", "h3"],
+          ["Bold", "bold", ""],
+          ["Italic", "italic", ""],
+          ["Bullets", "insertUnorderedList", ""],
+          ["Numbered", "insertOrderedList", ""],
+          ["Quote", "formatBlock", "blockquote"],
+        ].map(([label, cmd, arg]) => (
+          <button
+            key={label}
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => exec(cmd, arg)}
+          >
+            {label}
+          </button>
+        ))}
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => {
+            const url = window.prompt("Link URL (https://…)");
+            if (url && safeUrl(url)) exec("createLink", safeUrl(url));
+          }}
+        >
+          Link
+        </button>
+        {[
+          ["Alert", "clinical-alert"],
+          ["Clinical pearl", "pro-tip"],
+          ["Dosage warning", "dosage-warning"],
+          ["Takeaways", "key-takeaways"],
+        ].map(([label, cls]) => (
+          <button
+            type="button"
+            key={cls}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() =>
+              insert(
+                `<aside class="${cls}"><p><strong>${label}</strong></p><p>Add clinically verified guidance here.</p></aside><p><br></p>`,
+              )
+            }
+          >
+            {label}
+          </button>
+        ))}
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => {
+            const rows = Math.min(
+              12,
+              Math.max(
+                1,
+                Number(window.prompt("Number of body rows", "3")) || 3,
+              ),
+            );
+            const cols = Math.min(
+              6,
+              Math.max(2, Number(window.prompt("Number of columns", "3")) || 3),
+            );
+            insert(
+              `<table><thead><tr>${'<th scope="col">Heading</th>'.repeat(cols)}</tr></thead><tbody>${`<tr>${"<td>Value</td>".repeat(cols)}</tr>`.repeat(rows)}</tbody></table><p><br></p>`,
+            );
+          }}
+        >
+          Table
+        </button>
+      </div>
+      <div
+        ref={ref}
+        className="prose editor-body"
+        contentEditable
+        role="textbox"
+        aria-label="Article body"
+        aria-multiline="true"
+        suppressContentEditableWarning
+        onInput={() => {
+          if (ref.current) onChange(sanitize(ref.current.innerHTML));
+        }}
+        onPaste={(e) => {
+          e.preventDefault();
+          const html = e.clipboardData.getData("text/html");
+          if (html) insert(html);
+          else {
+            const span = document.createElement("div");
+            span.textContent = e.clipboardData.getData("text/plain");
+            insert(span.innerHTML.replace(/\n/g, "<br>"));
+          }
+        }}
+      />
+    </div>
+  );
+}
