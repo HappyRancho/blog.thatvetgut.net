@@ -21,37 +21,38 @@ service cloud.firestore {
         a.sourceUrl is string && a.sourceUrl.size() <= 2000 && a.audience in ['Pet parents','Veterinary professionals'];
     }
     function validManuscript(d,id) {
-      return d.keys().hasAll(['article','authorUid','status','revision','reviewerUid','reviewedAt','updatedAt','reviewNote']) &&
-        d.keys().hasOnly(['article','authorUid','status','revision','reviewerUid','reviewedAt','updatedAt','reviewNote']) &&
-        validArticle(d.article,id) && d.authorUid is string && d.revision is int && d.reviewerUid is string &&
+      return d.keys().hasAll(['article','authorUid','status','revision','reviewerUid','reviewerAuthorId','reviewedAt','updatedAt','reviewNote']) &&
+        d.keys().hasOnly(['article','authorUid','status','revision','reviewerUid','reviewerAuthorId','reviewedAt','updatedAt','reviewNote']) &&
+        validArticle(d.article,id) && d.authorUid is string && d.revision is int && d.reviewerUid is string && d.reviewerAuthorId is string &&
         d.reviewedAt is string && d.updatedAt is string && d.reviewNote is string && d.reviewNote.size() <= 4000;
     }
     function reviewTransition(old,next) {
       return next.article == old.article && next.authorUid == old.authorUid && next.revision == old.revision && (
-        (old.status in ['DRAFT','CHANGES REQUESTED'] && next.status == 'SUBMITTED FOR REVIEW' && next.reviewerUid == old.reviewerUid && next.reviewedAt == old.reviewedAt && next.article.references.size() > 0 && next.article.content.size() >= 200) ||
-        (old.status == 'SUBMITTED FOR REVIEW' && next.status == 'UNDER REVIEW' && request.auth.uid != old.authorUid && get(/databases/$(database)/documents/cms_users/$(request.auth.uid)).data.authorId != old.article.authorId && next.reviewerUid == request.auth.uid && next.reviewedAt == old.reviewedAt) ||
-        (old.status == 'UNDER REVIEW' && next.status in ['APPROVED','CHANGES REQUESTED'] && old.reviewerUid == request.auth.uid && request.auth.uid != old.authorUid && next.reviewerUid == old.reviewerUid && (next.status != 'APPROVED' || next.reviewedAt.size() > 0)) ||
-        (old.status in ['APPROVED','UNPUBLISHED'] && next.status == 'PUBLISHED' && next.reviewerUid == old.reviewerUid && next.reviewedAt == old.reviewedAt && next.reviewedAt.size() > 0 && existsAfter(/databases/$(database)/documents/publications/$(old.article.id))) ||
-        (old.status == 'PUBLISHED' && next.status == 'UNPUBLISHED' && next.reviewerUid == old.reviewerUid && next.reviewedAt == old.reviewedAt && !existsAfter(/databases/$(database)/documents/publications/$(old.article.id)))
+        (old.status in ['DRAFT','CHANGES REQUESTED'] && next.status == 'SUBMITTED FOR REVIEW' && next.reviewerUid == old.reviewerUid && next.reviewerAuthorId == old.reviewerAuthorId && next.reviewedAt == old.reviewedAt && next.article.references.size() > 0 && next.article.content.size() >= 200) ||
+        (old.status == 'SUBMITTED FOR REVIEW' && next.status == 'UNDER REVIEW' && request.auth.uid != old.authorUid && get(/databases/$(database)/documents/cms_users/$(request.auth.uid)).data.authorId != old.article.authorId && next.reviewerUid == request.auth.uid && next.reviewerAuthorId == get(/databases/$(database)/documents/cms_users/$(request.auth.uid)).data.authorId && next.reviewedAt == old.reviewedAt) ||
+        (old.status == 'UNDER REVIEW' && next.status in ['APPROVED','CHANGES REQUESTED'] && old.reviewerUid == request.auth.uid && request.auth.uid != old.authorUid && next.reviewerUid == old.reviewerUid && next.reviewerAuthorId == old.reviewerAuthorId && (next.status != 'APPROVED' || next.reviewedAt.size() > 0)) ||
+        (old.status in ['APPROVED','UNPUBLISHED'] && next.status == 'PUBLISHED' && next.reviewerUid == old.reviewerUid && next.reviewerAuthorId == old.reviewerAuthorId && next.reviewedAt == old.reviewedAt && next.reviewedAt.size() > 0 && existsAfter(/databases/$(database)/documents/publications/$(old.article.id))) ||
+        (old.status == 'PUBLISHED' && next.status == 'UNPUBLISHED' && next.reviewerUid == old.reviewerUid && next.reviewerAuthorId == old.reviewerAuthorId && next.reviewedAt == old.reviewedAt && !existsAfter(/databases/$(database)/documents/publications/$(old.article.id)))
       );
     }
     match /cms_users/{uid} { allow get: if request.auth != null && request.auth.uid == uid; allow list,write: if false; }
     match /authorized_phones/{id} { allow read,write: if false; }
     match /manuscripts/{id} {
       allow read: if member();
-      allow create: if member() && validManuscript(request.resource.data,id) && request.resource.data.authorUid == request.auth.uid && request.resource.data.status == 'DRAFT' && request.resource.data.revision == 1 && request.resource.data.reviewerUid == '' && request.resource.data.reviewedAt == '';
+      allow create: if member() && validManuscript(request.resource.data,id) && request.resource.data.authorUid == request.auth.uid && request.resource.data.status == 'DRAFT' && request.resource.data.revision == 1 && request.resource.data.reviewerUid == '' && request.resource.data.reviewerAuthorId == '' && request.resource.data.reviewedAt == '';
       allow update: if member() && validManuscript(request.resource.data,id) && (
-        (request.resource.data.status == 'DRAFT' && request.resource.data.authorUid == resource.data.authorUid && request.resource.data.revision == resource.data.revision + 1 && request.resource.data.reviewerUid == '' && request.resource.data.reviewedAt == '' && !existsAfter(/databases/$(database)/documents/publications/$(id))) || reviewTransition(resource.data,request.resource.data)
+        (request.resource.data.status == 'DRAFT' && request.resource.data.authorUid == resource.data.authorUid && request.resource.data.revision == resource.data.revision + 1 && request.resource.data.reviewerUid == '' && request.resource.data.reviewerAuthorId == '' && request.resource.data.reviewedAt == '' && !existsAfter(/databases/$(database)/documents/publications/$(id))) || reviewTransition(resource.data,request.resource.data)
       );
       allow delete: if member() && resource.data.status != 'PUBLISHED' && !existsAfter(/databases/$(database)/documents/publications/$(id));
     }
     match /publications/{id} {
       allow read: if true;
-      allow create,update: if member() && request.resource.data.keys().hasAll(['article','revision','reviewerUid','reviewedAt','publishedAt']) && request.resource.data.keys().hasOnly(['article','revision','reviewerUid','reviewedAt','publishedAt']) &&
+      allow create,update: if member() && request.resource.data.keys().hasAll(['article','revision','reviewerUid','reviewerAuthorId','reviewedAt','publishedAt']) && request.resource.data.keys().hasOnly(['article','revision','reviewerUid','reviewerAuthorId','reviewedAt','publishedAt']) &&
         getAfter(/databases/$(database)/documents/manuscripts/$(id)).data.status == 'PUBLISHED' &&
         request.resource.data.article == getAfter(/databases/$(database)/documents/manuscripts/$(id)).data.article &&
         request.resource.data.revision == getAfter(/databases/$(database)/documents/manuscripts/$(id)).data.revision &&
         request.resource.data.reviewerUid == getAfter(/databases/$(database)/documents/manuscripts/$(id)).data.reviewerUid &&
+        request.resource.data.reviewerAuthorId == getAfter(/databases/$(database)/documents/manuscripts/$(id)).data.reviewerAuthorId &&
         request.resource.data.reviewedAt == getAfter(/databases/$(database)/documents/manuscripts/$(id)).data.reviewedAt &&
         request.resource.data.publishedAt == request.time;
       allow delete: if member() && getAfter(/databases/$(database)/documents/manuscripts/$(id)).data.status != 'PUBLISHED';

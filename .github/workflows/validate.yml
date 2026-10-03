@@ -1,8 +1,6 @@
 name: Validate rebuild
 on:
   pull_request:
-  push:
-    branches: [rebuild/firebase-spark]
 permissions:
   contents: read
 jobs:

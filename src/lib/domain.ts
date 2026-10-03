@@ -2,8 +2,8 @@ export const STATUSES = ['DRAFT','SUBMITTED FOR REVIEW','UNDER REVIEW','CHANGES 
 export type Status = typeof STATUSES[number];
 export type Reference = { title: string; url: string; year: string; doi?: string };
 export type Article = { id: string; title: string; subtitle: string; category: string; tags: string[]; authorId: string; content: string; image: string; imageAlt: string; seoTitle: string; seoDescription: string; references: Reference[]; sourceUrl: string; audience: 'Pet parents' | 'Veterinary professionals'; };
-export type Manuscript = { article: Article; authorUid: string; status: Status; revision: number; reviewerUid: string; reviewedAt: string; updatedAt: string; reviewNote: string };
-export type Publication = { article: Article; revision: number; reviewerUid: string; reviewedAt: string; publishedAt: unknown };
+export type Manuscript = { article: Article; authorUid: string; status: Status; revision: number; reviewerUid: string; reviewerAuthorId: string; reviewedAt: string; updatedAt: string; reviewNote: string };
+export type Publication = { article: Article; revision: number; reviewerUid: string; reviewerAuthorId: string; reviewedAt: string; publishedAt: unknown };
 export type Author = { id: string; name: string; role: string; qualifications: string; bio: string; expertise: string[]; affiliation: string; image: string; linkedin: string };
 export type Member = { authorId: string; role: 'CO_FOUNDER'; status: 'ACTIVE' | 'INACTIVE' };
 export function slugify(text: string) { return text.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0,100); }
