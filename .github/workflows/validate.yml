@@ -20,6 +20,8 @@ jobs:
       - run: npm run format
       - run: npm test
       - run: npm run build
+      - name: Validate Cloudflare static deployment
+        run: npx --yes wrangler@4.147.0 deploy --dry-run --outdir /tmp/thatvetguy-worker-dry-run
       - run: npm run test:rules
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser
