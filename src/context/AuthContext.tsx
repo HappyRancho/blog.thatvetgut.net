@@ -206,20 +206,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           (window as any).recaptchaVerifier = null;
         }
 
-        // Replace any existing container element with a fresh, clean DOM node.
-        // This prevents "reCAPTCHA has already been rendered in this element"
-        // and eliminates "argument-error" caused by corrupted widget bindings.
-        const existingEl = document.getElementById(containerId);
-        if (existingEl) {
-          existingEl.remove();
+        // AdminLogin owns the reCAPTCHA container. Do not remove/recreate it
+        // outside React: doing so can leave React and Firebase pointing at
+        // different DOM nodes on retries/resends.
+        const containerEl = document.getElementById(containerId);
+        if (!containerEl) {
+          throw new Error('Security verification container is unavailable. Please refresh the page and try again.');
         }
 
-        const containerEl = document.createElement('div');
-        containerEl.id = containerId;
-        document.body.appendChild(containerEl);
+        // Clear stale widget markup before creating a new verifier.
+        containerEl.replaceChildren();
 
-        // Setup reCAPTCHA verifier passing the fresh DOM element
-        const verifier = new RecaptchaVerifier(auth, containerEl, {
+        // Bind Firebase to the stable React-owned container.
+        const verifier = new RecaptchaVerifier(auth, containerId, {
           size: 'invisible',
           callback: () => {
             // reCAPTCHA solved
