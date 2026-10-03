@@ -2,13 +2,14 @@ import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
-const server=spawn('npm',['run','preview','--','--port','4173'],{stdio:'pipe'});
+const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','--host','127.0.0.1','--port','4173'],{stdio:'ignore'});
 let browser;
 try {
  for(let i=0;i<40;i++){try{if((await fetch('http://127.0.0.1:4173')).ok)break;}catch{}await new Promise(r=>setTimeout(r,250));}
  browser=await chromium.launch({headless:true});
  await mkdir('screenshots',{recursive:true});
  const page=await browser.newPage({viewport:{width:1440,height:1000}});
+ page.setDefaultTimeout(12000);
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:4173');
  await page.getByRole('link',{name:'Read the story',exact:true}).waitFor();
@@ -48,4 +49,4 @@ try {
  await page.screenshot({path:'screenshots/home-mobile.png',fullPage:true});
  assert.deepEqual(errors,[]);
  console.log('Browser checks passed: desktop/mobile routes, search, bookmarks, reading controls, share dialog, unavailable article, CMS gate and horizontal overflow.');
-} finally {await browser?.close();server.kill();}
+} finally {await browser?.close();server.kill('SIGTERM');server.unref();}
