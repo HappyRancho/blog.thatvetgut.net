@@ -88,6 +88,23 @@ try {
   await page.keyboard.insertText(
     "Record changes in eating, drinking and behaviour before the appointment. Ask your veterinary surgeon what to monitor and when to call again. Bring previous clinical records and a list of current medicines. Keep the discussion specific to the animal being examined.",
   );
+  await page.evaluate(() => window.fixtureNetwork(false));
+  await page.waitForFunction(
+    () => !document.querySelector('[aria-label="Article body"]'),
+  );
+  await page
+    .getByRole("heading", { name: "Co-founder access", exact: true })
+    .waitFor();
+  await page
+    .getByText("Access verification timed out.", { exact: false })
+    .waitFor();
+  await page.evaluate(() => window.fixtureNetwork(true));
+  await editor.waitFor();
+  assert.equal(
+    await page.getByLabel("Title", { exact: true }).inputValue(),
+    "A useful clinic visit checklist",
+  );
+  assert.match(await editor.innerText(), /Record changes/);
   await page.getByRole("button", { name: "Preview formatting" }).click();
   assert.match(await page.locator(".prose").innerText(), /Record changes/);
   await page.getByRole("button", { name: "Return to editor" }).click();

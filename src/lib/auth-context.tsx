@@ -66,14 +66,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError("");
       setLoading(!!u);
       if (!u) return;
-      timeout = setTimeout(() => {
+      const timeOut = () => {
         if (current !== generation) return;
         setMember(null);
         setLoading(false);
         setError(
-          "Access verification timed out. Check your connection, then sign out and retry.",
+          "Access verification timed out. Reconnect to resume your workspace, or sign out to switch accounts.",
         );
-      }, 12000);
+      };
+      timeout = setTimeout(timeOut, 12000);
       stopMember = onSnapshot(
         doc(db!, "cms_users", u.uid),
         { includeMetadataChanges: true },
@@ -83,6 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (snapshot.metadata.fromCache) {
             setMember(null);
             setLoading(true);
+            clearTimeout(timeout);
+            timeout = setTimeout(timeOut, 12000);
             return;
           }
           clearTimeout(timeout);
@@ -92,9 +95,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             m?.role === "CO_FOUNDER" &&
             m.status === "ACTIVE" &&
             authors.some((a) => a.id === m.authorId)
-          )
+          ) {
+            setError("");
             setMember(m);
-          else {
+          } else {
             setMember(null);
             setError(
               "This Google account has not been approved for the editorial team.",
@@ -104,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
         () => {
           if (current !== generation) return;
+          clearTimeout(timeout);
           setMember(null);
           setLoading(false);
           setError(

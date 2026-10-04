@@ -88,7 +88,6 @@ function Profile({
     return () => {
       window.removeEventListener("beforeunload", warn);
       document.removeEventListener("click", guard, true);
-      onDirty(false);
     };
   }, [dirty, onDirty]);
   return (
@@ -328,6 +327,38 @@ function Admin() {
       setLoaded(false);
     }
   }, [user?.uid]);
+  useEffect(() => {
+    if (member) return;
+    const unsaved =
+      profileDirty ||
+      !!(
+        editor?.initial &&
+        JSON.stringify(editor.initial) !==
+          JSON.stringify(editor.manuscript?.article)
+      );
+    const warn = (e: BeforeUnloadEvent) => {
+      if (unsaved) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    const guard = (e: MouseEvent) => {
+      if (
+        unsaved &&
+        (e.target as Element)?.closest?.("a[href]") &&
+        !window.confirm("Leave this workspace and discard unsaved changes?")
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    window.addEventListener("beforeunload", warn);
+    document.addEventListener("click", guard, true);
+    return () => {
+      window.removeEventListener("beforeunload", warn);
+      document.removeEventListener("click", guard, true);
+    };
+  }, [member, editor, profileDirty]);
   useEffect(() => setVisible(20), [queryText, filter]);
   const reload = async () => {
     setBusy(true);
