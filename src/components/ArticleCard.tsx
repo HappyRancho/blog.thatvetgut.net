@@ -18,28 +18,22 @@ export function ArticleCard({
   const author = authors.find((x) => x.id === a.authorId);
   return (
     <article className={compact ? "article-card compact" : "article-card"}>
-      <Link
-        tabIndex={-1}
-        aria-hidden="true"
-        className={`card-image tone-${a.category}`}
-        to={`/article/${a.id}`}
-      >
-        {a.image && safeUrl(a.image, true) ? (
+      {a.image && safeUrl(a.image, true) && (
+        <Link
+          tabIndex={-1}
+          aria-hidden="true"
+          className="card-image"
+          to={`/article/${a.id}`}
+        >
           <MediaImage
             loading="lazy"
             src={safeUrl(a.image, true)}
             alt=""
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-            }}
+            width={640}
+            height={400}
           />
-        ) : (
-          <>
-            <BookOpen size={32} />
-            <span>{categoryName(a.category)}</span>
-          </>
-        )}
-      </Link>
+        </Link>
+      )}
       <div className="card-body">
         <span className="eyebrow">{categoryName(a.category)}</span>
         <h3>

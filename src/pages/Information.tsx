@@ -138,6 +138,12 @@ export function AuthorPage() {
         </a>
       )}
       <h2 className="section-title">From this contributor</h2>
+      {!items.some((p) => p.article.authorId === a.id) && (
+        <p className="muted">
+          No articles by this contributor are currently published. Explore their
+          professional portfolio above.
+        </p>
+      )}
       <div className="article-grid">
         {items
           .filter((p) => p.article.authorId === a.id)

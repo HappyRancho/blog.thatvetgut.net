@@ -141,9 +141,7 @@ export function Importer({
                 content: sanitize(content),
                 sourceUrl: canonical,
                 importedAt: new Date().toISOString(),
-                importedBy:
-                  (await import("../lib/auth-context")).auth?.currentUser
-                    ?.uid || "",
+                importedBy: auth?.currentUser?.uid || "",
               });
             } catch (err) {
               setMessage(

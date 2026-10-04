@@ -2529,3 +2529,87 @@ dialog > button {
 .ProseMirror-selectednode {
   outline: 2px solid var(--forest);
 }
+.publication-intro > *,
+.editorial-feature > *,
+.topic-ledger > *,
+.contributors-ledger > *,
+.footer-grid > * {
+  min-width: 0;
+}
+.feature-copy {
+  align-self: start;
+}
+.article-heading h1,
+.feature-copy h2,
+.manuscript-list h3 {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1000px) {
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 860px) {
+  .header .desktop,
+  .header .header-search {
+    display: none;
+  }
+  .header .masthead {
+    min-height: 80px;
+    justify-content: space-between;
+  }
+  .header .mobile {
+    display: inline-flex;
+  }
+  .header .masthead .mobile {
+    margin-left: auto;
+  }
+  .header .nav {
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+  .header .nav.open {
+    display: flex;
+  }
+  .header .nav a {
+    padding: 13px 0;
+  }
+  .header .nav .emergency-nav {
+    margin-left: 0;
+  }
+  .editorial-feature {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.75fr);
+    gap: 24px;
+  }
+  .topic-ledger {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: 24px;
+  }
+  .contributors-ledger {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+  }
+}
+@media (max-width: 700px) {
+  .editorial-feature,
+  .topic-ledger,
+  .contributors-ledger {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .feature-copy h2 {
+    font-size: 2rem;
+  }
+  .footer-grid {
+    gap: 24px;
+  }
+  .header .wordmark {
+    font-size: 2.3rem;
+  }
+  .topic-links {
+    grid-template-columns: 1fr;
+  }
+  .topic-links a {
+    font-size: 0.9rem;
+  }
+}

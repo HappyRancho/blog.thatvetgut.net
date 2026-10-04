@@ -52,6 +52,27 @@ const unpack = (d) =>
     Object.entries(d.fields || {}).map(([k, v]) => [k, decode(v)]),
   );
 async function list(collection, count = 48) {
+  if (collection === "publications") {
+    const endpoint = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(config.projectId)}/databases/${encodeURIComponent(config.databaseId)}/documents:runQuery`;
+    const r = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        structuredQuery: {
+          from: [{ collectionId: "publications" }],
+          orderBy: [
+            { field: { fieldPath: "publishedAt" }, direction: "DESCENDING" },
+          ],
+          limit: count,
+        },
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!r.ok) throw new Error("Published articles could not be read.");
+    return (await r.json())
+      .filter((x) => x.document)
+      .map((x) => unpack(x.document));
+  }
   const d = await rest(`${collection}?pageSize=${count}`);
   return (d?.documents || []).map((d) => ({
     ...unpack(d),
@@ -66,7 +87,7 @@ const articleList = (items) =>
     })
     .join("");
 const nav =
-  '<header><a href="/">ThatVetGuy.</a><nav><a href="/articles">Articles</a> · <a href="/categories">Topics</a> · <a href="/contributors">Our veterinarians</a> · <a href="/search">Search</a></nav></header>';
+  '<header class="header"><div class="masthead"><a class="wordmark" href="/">ThatVetGuy.</a></div><nav class="nav"><a href="/articles">Articles</a> · <a href="/categories">Topics</a> · <a href="/contributors">Our veterinarians</a> · <a href="/search">Search</a></nav></header>';
 const footer = `<footer><p>${esc(disclaimer)}</p><a href="/about">Editorial standards</a> · <a href="/contact">Contact</a> · <a href="https://www.thatvetguy.net/">The Collective</a></footer>`;
 const clean = (html) =>
   sanitizeHtml(html, {
@@ -328,7 +349,7 @@ export default {
         image = "";
       let initialItems = [],
         initialAuthors = defaults;
-      if (path.startsWith("/article/")) {
+      if (/^\/article\/[a-z0-9]+(?:-[a-z0-9]+)*$/.test(path)) {
         const d = await rest(
           "publications/" + encodeURIComponent(path.split("/")[2]),
         );
@@ -386,7 +407,7 @@ export default {
             },
           };
         }
-      } else if (path.startsWith("/author/")) {
+      } else if (/^\/author\/[a-z0-9]+(?:-[a-z0-9]+)*$/.test(path)) {
         const id = path.split("/")[2],
           d = await rest("authors/" + encodeURIComponent(id)),
           a = d ? { ...unpack(d), id } : defaults.find((a) => a.id === id);
@@ -412,8 +433,8 @@ export default {
       } else if (
         path === "/" ||
         path === "/articles" ||
-        path.startsWith("/category/") ||
-        path.startsWith("/tag/")
+        /^\/category\/[a-z0-9-]+$/.test(path) ||
+        /^\/tag\/[^/]+$/.test(path)
       ) {
         const all = (await list("publications")).sort((a, b) =>
             dateISO(b.publishedAt).localeCompare(dateISO(a.publishedAt)),

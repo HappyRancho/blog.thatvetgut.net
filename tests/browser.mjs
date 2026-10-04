@@ -44,6 +44,9 @@ try {
   await page
     .getByRole("link", { name: "Read the story", exact: true })
     .waitFor();
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.waitForTimeout(800);
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: "screenshots/home-desktop.png",
     fullPage: true,
@@ -69,6 +72,10 @@ try {
     .getByRole("button", { name: "Toggle larger article text" })
     .click();
   assert.equal(await page.locator(".prose.large").count(), 1);
+  await page.screenshot({
+    path: "screenshots/article-desktop.png",
+    fullPage: true,
+  });
   await page
     .getByRole("button", { name: "Share article", exact: true })
     .click();
@@ -87,6 +94,20 @@ try {
   await page
     .getByRole("heading", { name: "This article is not available." })
     .waitFor();
+  for (const route of [
+    "/categories",
+    "/contributors",
+    "/author/dr-chirag-patidar",
+    "/category/pet-health",
+    "/tag/cats",
+    "/about",
+    "/contact",
+    "/privacy",
+  ]) {
+    await page.goto("http://127.0.0.1:4173" + route);
+    await page.locator("h1").waitFor();
+    assert.equal(await page.locator('a[href="/admin"]').count(), 0);
+  }
   await page.goto("http://127.0.0.1:4173/admin");
   await page.getByRole("heading", { name: "Co-founder access" }).waitFor();
   assert.equal(
@@ -101,6 +122,25 @@ try {
     await page
       .getByRole("link", { name: "Read the story", exact: true })
       .waitFor();
+    const overflow = await page.evaluate(() =>
+      [...document.querySelectorAll("body *")]
+        .filter(
+          (e) =>
+            e.getBoundingClientRect().right > innerWidth + 1 &&
+            getComputedStyle(e).position !== "fixed",
+        )
+        .map((e) => ({
+          tag: e.tagName,
+          class: e.className,
+          right: e.getBoundingClientRect().right,
+        }))
+        .slice(0, 20),
+    );
+    if (overflow.length) console.log("Overflow candidates", width, overflow);
+    await page.screenshot({
+      path: `screenshots/home-${width}.png`,
+      fullPage: true,
+    });
     assert.ok(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth + 1,
@@ -124,6 +164,18 @@ try {
     .waitFor();
   await page.screenshot({
     path: "screenshots/home-mobile.png",
+    fullPage: true,
+  });
+  await page.getByRole("link", { name: "Read the story", exact: true }).click();
+  await page.locator(".prose").waitFor();
+  assert.ok(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 1,
+    ),
+    "Article mobile overflow",
+  );
+  await page.screenshot({
+    path: "screenshots/article-mobile.png",
     fullPage: true,
   });
   await page.goto("http://127.0.0.1:4174/tests/editor-fixture.html");

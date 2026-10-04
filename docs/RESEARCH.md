@@ -14,7 +14,7 @@ Inspected real rendered pages on 3 October 2026 using Playwright in GitHub Actio
 | Works in Progress | Homepage                                                      | Typographic hierarchy, distinctive feature composition, author credits and topic labels | Purposeful feature plus a quieter reading list, warm paper and restrained forest accents  |
 | HappyPet (India)  | Main site; original `/blog` returned 404                      | Local audience, pet-care tracking and media navigation                                  | Indian context in editorial proposals without copying the app or inventing local services |
 
-PetMD returned an access-denied page (HTTP 403). The Spruce Pets and Daily Paws returned restricted-access pages (HTTP 402). Dogsee's Indian blog returned a security-check page. These were not treated as reviewed content. Normal public PetMD article/topic URLs are included in the follow-up research run. No authentication or anti-bot protection was bypassed.
+PetMD returned an access-denied page (HTTP 403). The Spruce Pets and Daily Paws returned restricted-access pages (HTTP 402). Dogsee's Indian blog returned a security-check page. These were not treated as reviewed content. The follow-up also inspected `/dog` and the public vomiting-in-dogs article URL; both returned HTTP 403 access-denied pages. No authentication or anti-bot protection was bypassed.
 
 ## Writing-interface research
 
@@ -41,3 +41,5 @@ Replaced the eight sample manuscripts with practical reader questions. No manusc
 ## Observed deployment problem
 
 Anonymous REST reads against the configured named Firestore database returned HTTP 403 for both `publications` and `authors`. Private `manuscripts` and `cms_users` also denied anonymous reads, as expected. The former indicates public collection rules/configuration need owner verification before launch. These observations do not establish what the live rules currently contain, or verify authenticated CMS writes. No production data was changed.
+
+Seven of eight proposed source landing pages returned HTTP 200 with matching titles. Cat Friendly's carrier guide returned HTTP 403 and still requires verification by a founder. Availability of a source page is not evidence that every draft claim has been clinically verified.

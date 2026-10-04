@@ -3,6 +3,9 @@ import { emptyArticle, type Article } from "../lib/domain";
 const drafts = [
   {
     id: "prepare-for-veterinary-visit",
+    image:
+      "https://images.unsplash.com/photo-1576201836106-db1758fd1c97?auto=format&fit=crop&q=80&w=1200",
+    imageAlt: "A golden puppy running across grass",
     title: "Make your next vet visit more useful",
     subtitle:
       "A simple preparation guide: what to record, what to bring and which questions to ask.",
