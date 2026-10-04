@@ -80,6 +80,7 @@ export function ManuscriptEditor({
         </div>
         <button
           className="secondary"
+          disabled={busy}
           onClick={() => {
             if (!dirty || window.confirm("Discard unsaved changes?")) onClose();
           }}
@@ -112,230 +113,233 @@ export function ManuscriptEditor({
           }
         }}
       >
-        <div className="editor-grid">
-          <div className="form-stack">
-            <label>
-              Title
-              <input
-                required
-                maxLength={180}
-                value={a.title}
-                onChange={(e) => {
-                  const title = e.target.value;
-                  setDirty(true);
-                  setA((old) => ({
-                    ...old,
-                    title,
-                    id: manual ? old.id : slugify(title),
-                  }));
-                }}
-              />
-            </label>
-            <label>
-              Subtitle / clinical summary
-              <textarea
-                maxLength={500}
-                rows={3}
-                value={a.subtitle}
-                onChange={(e) => set("subtitle", e.target.value)}
-              />
-            </label>
-            <div className="section-title">
-              <h3>Article body</h3>
-              <button
-                type="button"
-                className="secondary"
-                onClick={() => setPreview(!preview)}
-              >
-                {preview ? "Return to editor" : "Preview formatting"}
-              </button>
-            </div>
-            {preview ? (
-              <div
-                className="prose panel"
-                dangerouslySetInnerHTML={{ __html: previewContent }}
-              />
-            ) : (
-              <Suspense
-                fallback={<p role="status">Opening the writing tools…</p>}
-              >
-                <RichEditor
-                  value={a.content}
-                  ownerId={a.id}
-                  onUploadStart={() => setManual(true)}
-                  onChange={(value) => set("content", value)}
+        <fieldset className="editor-save-guard" disabled={busy}>
+          <div className="editor-grid">
+            <div className="form-stack">
+              <label>
+                Title
+                <input
+                  required
+                  maxLength={180}
+                  value={a.title}
+                  onChange={(e) => {
+                    const title = e.target.value;
+                    setDirty(true);
+                    setA((old) => ({
+                      ...old,
+                      title,
+                      id: manual ? old.id : slugify(title),
+                    }));
+                  }}
                 />
-              </Suspense>
-            )}
-            <h3>Sources & references</h3>
-            {a.references.map((r, i) => (
-              <fieldset key={i} className="reference-editor">
-                <legend>Reference {i + 1}</legend>
-                {(["title", "url", "year", "doi"] as const).map((key) => (
-                  <label key={key}>
-                    {key === "doi" ? "DOI (optional)" : key}
-                    <input
-                      type={key === "url" ? "url" : "text"}
-                      value={r[key] || ""}
-                      onChange={(e) =>
-                        set(
-                          "references",
-                          a.references.map((ref, n) =>
-                            n === i ? { ...ref, [key]: e.target.value } : ref,
-                          ),
-                        )
-                      }
-                    />
-                  </label>
-                ))}
+              </label>
+              <label>
+                Subtitle / clinical summary
+                <textarea
+                  maxLength={500}
+                  rows={3}
+                  value={a.subtitle}
+                  onChange={(e) => set("subtitle", e.target.value)}
+                />
+              </label>
+              <div className="section-title">
+                <h3>Article body</h3>
                 <button
                   type="button"
                   className="secondary"
-                  onClick={() =>
-                    set(
-                      "references",
-                      a.references.filter((_, n) => n !== i),
-                    )
+                  onClick={() => setPreview(!preview)}
+                >
+                  {preview ? "Return to editor" : "Preview formatting"}
+                </button>
+              </div>
+              {preview ? (
+                <div
+                  className="prose panel"
+                  dangerouslySetInnerHTML={{ __html: previewContent }}
+                />
+              ) : (
+                <Suspense
+                  fallback={<p role="status">Opening the writing tools…</p>}
+                >
+                  <RichEditor
+                    value={a.content}
+                    readOnly={busy}
+                    ownerId={a.id}
+                    onUploadStart={() => setManual(true)}
+                    onChange={(value) => set("content", value)}
+                  />
+                </Suspense>
+              )}
+              <h3>Sources & references</h3>
+              {a.references.map((r, i) => (
+                <fieldset key={i} className="reference-editor">
+                  <legend>Reference {i + 1}</legend>
+                  {(["title", "url", "year", "doi"] as const).map((key) => (
+                    <label key={key}>
+                      {key === "doi" ? "DOI (optional)" : key}
+                      <input
+                        type={key === "url" ? "url" : "text"}
+                        value={r[key] || ""}
+                        onChange={(e) =>
+                          set(
+                            "references",
+                            a.references.map((ref, n) =>
+                              n === i ? { ...ref, [key]: e.target.value } : ref,
+                            ),
+                          )
+                        }
+                      />
+                    </label>
+                  ))}
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() =>
+                      set(
+                        "references",
+                        a.references.filter((_, n) => n !== i),
+                      )
+                    }
+                  >
+                    Remove source
+                  </button>
+                </fieldset>
+              ))}
+              <button
+                type="button"
+                className="secondary"
+                onClick={() =>
+                  set("references", [
+                    ...a.references,
+                    { title: "", url: "", year: "" },
+                  ])
+                }
+              >
+                Add reference
+              </button>
+            </div>
+            <aside className="form-stack editor-settings">
+              <h3>Publication details</h3>
+              <label>
+                URL slug
+                <input
+                  value={a.id}
+                  readOnly={
+                    !!revision ||
+                    (manual && /\/media\//.test(a.image + a.content))
+                  }
+                  onChange={(e) => {
+                    setManual(true);
+                    set("id", slugify(e.target.value));
+                  }}
+                />
+                <small>
+                  {manuscript
+                    ? "The URL stays stable after the first save."
+                    : "Letters, numbers and hyphens. Must be unique."}
+                </small>
+              </label>
+              <label>
+                Author
+                <select
+                  value={a.authorId}
+                  onChange={(e) => set("authorId", e.target.value)}
+                >
+                  {authors.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Specialty
+                <select
+                  value={a.category}
+                  onChange={(e) => set("category", e.target.value)}
+                >
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Audience
+                <select
+                  value={a.audience}
+                  onChange={(e) =>
+                    set("audience", e.target.value as Article["audience"])
                   }
                 >
-                  Remove source
-                </button>
-              </fieldset>
-            ))}
-            <button
-              type="button"
-              className="secondary"
-              onClick={() =>
-                set("references", [
-                  ...a.references,
-                  { title: "", url: "", year: "" },
-                ])
-              }
-            >
-              Add reference
-            </button>
+                  <option>Pet parents</option>
+                  <option>Veterinary professionals</option>
+                </select>
+              </label>
+              <label>
+                Tags (comma-separated)
+                <input
+                  value={a.tags.join(", ")}
+                  onChange={(e) =>
+                    set(
+                      "tags",
+                      e.target.value
+                        .split(",")
+                        .map((t) => t.trim())
+                        .slice(0, 15),
+                    )
+                  }
+                />
+              </label>
+              <ImageField
+                value={a.image}
+                alt={a.imageAlt}
+                ownerType="article"
+                ownerId={a.id}
+                onUploadStart={() => setManual(true)}
+                onChange={(url) => set("image", url)}
+              />
+              <label>
+                Image description
+                <input
+                  maxLength={300}
+                  value={a.imageAlt}
+                  onChange={(e) => set("imageAlt", e.target.value)}
+                />
+              </label>
+              <h3>Search appearance</h3>
+              <label>
+                SEO title
+                <input
+                  maxLength={180}
+                  value={a.seoTitle}
+                  onChange={(e) => set("seoTitle", e.target.value)}
+                />
+              </label>
+              <label>
+                SEO description
+                <textarea
+                  maxLength={500}
+                  value={a.seoDescription}
+                  onChange={(e) => set("seoDescription", e.target.value)}
+                />
+              </label>
+              {a.sourceUrl && (
+                <p>
+                  Imported from{" "}
+                  <a
+                    href={safeUrl(a.sourceUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    LinkedIn
+                  </a>
+                </p>
+              )}
+            </aside>
           </div>
-          <aside className="form-stack editor-settings">
-            <h3>Publication details</h3>
-            <label>
-              URL slug
-              <input
-                value={a.id}
-                readOnly={
-                  !!revision ||
-                  (manual && /\/media\//.test(a.image + a.content))
-                }
-                onChange={(e) => {
-                  setManual(true);
-                  set("id", slugify(e.target.value));
-                }}
-              />
-              <small>
-                {manuscript
-                  ? "The URL stays stable after the first save."
-                  : "Letters, numbers and hyphens. Must be unique."}
-              </small>
-            </label>
-            <label>
-              Author
-              <select
-                value={a.authorId}
-                onChange={(e) => set("authorId", e.target.value)}
-              >
-                {authors.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Specialty
-              <select
-                value={a.category}
-                onChange={(e) => set("category", e.target.value)}
-              >
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Audience
-              <select
-                value={a.audience}
-                onChange={(e) =>
-                  set("audience", e.target.value as Article["audience"])
-                }
-              >
-                <option>Pet parents</option>
-                <option>Veterinary professionals</option>
-              </select>
-            </label>
-            <label>
-              Tags (comma-separated)
-              <input
-                value={a.tags.join(", ")}
-                onChange={(e) =>
-                  set(
-                    "tags",
-                    e.target.value
-                      .split(",")
-                      .map((t) => t.trim())
-                      .slice(0, 15),
-                  )
-                }
-              />
-            </label>
-            <ImageField
-              value={a.image}
-              alt={a.imageAlt}
-              ownerType="article"
-              ownerId={a.id}
-              onUploadStart={() => setManual(true)}
-              onChange={(url) => set("image", url)}
-            />
-            <label>
-              Image description
-              <input
-                maxLength={300}
-                value={a.imageAlt}
-                onChange={(e) => set("imageAlt", e.target.value)}
-              />
-            </label>
-            <h3>Search appearance</h3>
-            <label>
-              SEO title
-              <input
-                maxLength={180}
-                value={a.seoTitle}
-                onChange={(e) => set("seoTitle", e.target.value)}
-              />
-            </label>
-            <label>
-              SEO description
-              <textarea
-                maxLength={500}
-                value={a.seoDescription}
-                onChange={(e) => set("seoDescription", e.target.value)}
-              />
-            </label>
-            {a.sourceUrl && (
-              <p>
-                Imported from{" "}
-                <a
-                  href={safeUrl(a.sourceUrl)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  LinkedIn
-                </a>
-              </p>
-            )}
-          </aside>
-        </div>
+        </fieldset>
         <div className="save-bar">
           <span role="status">
             {busy

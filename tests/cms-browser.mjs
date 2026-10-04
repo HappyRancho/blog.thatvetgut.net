@@ -125,11 +125,11 @@ try {
     .getByRole("button", { name: "Add reference", exact: true })
     .click();
   await page
-    .locator("fieldset")
+    .locator(".reference-editor")
     .getByLabel("title", { exact: true })
     .fill("AVMA pet owner resources");
   await page
-    .locator("fieldset")
+    .locator(".reference-editor")
     .getByLabel("url", { exact: true })
     .fill("https://www.avma.org/resources-tools/pet-owners");
   await page.getByRole("button", { name: "Save draft", exact: true }).click();
@@ -149,7 +149,10 @@ try {
   await page
     .getByRole("button", { name: "Submit for review", exact: true })
     .click();
-  await page.getByText("SUBMITTED FOR REVIEW", { exact: true }).waitFor();
+  await page
+    .locator(".manuscript-list .status")
+    .filter({ hasText: /^SUBMITTED FOR REVIEW$/ })
+    .waitFor();
   assert.equal(
     await page
       .getByRole("button", { name: "Take review", exact: true })
@@ -167,7 +170,10 @@ try {
   await assertSucceeds(getDoc(doc(anon, "publications", articleId)));
   await assertSucceeds(getDoc(doc(anon, "media", image.split("/").at(-1))));
   await page.getByRole("button", { name: "Unpublish", exact: true }).click();
-  await page.getByText("UNPUBLISHED", { exact: true }).waitFor();
+  await page
+    .locator(".manuscript-list .status")
+    .filter({ hasText: /^UNPUBLISHED$/ })
+    .waitFor();
   assert.equal(
     (await getDoc(doc(anon, "publications", articleId))).exists(),
     false,

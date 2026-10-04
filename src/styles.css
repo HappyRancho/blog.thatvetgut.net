@@ -1332,6 +1332,12 @@ footer {
   grid-template-columns: minmax(0, 1fr) 250px;
   gap: 25px;
 }
+.editor-save-guard {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
 .editor-settings {
   background: #eff2e9;
   padding: 20px;

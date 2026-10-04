@@ -84,11 +84,13 @@ export function RichEditor({
   onChange,
   ownerId,
   onUploadStart,
+  readOnly = false,
 }: {
   value: string;
   onChange: (v: string) => void;
   ownerId: string;
   onUploadStart: () => void;
+  readOnly?: boolean;
 }) {
   const [insert, setInsert] = useState(false),
     [image, setImage] = useState(""),
@@ -117,6 +119,7 @@ export function RichEditor({
       Caption,
     ],
     content: sanitize(value),
+    editable: !readOnly,
     editorProps: {
       attributes: {
         class: "prose editor-body",
@@ -128,6 +131,9 @@ export function RichEditor({
     },
     onUpdate: ({ editor }) => onChange(sanitize(editor.getHTML())),
   });
+  useEffect(() => {
+    editor?.setEditable(!readOnly, false);
+  }, [editor, readOnly]);
   useEffect(() => {
     if (
       editor &&
