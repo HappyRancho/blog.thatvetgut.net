@@ -47,16 +47,34 @@ for (const collection of [
   "media",
 ]) {
   try {
-    const r = await fetch(`${base}/${collection}?pageSize=100`, {
+    let r = await fetch(`${base}/${collection}?pageSize=100`, {
       signal: AbortSignal.timeout(20000),
     });
-    const d = await r.json();
+    let d = await r.json();
+    if (!r.ok) {
+      const q = await fetch(`${base}:runQuery`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          structuredQuery: {
+            from: [{ collectionId: collection }],
+            limit: 100,
+          },
+        }),
+        signal: AbortSignal.timeout(20000),
+      });
+      if (q.ok) {
+        const items = (await q.json()).filter((x) => x.document);
+        r = q;
+        d = { documents: items.map((x) => x.document) };
+      }
+    }
     report.database.push({
       collection,
       status: r.status,
       count: r.ok ? d.documents?.length || 0 : undefined,
       hasMore: !!d.nextPageToken,
-      error: d.error?.message,
+      error: r.ok ? undefined : d.error?.message,
     });
     if (collection === "publications" && r.ok) {
       const docs = d.documents || [];

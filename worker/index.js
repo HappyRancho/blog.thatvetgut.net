@@ -295,18 +295,22 @@ async function importer(request) {
   }
 }
 async function sitemap() {
-  let token = "",
-    entries = [],
-    pages = 0;
-  do {
-    const d = await rest(
-      `publications?pageSize=500${token ? "&pageToken=" + encodeURIComponent(token) : ""}`,
-    );
-    entries.push(...(d?.documents || []).map(unpack));
-    token = d?.nextPageToken || "";
-    pages++;
-  } while (token && pages < 20);
-  if (token) throw new Error("Sitemap exceeds the configured page limit.");
+  let entries = [];
+  try {
+    let token = "",
+      pages = 0;
+    do {
+      const d = await rest(
+        `publications?pageSize=500${token ? "&pageToken=" + encodeURIComponent(token) : ""}`,
+      );
+      entries.push(...(d?.documents || []).map(unpack));
+      token = d?.nextPageToken || "";
+      pages++;
+    } while (token && pages < 20);
+    if (token) throw new Error("Sitemap exceeds the configured page limit.");
+  } catch {
+    entries = await list("publications", 500);
+  }
   const paths = [
     "/",
     "/articles",

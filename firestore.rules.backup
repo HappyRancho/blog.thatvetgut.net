@@ -1,0 +1,110 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function member() {
+      return request.auth != null && request.auth.token.email_verified == true &&
+        exists(/databases/$(database)/documents/cms_users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/cms_users/$(request.auth.uid)).data.role == 'CO_FOUNDER' &&
+        get(/databases/$(database)/documents/cms_users/$(request.auth.uid)).data.status == 'ACTIVE' &&
+        get(/databases/$(database)/documents/cms_users/$(request.auth.uid)).data.authorId in ['dr-chirag-patidar','dr-amaan-ahmed','dr-shivam-singh-thakur','dr-ritesh-verma','dr-deepesh-mathur','dr-deepesh-chaware'];
+    }
+    function validArticle(a,id) {
+      return a.keys().hasAll(['id','title','subtitle','category','tags','authorId','content','image','imageAlt','seoTitle','seoDescription','references','sourceUrl','audience']) &&
+        a.keys().hasOnly(['id','title','subtitle','category','tags','authorId','content','image','imageAlt','seoTitle','seoDescription','references','sourceUrl','audience','importedAt','importedBy']) &&
+        a.id == id && id.matches('^[a-z0-9]+(-[a-z0-9]+)*$') && id.size() <= 100 &&
+        a.title is string && a.title.size() >= 8 && a.title.size() <= 180 &&
+        a.subtitle is string && a.subtitle.size() <= 500 && a.content is string && a.content.size() <= 150000 &&
+        a.category in ['pet-health','veterinary-medicine','animal-nutrition','preventive-care','emergency-critical-care','one-health','animal-welfare','livestock-large-animals'] &&
+        a.authorId in ['dr-chirag-patidar','dr-amaan-ahmed','dr-shivam-singh-thakur','dr-ritesh-verma','dr-deepesh-mathur','dr-deepesh-chaware'] &&
+        a.tags is list && a.tags.size() <= 15 && a.references is list && a.references.size() <= 50 &&
+        a.image is string && a.image.size() <= 2000 && a.imageAlt is string && a.imageAlt.size() <= 300 &&
+        a.seoTitle is string && a.seoTitle.size() <= 180 && a.seoDescription is string && a.seoDescription.size() <= 500 &&
+        a.sourceUrl is string && a.sourceUrl.size() <= 2000 && a.audience in ['Pet parents','Veterinary professionals'];
+    }
+    function validManuscript(d,id) {
+      return d.keys().hasAll(['article','authorUid','status','revision','reviewerUid','reviewerAuthorId','reviewedAt','updatedAt','reviewNote']) &&
+        d.keys().hasOnly(['article','authorUid','status','revision','reviewerUid','reviewerAuthorId','reviewedAt','updatedAt','reviewNote']) &&
+        validArticle(d.article,id) && d.authorUid is string && d.revision is int && d.reviewerUid is string && d.reviewerAuthorId is string &&
+        (d.reviewedAt is string || d.reviewedAt is timestamp) && d.updatedAt is string && d.reviewNote is string && d.reviewNote.size() <= 4000;
+    }
+    function reviewTransition(old,next) {
+      return next.article == old.article && next.authorUid == old.authorUid && next.revision == old.revision && (
+        (old.status in ['DRAFT','CHANGES REQUESTED'] && next.status == 'SUBMITTED FOR REVIEW' && next.reviewerUid == old.reviewerUid && next.reviewerAuthorId == old.reviewerAuthorId && next.reviewedAt == old.reviewedAt && next.article.references.size() > 0 && next.article.content.size() >= 200) ||
+        (old.status == 'SUBMITTED FOR REVIEW' && next.status == 'UNDER REVIEW' && request.auth.uid != old.authorUid && get(/databases/$(database)/documents/cms_users/$(request.auth.uid)).data.authorId != old.article.authorId && next.reviewerUid == request.auth.uid && next.reviewerAuthorId == get(/databases/$(database)/documents/cms_users/$(request.auth.uid)).data.authorId && next.reviewedAt == old.reviewedAt) ||
+        (old.status == 'UNDER REVIEW' && next.status in ['APPROVED','CHANGES REQUESTED'] && old.reviewerUid == request.auth.uid && request.auth.uid != old.authorUid && next.reviewerUid == old.reviewerUid && next.reviewerAuthorId == old.reviewerAuthorId && ((next.status == 'APPROVED' && next.reviewedAt == request.time) || (next.status == 'CHANGES REQUESTED' && next.reviewedAt == old.reviewedAt))) ||
+        (old.status in ['APPROVED','UNPUBLISHED'] && next.status == 'PUBLISHED' && next.reviewerUid == old.reviewerUid && next.reviewerAuthorId == old.reviewerAuthorId && next.reviewedAt == old.reviewedAt && next.reviewedAt != '' && existsAfter(/databases/$(database)/documents/publications/$(old.article.id))) ||
+        (old.status == 'PUBLISHED' && next.status == 'UNPUBLISHED' && next.reviewerUid == old.reviewerUid && next.reviewerAuthorId == old.reviewerAuthorId && next.reviewedAt == old.reviewedAt && !existsAfter(/databases/$(database)/documents/publications/$(old.article.id)))
+      );
+    }
+    match /cms_users/{uid} { allow get: if request.auth != null && request.auth.uid == uid; allow list,write: if false; }
+    match /authorized_phones/{id} { allow read,write: if false; }
+    match /manuscripts/{id} {
+      allow read: if member();
+      allow create: if member() && validManuscript(request.resource.data,id) && request.resource.data.authorUid == request.auth.uid && request.resource.data.status == 'DRAFT' && request.resource.data.revision == 1 && request.resource.data.reviewerUid == '' && request.resource.data.reviewerAuthorId == '' && request.resource.data.reviewedAt == '';
+      allow update: if member() && validManuscript(request.resource.data,id) && (
+        (request.resource.data.status == 'DRAFT' && request.resource.data.authorUid == resource.data.authorUid && request.resource.data.revision == resource.data.revision + 1 && request.resource.data.reviewerUid == '' && request.resource.data.reviewerAuthorId == '' && request.resource.data.reviewedAt == '' && !existsAfter(/databases/$(database)/documents/publications/$(id))) || reviewTransition(resource.data,request.resource.data)
+      );
+      allow delete: if member() && resource.data.status != 'PUBLISHED' && !existsAfter(/databases/$(database)/documents/publications/$(id));
+    }
+    match /publications/{id} {
+      allow read: if true;
+      allow create,update: if member() && request.resource.data.keys().hasAll(['article','revision','reviewerUid','reviewerAuthorId','reviewedAt','publishedAt']) && request.resource.data.keys().hasOnly(['article','revision','reviewerUid','reviewerAuthorId','reviewedAt','publishedAt','updatedAt']) &&
+        (!('updatedAt' in request.resource.data) || request.resource.data.updatedAt == request.time) &&
+        getAfter(/databases/$(database)/documents/manuscripts/$(id)).data.status == 'PUBLISHED' &&
+        request.resource.data.article == getAfter(/databases/$(database)/documents/manuscripts/$(id)).data.article &&
+        request.resource.data.revision == getAfter(/databases/$(database)/documents/manuscripts/$(id)).data.revision &&
+        request.resource.data.reviewerUid == getAfter(/databases/$(database)/documents/manuscripts/$(id)).data.reviewerUid &&
+        request.resource.data.reviewerAuthorId == getAfter(/databases/$(database)/documents/manuscripts/$(id)).data.reviewerAuthorId &&
+        request.resource.data.reviewedAt == getAfter(/databases/$(database)/documents/manuscripts/$(id)).data.reviewedAt &&
+        request.resource.data.publishedAt == request.time;
+      allow delete: if member() && getAfter(/databases/$(database)/documents/manuscripts/$(id)).data.status != 'PUBLISHED';
+    }
+    match /source_imports/{id} {
+      allow read: if member();
+      allow create: if member() && id.matches('^[a-f0-9]{64}$') &&
+        request.resource.data.keys().hasOnly(['articleId','sourceUrl','importedBy','importedAt']) &&
+        request.resource.data.importedBy == request.auth.uid && request.resource.data.importedAt == request.time &&
+        getAfter(/databases/$(database)/documents/manuscripts/$(request.resource.data.articleId)).data.article.sourceUrl == request.resource.data.sourceUrl;
+      allow delete: if member() && !existsAfter(/databases/$(database)/documents/manuscripts/$(resource.data.articleId));
+      allow update: if false;
+    }
+    function publicMedia(m,id) {
+      return (m.ownerType == 'author' && get(/databases/$(database)/documents/authors/$(m.ownerId)).data.image == '/media/'+id) ||
+        (m.ownerType == 'article' && exists(/databases/$(database)/documents/publications/$(m.ownerId)) &&
+        (get(/databases/$(database)/documents/publications/$(m.ownerId)).data.article.image == '/media/'+id ||
+         get(/databases/$(database)/documents/publications/$(m.ownerId)).data.article.content.matches('.*src="/media/'+id+'".*')));
+    }
+    match /media/{id} {
+      allow get: if member() || publicMedia(resource.data,id);
+      allow list: if false;
+      allow create: if member() && id.matches('^[a-f0-9-]{36}$') && request.resource.data.keys().hasOnly(['ownerType','ownerId','uploadedBy','data','width','height','createdAt']) &&
+        request.resource.data.uploadedBy == request.auth.uid && request.resource.data.createdAt == request.time &&
+        request.resource.data.ownerId is string && request.resource.data.ownerId.matches('^[a-z0-9]+(-[a-z0-9]+)*$') &&
+        request.resource.data.ownerType in ['article','author'] && (request.resource.data.ownerType == 'article' || get(/databases/$(database)/documents/cms_users/$(request.auth.uid)).data.authorId == request.resource.data.ownerId) &&
+        request.resource.data.data is string && request.resource.data.data.size() <= 240000 && request.resource.data.data.matches('^data:image/(webp|jpeg|png);base64,[A-Za-z0-9+/=]+$') &&
+        request.resource.data.width is int && request.resource.data.width > 0 && request.resource.data.width <= 1400 && request.resource.data.height is int && request.resource.data.height > 0 && request.resource.data.height <= 1400;
+      allow update,delete: if false;
+    }
+    match /authors/{id} {
+      allow read: if true;
+      allow create,update: if member() && get(/databases/$(database)/documents/cms_users/$(request.auth.uid)).data.authorId == id &&
+        request.resource.data.keys().hasAll(['id','name','role','qualifications','bio','expertise','affiliation','image','linkedin']) &&
+        request.resource.data.keys().hasOnly(['id','name','role','qualifications','bio','expertise','affiliation','image','linkedin','portfolio']) &&
+        (!('portfolio' in request.resource.data) || (request.resource.data.portfolio is string && request.resource.data.portfolio.size() <= 2000)) &&
+        request.resource.data.id == id && request.resource.data.name is string && request.resource.data.name.size() <= 100 &&
+        request.resource.data.bio is string && request.resource.data.bio.size() <= 4000 &&
+        request.resource.data.role is string && request.resource.data.role.size() <= 150 && request.resource.data.qualifications is string && request.resource.data.qualifications.size() <= 150 &&
+        request.resource.data.affiliation is string && request.resource.data.affiliation.size() <= 300 && request.resource.data.expertise is list && request.resource.data.expertise.size() <= 15 &&
+        request.resource.data.image is string && request.resource.data.image.size() <= 2000 && request.resource.data.linkedin is string && request.resource.data.linkedin.size() <= 2000;
+    }
+    match /newsletter_signups/{id} {
+      allow create: if request.resource.data.keys().hasAll(['email','role','consent','createdAt']) && request.resource.data.keys().hasOnly(['email','role','consent','createdAt']) && request.resource.data.email is string && request.resource.data.email.size() <= 254 && request.resource.data.email.matches('^[^@ ]+@[^@ ]+[.][^@ ]+$') && request.resource.data.role in ['Pet parent','Veterinary professional','Student'] && request.resource.data.consent == true && request.resource.data.createdAt == request.time;
+      allow read,delete: if member();
+    }
+    match /contact_inquiries/{id} {
+      allow create: if request.resource.data.keys().hasAll(['name','email','message','createdAt']) && request.resource.data.keys().hasOnly(['name','email','message','createdAt']) && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100 && request.resource.data.email is string && request.resource.data.email.size() <= 254 && request.resource.data.email.matches('^[^@ ]+@[^@ ]+[.][^@ ]+$') && request.resource.data.message is string && request.resource.data.message.size() >= 10 && request.resource.data.message.size() <= 5000 && request.resource.data.createdAt == request.time;
+      allow read,delete: if member();
+    }
+    match /{path=**} { allow read,write: if false; }
+  }
+}
