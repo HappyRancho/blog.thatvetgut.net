@@ -460,7 +460,7 @@ function Admin() {
             {authError || status}
           </p>
         </div>
-        <Link to="/">Return to the journal</Link>
+        <Link to="/">Return to the blog</Link>
       </div>
     );
   return (
@@ -553,7 +553,7 @@ function Admin() {
             <div className="section-title">
               <div>
                 <span className="eyebrow">The publishing desk</span>
-                <h1>Your journal, in progress.</h1>
+                <h1>Your articles, all in one place.</h1>
               </div>
               <button
                 disabled={busy}
@@ -876,9 +876,10 @@ function Admin() {
                   <div className="panel">
                     <h2>Start with practical reader questions.</h2>
                     <p>
-                      New educational drafts covering all eight specialties.
-                      Suggested authors must verify and accept the material; no
-                      clinical review or publication is implied.
+                      30 practical articles, five assigned to each founder,
+                      covering all eight specialties. Suggested authors must
+                      verify and accept the material; no clinical review or
+                      publication is implied.
                     </p>
                     <button
                       disabled={busy}
@@ -892,7 +893,7 @@ function Admin() {
                         })
                       }
                     >
-                      Add starter drafts
+                      Add 30 article drafts
                     </button>
                   </div>
                 )}

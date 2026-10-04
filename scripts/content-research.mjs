@@ -1,5 +1,11 @@
 import { mkdir, writeFile } from "node:fs/promises";
 const sources = {
+  heatvca: "https://vcahospitals.com/know-your-pet/heat-stroke-in-dogs",
+  lepto: "https://vcahospitals.com/know-your-pet/leptospirosis-in-dogs",
+  carrierVca:
+    "https://vcahospitals.com/know-your-pet/cat-behavior-and-training---traveling-air-travel",
+  pain: "https://www.fda.gov/animal-veterinary/animal-health-literacy/get-facts-about-pain-relievers-pets",
+  farm: "https://www.woah.org/en/what-we-do/standards/codes-and-manuals/terrestrial-code-online-access/",
   vaccination: "https://wsava.org/global-guidelines/vaccination-guidelines/",
   nutrition: "https://wsava.org/global-guidelines/global-nutrition-guidelines/",
   dental:
@@ -44,7 +50,7 @@ const images = {
   puppy: "photo-1558788353-f76d92427f16",
   kitten: "photo-1573865526739-10659fec78a5",
   horse: "photo-1553284965-83fd3e82fa5a",
-  cow: "photo-1516467508483-a7212febe31a",
+  cow: "photo-1546445317-29f4545e9d53",
 };
 await mkdir("content-research", { recursive: true });
 const result = [];
