@@ -1,5 +1,8 @@
 import { writeFile, readFile } from "node:fs/promises";
 try {
+  process.loadEnvFile(".env");
+} catch {}
+try {
   process.loadEnvFile(".env.local");
 } catch {}
 let appletConfig = {};
