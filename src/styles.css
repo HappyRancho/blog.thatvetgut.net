@@ -778,6 +778,12 @@ footer {
 .filter-bar label {
   margin: 0;
   flex: 1;
+  min-width: 0;
+}
+.filter-bar input,
+.filter-bar select {
+  min-width: 0;
+  width: 100%;
 }
 .filter-bar .search-field {
   flex: 2.3;
