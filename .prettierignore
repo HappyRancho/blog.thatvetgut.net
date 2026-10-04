@@ -3,3 +3,5 @@ dist/
 worker/public-config.js
 research/
 screenshots/
+
+dist-test/

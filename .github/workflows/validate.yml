@@ -1,6 +1,8 @@
 name: Validate rebuild
 on:
   pull_request:
+  push:
+    branches: [main]
 permissions:
   contents: read
 jobs:
@@ -20,12 +22,14 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run test:content
+      - run: npm run test:config
       - run: npm run build
       - run: npm run test:worker
       - name: Validate Cloudflare static deployment
         run: npx --yes wrangler@4.147.0 deploy --dry-run --outdir /tmp/thatvetguy-worker-dry-run
       - run: npm run test:rules
       - run: npx playwright install --with-deps chromium
+      - run: npm run build:test
       - run: npm run test:browser
         id: browser
         timeout-minutes: 3
@@ -55,3 +59,18 @@ jobs:
             firebase.json
             firestore.indexes.json
             README.md
+  public-deployment-inspection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Inspect live public pages and database permissions without writes
+        run: node scripts/check-live.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: public-deployment-inspection
+          path: live-check/

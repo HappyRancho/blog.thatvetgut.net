@@ -15,7 +15,7 @@ export function Categories() {
         title="Eight perspectives on animal health"
         description="Browse eight veterinary specialties, from preventive care to herd health."
       />
-      <span className="eyebrow">Explore the journal</span>
+      <span className="eyebrow">Explore the blog</span>
       <h1>Every kind of care.</h1>
       <p className="intro-text">
         A connected view of animal health, organised around what you want to
@@ -318,7 +318,7 @@ export function Privacy() {
       />
       <h1>Privacy, in plain language.</h1>
       <div className="prose">
-        <h2>Reading the journal</h2>
+        <h2>Reading the blog</h2>
         <p>
           Bookmarks stay in your browser on this device. We do not use
           advertising trackers in this implementation. Images hosted by third

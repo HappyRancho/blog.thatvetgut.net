@@ -74,7 +74,7 @@ export default function Archive() {
     ? categoryName(category)
     : tag
       ? `Articles tagged “${tag}”`
-      : "The reading room";
+      : "Pet health & animal care";
   if (slug && !topic)
     return (
       <>
@@ -92,12 +92,12 @@ export default function Archive() {
         title={title}
         description={
           topic?.description ||
-          "Explore the ThatVetGuy veterinary journal by specialty, topic and audience."
+          "Explore the ThatVetGuy pet-health blog by specialty, topic and audience."
         }
         noindex={!!q || bookmarked}
       />
       <span className="eyebrow">
-        The journal / {category ? "Specialty collection" : "All articles"}
+        The blog / {category ? "Specialty collection" : "All articles"}
       </span>
       <h1>
         {title}

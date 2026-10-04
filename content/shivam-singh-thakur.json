@@ -1,0 +1,132 @@
+[
+  {
+    "id": "reading-pet-food-labels",
+    "title": "What a pet-food label can—and cannot—tell you",
+    "subtitle": "Look beyond ingredient marketing to life stage, nutritional suitability and the questions a manufacturer should answer.",
+    "category": "animal-nutrition",
+    "authorId": "dr-shivam-singh-thakur",
+    "tags": ["nutrition", "dogs", "cats", "food labels"],
+    "content": "<h2>Start with suitability</h2><p>Before judging a bag by its ingredient list, ask whether the food is intended for your animal’s species and life stage, and whether it is designed to provide complete nutrition or to complement another diet. Labelling terms differ between markets. Ask your veterinarian to interpret unfamiliar statements in the local context.</p><h2>Ingredients are only one part of the picture</h2><p>An ingredient list does not by itself show how well a food is formulated, manufactured, digested or suited to an individual animal. Attractive marketing language is not a substitute for nutritional expertise or quality control. “Natural” or “premium” does not tell you whether a diet meets this animal’s needs.</p><h2>Ask about the people and process behind the food</h2><p>Useful manufacturer questions include who formulates the diets, what qualifications they have, what quality-control measures are used, and whether detailed nutritional and calorie information is available. A company should be able to answer these questions clearly rather than relying only on advertising.</p><h2>Use the feeding guide as a starting point</h2><p>The amount printed on a package cannot account for every animal’s activity, body condition and household treats. Ask the clinic to assess body condition and help plan a suitable daily amount. Record the food, quantity, treats and supplements so adjustments are based on what is actually fed.</p><h2>Medical diets need individual advice</h2><p>An animal with a health condition may have nutritional needs that a general comparison chart cannot address. Changes to a prescribed diet, homemade recipe or supplement plan should be discussed with the treating veterinarian. Adding nutrients without knowing the existing diet can unbalance it.</p><h2>Take a photograph to the appointment</h2><p>Photograph the front, nutritional statement, feeding guide and manufacturer contact details. Bring the current diet history. These are more useful for a clinical discussion than a single ingredient ranking or a social-media score.</p><h2>A practical label comparison</h2><table><thead><tr><th>Look for</th><th>Why it helps</th></tr></thead><tbody><tr><td>Species and life stage</td><td>Shows the intended animal and stage of life</td></tr><tr><td>Complete or complementary status</td><td>Clarifies whether it is a main diet or an addition</td></tr><tr><td>Calorie information</td><td>Helps compare portions without assuming equal volumes are equal</td></tr><tr><td>Manufacturer contact details</td><td>Gives you a route to ask formulation and quality questions</td></tr></tbody></table><p>US or European label terminology may appear on imported products in India. Ask what the statement actually means and whether the exact food is appropriate for your pet rather than treating foreign packaging as an automatic quality guarantee.</p>",
+    "references": [
+      {
+        "title": "WSAVA — Global nutrition guidelines",
+        "url": "https://wsava.org/global-guidelines/global-nutrition-guidelines/",
+        "year": ""
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1573865526739-10659fec78a5?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Ginger cat resting indoors",
+    "seoTitle": "What a pet-food label can—and cannot—tell you",
+    "seoDescription": "Look beyond ingredient marketing to life stage, nutritional suitability and the questions a manufacturer should answer.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "healthy-pet-weight-and-portions",
+    "title": "Is your pet eating the right amount? Start with body condition",
+    "subtitle": "Use weight trends, a complete food history and measured portions instead of judging by the bowl.",
+    "authorId": "dr-shivam-singh-thakur",
+    "category": "animal-nutrition",
+    "tags": ["dogs", "cats", "weight", "feeding"],
+    "references": [
+      {
+        "title": "WSAVA — Global nutrition guidelines and tools",
+        "url": "https://wsava.org/global-guidelines/global-nutrition-guidelines/",
+        "year": ""
+      },
+      {
+        "title": "AVMA — Pet dental care",
+        "url": "https://www.avma.org/resources-tools/pet-owners/petcare/pet-dental-care",
+        "year": ""
+      }
+    ],
+    "content": "<aside class=\"key-takeaways\"><p><strong>The packet is a starting point.</strong> Your pet's body condition, muscle condition and weight trend help the veterinary team adjust feeding more usefully than a fixed bowl size.</p></aside>\n<h2>Weight alone does not tell the whole story</h2><p>Two animals of the same weight may have different frames and amounts of muscle and body fat. A veterinarian can assess body condition and show you how to feel for ribs and look for a waist without relying only on a photograph. Long coats can make visual judgement particularly misleading.</p><p>Muscle condition is assessed separately. An older or chronically ill animal can lose muscle while still carrying excess fat. A shrinking number on the scale is therefore not automatically a successful weight-loss result. Unplanned weight change needs an explanation.</p>\n<h2>Write down everything that goes in</h2><p>For several ordinary days, record meals, treats, table food, chews, supplements and food used for medication or training. Include contributions from every person in the household. A food diary often reveals why a carefully measured main meal is only part of the total.</p><p>Photograph the product label and measure the actual amount offered. A kitchen scale can make repeat portions easier than estimating a scoop. Keep units clear: grams of food, number of treats and calories are different measurements.</p>\n<h2>Agree on a realistic plan</h2><ul><li>Ask for a target based on examination, not a breed chart alone.</li><li>Confirm the food, daily amount and how treats fit into that allowance.</li><li>Choose activity appropriate to age, breathing, joints and fitness.</li><li>Set a recheck date and decide which observations to record at home.</li></ul><p>A weight-management plan should provide adequate essential nutrients while adjusting energy intake. Simply cutting a complete diet severely can create nutritional problems. Cats should not be crash-dieted or deliberately starved. A cat eating poorly needs prompt veterinary advice.</p>\n<h2>Make the household part of the solution</h2><p>Use one labelled daily food container so family members can see what remains. Offer part of the normal ration in suitable food toys if safe for the pet. Give attention, play or a comfortable resting place rather than automatically responding to every request with another snack.</p><p>Edible dental products count too. Ask the clinic how to keep dental care within the feeding plan instead of quietly adding a second treat allowance.</p>\n<h2>Review and adjust</h2><p>Track weight at comparable intervals and note appetite, stamina, comfort and muscle changes. Take the record to rechecks. If weight changes unexpectedly despite a consistent routine, or thirst and appetite change, investigate rather than assuming someone is feeding too much. The aim is comfortable health over time, not a rapid result for a before-and-after photo.</p>",
+    "image": "https://images.unsplash.com/photo-1573865526739-10659fec78a5?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Ginger cat resting indoors",
+    "seoTitle": "Is your pet eating the right amount? Start with body condition",
+    "seoDescription": "Use weight trends, a complete food history and measured portions instead of judging by the bowl.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "raw-pet-food-risks",
+    "title": "Raw pet food: questions to ask before changing the bowl",
+    "subtitle": "Separate nutritional claims from infection risk, and consider everyone who shares your home.",
+    "authorId": "dr-shivam-singh-thakur",
+    "category": "animal-nutrition",
+    "tags": ["dogs", "cats", "raw food", "food safety"],
+    "references": [
+      {
+        "title": "WSAVA — Global nutrition guidelines and tools",
+        "url": "https://wsava.org/global-guidelines/global-nutrition-guidelines/",
+        "year": ""
+      },
+      {
+        "title": "WOAH — Antimicrobial resistance",
+        "url": "https://www.woah.org/en/what-we-do/global-initiatives/antimicrobial-resistance/",
+        "year": ""
+      }
+    ],
+    "content": "<aside class=\"key-takeaways\"><p><strong>Raw does not automatically mean safer or more complete.</strong> Assess nutritional adequacy, pathogen exposure and household vulnerability before choosing a diet.</p></aside>\n<h2>Two different questions need answers</h2><p>A food can be nutritionally unbalanced, microbiologically contaminated, both, or neither. Attractive ingredients do not answer either question. Ask whether a diet supplies the necessary nutrients for the species and life stage, and separately ask how the ingredients and finished product are handled to control harmful microorganisms.</p><p>WSAVA's nutrition resources describe risks associated with raw meat-based diets. Claims about a shinier coat or smaller stool do not establish protection from those risks, and they do not prove a diet is suitable for a growing puppy, pregnant animal or pet with a medical condition.</p>\n<h2>The risk is not limited to the animal eating it</h2><p>Handling raw animal products can contaminate hands, utensils, surfaces and bowls. Pets may also carry organisms without obvious diarrhoea. That matters when young children, pregnant people, older adults or immunocompromised people share the environment. Good kitchen hygiene helps, but it does not make all raw products pathogen-free.</p><p>Freezing is not a guarantee that all relevant bacteria or parasites have been removed. Do not treat a frozen label or a reassuring social-media testimonial as proof of safety. Ask the manufacturer for concrete quality-control information.</p>\n<h2>Bone content introduces another issue</h2><p>Bones can damage teeth or cause other injuries and obstruction. A claim that a bone is natural does not make it risk-free. Ask the veterinarian for safer chewing and dental-care options appropriate to your animal. A dog swallowing something large or sharp needs case-specific advice, not instructions to force food after it.</p>\n<h2>Questions a useful diet discussion should cover</h2><ul><li>Who formulates the diet, and what relevant nutrition training do they have?</li><li>Is it complete for this species and life stage?</li><li>What testing and quality-control procedures support its safety?</li><li>Does this household include someone at increased infection risk?</li><li>What practical, nutritionally suitable alternatives are available?</li></ul>\n<h2>Choose with the whole household in mind</h2><p>A complete cooked diet may meet the same nutritional goals with a different microbial risk profile. Commercial and homemade diets both need appropriate assessment; neither category is automatically perfect. If you currently feed raw, tell the clinic openly so the advice and diagnostic decisions reflect the real diet.</p><p>Keep food packaging and batch information when an animal becomes ill. Wash hands and follow professional cleaning advice. Do not self-treat suspected foodborne illness with leftover antibiotics. Resistance is a wider human and animal health issue, not a reason to experiment with antimicrobial treatment.</p>",
+    "image": "https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Golden retriever outdoors",
+    "seoTitle": "Raw pet food: questions to ask before changing the bowl",
+    "seoDescription": "Separate nutritional claims from infection risk, and consider everyone who shares your home.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "homemade-pet-diets-balanced",
+    "title": "Home-cooked pet food needs a recipe, not a guess",
+    "subtitle": "Why meat, rice and vegetables may look wholesome without supplying a complete long-term diet.",
+    "authorId": "dr-shivam-singh-thakur",
+    "category": "animal-nutrition",
+    "tags": ["dogs", "cats", "homemade diets", "feeding"],
+    "references": [
+      {
+        "title": "WSAVA — Global nutrition guidelines and tools",
+        "url": "https://wsava.org/global-guidelines/global-nutrition-guidelines/",
+        "year": ""
+      },
+      {
+        "title": "AVMA — Household hazards",
+        "url": "https://www.avma.org/resources-tools/pet-owners/petcare/household-hazards",
+        "year": ""
+      }
+    ],
+    "content": "<aside class=\"key-takeaways\"><p><strong>Ingredients are not a nutrient analysis.</strong> For long-term home cooking, use an individually appropriate recipe from a veterinarian with suitable nutrition expertise and follow it accurately.</p></aside>\n<h2>A varied plate is not automatically balanced</h2><p>Dogs and cats require the right amounts and proportions of nutrients, not just a variety of foods. A mixture of meat, rice and vegetables may provide calories while missing essential minerals or vitamins. Cats also have distinct nutritional requirements that cannot be met by simply adapting a human vegetarian meal or a dog's ration.</p><p>A recipe that is suitable for one healthy adult animal may be unsuitable for growth, pregnancy or disease. Growing animals are particularly sensitive to some imbalances. Ask for advice before making a homemade diet the main food rather than waiting for a visible deficiency.</p>\n<h2>What a usable recipe should specify</h2><ul><li>The precise ingredients and their quantities.</li><li>Whether quantities are weighed before or after cooking.</li><li>The required preparation and storage method.</li><li>The exact supplement products and amounts, if indicated.</li><li>The daily portion and a review plan for the individual animal.</li></ul><p>Changing a meat cut, replacing an ingredient or leaving out a supplement can change the nutrient profile. A spoonful of an unspecified multivitamin is not an adequate substitute for formulation. Follow the recipe and ask its prescriber before making changes.</p>\n<h2>Distinguish temporary feeding advice from a permanent diet</h2><p>A clinician may recommend a short-term feeding approach for a particular illness. That does not mean the same limited recipe provides complete nutrition indefinitely. Ask how long it is intended to be used, how to transition afterward and what to do if your pet will not eat it.</p><p>Do not put a cat on an extended food restriction because a recipe or internet guide suggests it. Poor intake, weight loss or persistent vomiting needs a clinical assessment and a clear feeding plan.</p>\n<h2>Make cooking safe and sustainable</h2><p>Store ingredients and prepared portions safely, keep raw food away from ready-to-eat food and wash preparation equipment. Keep harmful household ingredients such as onion, garlic, chocolate and products containing xylitol out of pet recipes. Tolerance of a tiny accidental amount does not establish an ingredient as suitable for routine feeding.</p><p>Consider your budget, time, refrigeration and consistency honestly. A suitable complete commercial food may be more practical than a recipe you cannot reliably prepare. The best plan is one that meets nutritional needs and can actually be followed.</p>\n<h2>Bring evidence to follow-up</h2><p>Record the recipe used, any substitutions, treats, appetite and weight. Review body and muscle condition with the clinic. Laboratory testing may be relevant in some cases, but a normal result does not prove that every nutrient in a diet is adequate. Formulation and follow-up work together.</p>",
+    "image": "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Black-and-white cat looking over a wooden surface",
+    "seoTitle": "Home-cooked pet food needs a recipe, not a guess",
+    "seoDescription": "Why meat, rice and vegetables may look wholesome without supplying a complete long-term diet.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "changing-pet-food-sensibly",
+    "title": "Changing pet food without changing everything at once",
+    "subtitle": "A practical approach to introducing a new diet, monitoring appetite and recognising when to ask for help.",
+    "authorId": "dr-shivam-singh-thakur",
+    "category": "animal-nutrition",
+    "tags": ["dogs", "cats", "diet changes", "feeding"],
+    "references": [
+      {
+        "title": "WSAVA — Global nutrition guidelines and tools",
+        "url": "https://wsava.org/global-guidelines/global-nutrition-guidelines/",
+        "year": ""
+      },
+      {
+        "title": "AVMA — Household hazards",
+        "url": "https://www.avma.org/resources-tools/pet-owners/petcare/household-hazards",
+        "year": ""
+      }
+    ],
+    "content": "<aside class=\"key-takeaways\"><p><strong>Know why you are changing the food.</strong> Confirm suitability first, then use a gradual, observable transition when your veterinarian considers that appropriate.</p></aside>\n<h2>Start with the reason</h2><p>A change may be needed for life stage, product availability, a clinical condition or practical household reasons. Check that the new food is appropriate for the species and intended life stage. A complementary food or treat should not silently replace a complete main diet.</p><p>If the change is part of treatment, follow the treating veterinarian's instructions. Some clinical situations require a different approach from the usual gradual introduction. A prescribed food should not be swapped for a similar-looking bag solely because the ingredient lists resemble each other.</p>\n<h2>Keep the transition easy to interpret</h2><p>For a healthy pet, the veterinary team may recommend introducing the new food progressively over several days, changing the proportion as tolerated. Ask for a schedule suited to the animal, especially if there is a history of digestive trouble. There is no universal timetable that overrides illness or refusal to eat.</p><ul><li>Measure both foods rather than adding a full new ration to the old one.</li><li>Keep feeding times reasonably consistent.</li><li>Avoid introducing several treats or supplements at the same time.</li><li>Note what was actually eaten, not only what was offered.</li></ul><p>Different foods can contain different amounts of energy. Equal volumes do not necessarily provide equal calories. Confirm the final daily amount using the label and your pet's body condition.</p>\n<h2>Monitor more than stool consistency</h2><p>Record appetite, vomiting, stool, comfort and activity. A small change in stool may need discussion, but repeated vomiting, marked diarrhoea, weakness or reduced intake should not simply be labelled a normal transition. Kittens, puppies and animals with existing disease can need help sooner.</p><p>A cat that stops eating needs prompt veterinary advice. Do not try to force acceptance by withholding all alternatives indefinitely. Ask about palatability, texture, medical causes of poor appetite and a safe next step.</p>\n<h2>Avoid unsafe persuasion</h2><p>Adding rich table food, unplanned supplements or potentially harmful ingredients can change the diet and cloud the cause of symptoms. Warm food only safely and test the temperature. Do not add human medicines or digestive remedies without veterinary direction.</p>\n<h2>Review the result</h2><p>Once the animal is eating the new diet reliably, reassess portions and weight over time. Keep the product name and batch details, and write down any problems. If the goal was to investigate a food reaction, the plan may need stricter ingredient control and a specific duration; ordinary mixed feeding cannot substitute for a supervised diagnostic diet trial.</p>",
+    "image": "https://images.unsplash.com/photo-1573865526739-10659fec78a5?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Ginger cat resting indoors",
+    "seoTitle": "Changing pet food without changing everything at once",
+    "seoDescription": "A practical approach to introducing a new diet, monitoring appetite and recognising when to ask for help.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  }
+]

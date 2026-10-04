@@ -1,0 +1,92 @@
+// Read-only deployment inspection. Never authenticates or changes production records.
+import { readFile, mkdir, writeFile } from "node:fs/promises";
+const config = JSON.parse(
+  await readFile("firebase-applet-config.json", "utf8"),
+);
+const site = "https://blog.thatvetguy.net";
+const base = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(config.projectId)}/databases/${encodeURIComponent(config.firestoreDatabaseId)}/documents`;
+const report = {
+  inspectedAt: new Date().toISOString(),
+  pages: [],
+  database: [],
+  publications: null,
+};
+await mkdir("live-check", { recursive: true });
+for (const path of ["/", "/admin", "/sitemap.xml"]) {
+  try {
+    const r = await fetch(site + path, {
+      signal: AbortSignal.timeout(20000),
+      headers: { "Cache-Control": "no-cache" },
+    });
+    const html = await r.text();
+    report.pages.push({
+      path,
+      status: r.status,
+      type: r.headers.get("content-type"),
+      title: html.match(/<title[^>]*>(.*?)<\/title>/s)?.[1],
+      articleUrls: [
+        ...new Set(
+          [
+            ...html.matchAll(
+              /https:\/\/blog\.thatvetguy\.net\/article\/([a-z0-9-]+)/g,
+            ),
+          ].map((x) => x[1]),
+        ),
+      ],
+      unavailable: /temporarily unavailable/i.test(html),
+    });
+  } catch (e) {
+    report.pages.push({ path, error: e.message });
+  }
+}
+for (const collection of [
+  "publications",
+  "authors",
+  "manuscripts",
+  "cms_users",
+  "media",
+]) {
+  try {
+    const r = await fetch(`${base}/${collection}?pageSize=100`, {
+      signal: AbortSignal.timeout(20000),
+    });
+    const d = await r.json();
+    report.database.push({
+      collection,
+      status: r.status,
+      count: r.ok ? d.documents?.length || 0 : undefined,
+      hasMore: !!d.nextPageToken,
+      error: d.error?.message,
+    });
+    if (collection === "publications" && r.ok) {
+      const docs = d.documents || [];
+      const counts = {};
+      for (const doc of docs) {
+        const id =
+          doc.fields?.article?.mapValue?.fields?.authorId?.stringValue ||
+          "unknown";
+        counts[id] = (counts[id] || 0) + 1;
+      }
+      report.publications = {
+        count: docs.length,
+        hasMore: !!d.nextPageToken,
+        byAuthor: counts,
+      };
+    }
+  } catch (e) {
+    report.database.push({ collection, error: e.message });
+  }
+}
+try {
+  const r = await fetch(site + "/api/linkedin", {
+    method: "POST",
+    headers: { Origin: site, "Content-Type": "application/json" },
+    body: JSON.stringify({ url: "https://www.linkedin.com/pulse/example" }),
+    signal: AbortSignal.timeout(15000),
+  });
+  report.unauthenticatedImporterStatus = r.status;
+} catch (e) {
+  report.importerError = e.message;
+}
+await writeFile("live-check/report.json", JSON.stringify(report, null, 2));
+console.log(JSON.stringify(report, null, 2));
