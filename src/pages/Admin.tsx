@@ -34,6 +34,7 @@ import {
   type Author,
   STATUSES,
   safeUrl,
+  dateLabel,
 } from "../lib/domain";
 import { SEO, Loading } from "../components/Layout";
 import { ManuscriptEditor } from "../components/ManuscriptEditor";
@@ -544,6 +545,8 @@ function Admin() {
                 key={editor.session}
                 {...editor}
                 onSaved={(saved) => {
+                  if (editor.manuscript?.status === "PUBLISHED")
+                    void reloadCatalog();
                   setRows((old) => [
                     saved,
                     ...old.filter((m) => m.article.id !== saved.article.id),
@@ -642,8 +645,9 @@ function Admin() {
                             </span>
                             <h3>{m.article.title}</h3>
                             <p>
-                              Revision {m.revision} · Updated{" "}
-                              {new Date(m.updatedAt).toLocaleDateString()}
+                              Revision {m.revision}
+                              {dateLabel(m.updatedAt) &&
+                                " · Updated " + dateLabel(m.updatedAt)}
                             </p>
                             {m.reviewNote && (
                               <p className="review-note">

@@ -253,6 +253,7 @@ try {
       exact: true,
     })
     .waitFor();
+  await page.locator(".import-review > summary").click();
   assert.equal(
     await page
       .getByRole("button", { name: "Open in draft editor", exact: true })

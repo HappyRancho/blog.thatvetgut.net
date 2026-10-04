@@ -248,3 +248,77 @@ test("SSR returns only published content, safe metadata and real not-found statu
     globalThis.HTMLRewriter = originalRewriter;
   }
 });
+
+test("LinkedIn requests verify identity and explicit active founder membership before retrieval", async () => {
+  const originalFetch = globalThis.fetch;
+  let verified = true,
+    active = true,
+    authorId = "dr-chirag-patidar",
+    validToken = true,
+    linkedInReads = 0;
+  globalThis.fetch = async (url, options) => {
+    if (String(url).startsWith("https://identitytoolkit.googleapis.com/")) {
+      assert.equal(JSON.parse(options.body).idToken, "fixture-token");
+      return validToken
+        ? Response.json({
+            users: [{ localId: "worker-test-member", emailVerified: verified }],
+          })
+        : new Response("invalid", { status: 400 });
+    }
+    if (String(url).includes("/cms_users/worker-test-member")) {
+      assert.equal(options.headers.Authorization, "Bearer fixture-token");
+      return Response.json({
+        fields: {
+          role: { stringValue: "CO_FOUNDER" },
+          status: { stringValue: active ? "ACTIVE" : "INACTIVE" },
+          authorId: { stringValue: authorId },
+        },
+      });
+    }
+    assert.equal(url, "https://www.linkedin.com/pulse/real-public-article");
+    linkedInReads++;
+    return new Response(
+      "<article>A publicly accessible article body.</article>",
+      { headers: { "content-type": "text/html" } },
+    );
+  };
+  const request = () =>
+    worker.fetch(
+      new Request("https://blog.thatvetguy.net/api/linkedin", {
+        method: "POST",
+        headers: {
+          origin: "https://blog.thatvetguy.net",
+          Authorization: "Bearer fixture-token",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          url: "https://www.linkedin.com/pulse/real-public-article",
+        }),
+      }),
+      {},
+    );
+  try {
+    validToken = false;
+    assert.equal((await request()).status, 422);
+    validToken = true;
+    verified = false;
+    assert.equal((await request()).status, 422);
+    verified = true;
+    active = false;
+    assert.equal((await request()).status, 403);
+    active = true;
+    authorId = "outside-founder";
+    assert.equal((await request()).status, 403);
+    assert.equal(linkedInReads, 0);
+    authorId = "dr-chirag-patidar";
+    for (let i = 0; i < 6; i++) {
+      const response = await request();
+      assert.equal(response.status, 200);
+      assert.match((await response.json()).html, /publicly accessible/);
+    }
+    assert.equal((await request()).status, 429);
+    assert.equal(linkedInReads, 6);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
