@@ -226,6 +226,7 @@ export function Layout({ children }: { children: ReactNode }) {
             <Link to="/about">Editorial standards</Link>
             <Link to="/contact">Contact & corrections</Link>
             <Link to="/privacy">Privacy</Link>
+            <a href="https://unsplash.com/">Animal photography via Unsplash</a>
             <a href="https://www.thatvetguy.net/">The ThatVetGuy Collective</a>
           </div>
           <div>

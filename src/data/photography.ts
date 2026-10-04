@@ -29,3 +29,22 @@ export type PhotoKey = keyof typeof photos;
 export function petPhoto(key: PhotoKey, width = 1000) {
   return `https://images.unsplash.com/${photos[key].id}?auto=format&fit=crop&w=${width}&q=80`;
 }
+
+export function articlePhotoSizes(src: string) {
+  try {
+    const url = new URL(src);
+    if (url.hostname !== "images.unsplash.com") return {};
+    const sized = (width: number) => {
+      const u = new URL(url);
+      u.searchParams.set("w", String(width));
+      return u.href;
+    };
+    return {
+      srcSet: `${sized(480)} 480w, ${sized(800)} 800w, ${sized(1200)} 1200w`,
+      sizes:
+        "(max-width: 760px) calc(100vw - 36px), (max-width: 1000px) 45vw, 380px",
+    };
+  } catch {
+    return {};
+  }
+}

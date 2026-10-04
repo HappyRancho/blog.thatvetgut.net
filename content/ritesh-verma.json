@@ -1,0 +1,137 @@
+[
+  {
+    "id": "understanding-veterinary-blood-tests",
+    "title": "A blood-test result is the start of a conversation",
+    "subtitle": "Why an out-of-range number needs clinical context, and how to discuss results with your veterinarian.",
+    "category": "veterinary-medicine",
+    "authorId": "dr-ritesh-verma",
+    "tags": ["diagnostics", "blood tests", "clinical context"],
+    "content": "<h2>A number is not a diagnosis</h2><p>Laboratory tests help a veterinarian investigate health, monitor disease or check treatment. A result is interpreted alongside the animal’s history, examination and other findings. Reading one highlighted number without that context can lead to unnecessary worry or false reassurance.</p><h2>Understand the reference interval</h2><p>The interval printed beside a result describes the laboratory’s comparison range. Intervals can differ between laboratories and methods. The significance of a change also depends on species, age, clinical condition, sample quality and the pattern of other results. A value inside the interval does not by itself exclude illness.</p><h2>Ask what the test was designed to answer</h2><p>Some tests assess cell counts; others investigate organ function, metabolic changes or a specific infection. Ask which clinical question the test addresses and whether the finding is specific to one disease. Your veterinarian may need additional tests or a repeat sample to clarify the result.</p><h2>Keep the whole report</h2><p>Save the report with the date, laboratory, medicines being taken and the reason for testing. Previous results can make changes over time easier to interpret. Screenshots that crop out units, intervals or the animal’s details can remove information needed for a useful comparison.</p><h2>Discuss the next step</h2><p>Ask which results affect decisions today, which will be monitored and when reassessment is recommended. If a repeat test is planned, clarify food, water and medicine instructions with the clinic. Do not stop a prescription or add a supplement solely because an online chart labels a result abnormal.</p><h2>Know when to call sooner</h2><p>A worsening animal needs advice even if an earlier result looked reassuring. Follow the clinic’s instructions about symptoms requiring an earlier review. Testing supports clinical reasoning; it does not replace an examination.</p><h2>Three questions for a highlighted result</h2><ol><li>How large is the change, and does it fit the examination?</li><li>Could sample quality or a current medicine affect it?</li><li>Will repeating this test, adding another test or monitoring symptoms change the plan?</li></ol><p>A complete blood count looks at cells, including red cells, white cells and platelets. A chemistry panel answers different questions. Ask which tests were actually performed instead of assuming a blood test checked everything. If several clinics are involved, share complete reports so units and reference intervals remain visible.</p>",
+    "references": [
+      {
+        "title": "VCA Animal Hospitals — Complete blood count",
+        "url": "https://vcahospitals.com/know-your-pet/complete-blood-count",
+        "year": ""
+      },
+      {
+        "title": "VCA Animal Hospitals — Urinalysis",
+        "url": "https://vcahospitals.com/know-your-pet/urinalysis",
+        "year": ""
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Black-and-white cat looking over a wooden surface",
+    "seoTitle": "A blood-test result is the start of a conversation",
+    "seoDescription": "Why an out-of-range number needs clinical context, and how to discuss results with your veterinarian.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "understanding-pet-urine-tests",
+    "title": "What a urine test can tell your veterinarian",
+    "subtitle": "Collection method, concentration and microscopy all matter when a urine report is interpreted.",
+    "authorId": "dr-ritesh-verma",
+    "category": "veterinary-medicine",
+    "tags": ["dogs", "cats", "diagnostics", "urine tests"],
+    "references": [
+      {
+        "title": "VCA Animal Hospitals — Urinalysis",
+        "url": "https://vcahospitals.com/know-your-pet/urinalysis",
+        "year": ""
+      },
+      {
+        "title": "VCA Animal Hospitals — Complete blood count",
+        "url": "https://vcahospitals.com/know-your-pet/complete-blood-count",
+        "year": ""
+      }
+    ],
+    "content": "<aside class=\"clinical-alert\"><p><strong>Straining without passing urine is urgent.</strong> A cat or dog repeatedly trying to urinate with little or no output needs immediate veterinary advice. Do not delay care while trying to collect a sample.</p></aside>\n<h2>Urine is more than a colour check</h2><p>A urinalysis can help investigate the urinary tract and provide clues about other health problems. The team considers appearance, concentration, chemical findings and material seen under the microscope. None of these should be interpreted entirely alone.</p><p>For example, a dilute sample may be expected after increased water intake, or it may contribute to investigating disease. Timing, hydration, medicines and other test results affect its significance. Looking at a clear puddle is not a way to diagnose kidney failure.</p>\n<h2>How the sample was obtained changes the question</h2><p>A cleanly collected free-catch sample can be useful, but it may include material from the lower urinary tract or the environment. For some investigations, the veterinarian may recommend collecting directly from the bladder or using another clinical method. These are procedures for trained professionals, not home techniques.</p><p>If you are asked to collect urine, get instructions about the container, timing, storage and delivery. Label the animal and collection time. Explain if the sample touched litter, soil or a household surface; that information is more helpful than trying to hide contamination.</p>\n<h2>Understand the parts of the report</h2><ul><li><strong>Specific gravity:</strong> a measure used to assess urine concentration in context.</li><li><strong>Chemistry:</strong> findings such as protein or glucose can guide further investigation.</li><li><strong>Sediment:</strong> microscopy looks for cells, crystals and other material.</li><li><strong>Culture:</strong> when indicated, a separate test can investigate bacterial growth and help guide treatment.</li></ul><p>Crystals do not automatically establish a bladder stone, and bacteria seen or suspected in a contaminated sample do not automatically justify antibiotics. Your veterinarian considers sample quality and clinical signs before deciding what comes next.</p>\n<h2>Give the history that makes the test useful</h2><p>Report changes in thirst, frequency, accidents indoors, discomfort, blood, medicines and previous urinary problems. If several animals share a garden or litter area, explain whether you are certain whose urine was sampled. A short diary of observations can be useful, provided it does not delay urgent care.</p>\n<h2>Ask for the next decision</h2><p>Ask which findings need action now, whether a repeat sample or culture is needed and how follow-up will be arranged. Do not alter drinking water or stop a prescription to improve the appearance of a result. Combine the report with the examination and, where appropriate, <a href=\"/article/understanding-veterinary-blood-tests\">blood-test findings</a>.</p>",
+    "image": "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Black-and-white cat looking over a wooden surface",
+    "seoTitle": "What a urine test can tell your veterinarian",
+    "seoDescription": "Collection method, concentration and microscopy all matter when a urine report is interpreted.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "pet-stool-tests-parasites",
+    "title": "Why your vet asks for a stool sample",
+    "subtitle": "A clean sample can help investigate parasites, but one negative test does not rule out every cause of diarrhoea.",
+    "authorId": "dr-ritesh-verma",
+    "category": "preventive-care",
+    "tags": ["dogs", "cats", "parasites", "stool tests"],
+    "references": [
+      {
+        "title": "VCA Animal Hospitals — Fecal flotation",
+        "url": "https://vcahospitals.com/know-your-pet/fecal-flotation",
+        "year": ""
+      },
+      {
+        "title": "WSAVA — 2024 vaccination guidelines for dogs and cats",
+        "url": "https://wsava.org/global-guidelines/vaccination-guidelines/",
+        "year": "2024"
+      }
+    ],
+    "content": "<aside class=\"key-takeaways\"><p><strong>Ask before you collect.</strong> The required amount, container and storage depend on the test. Keep the sample labelled and tell the clinic when it was passed.</p></aside>\n<h2>A normal-looking stool can still be useful to test</h2><p>Some intestinal parasites are identified by eggs or other stages that are not visible to the naked eye. A veterinary laboratory uses appropriate methods to look for them. Conversely, visible mucus or a change in colour does not identify one particular infection.</p><p>Faecal testing can be part of preventive care or an investigation into diarrhoea, poor growth or weight loss. The test chosen depends on the suspected problem and the animal's age, travel, diet and treatment history. A single universal worm test does not detect everything.</p>\n<h2>Collect a sample the laboratory can use</h2><ul><li>Use the clinic's container or another container it approves.</li><li>Collect fresh material with as little soil, grass or litter as possible.</li><li>Seal it securely and label the animal, date and time.</li><li>Ask how quickly it must reach the clinic and whether refrigeration is appropriate.</li><li>Wash your hands and keep it away from food and children.</li></ul><p>If more than one animal shares a space, make sure the sample belongs to the intended patient. Do not combine samples from different pets unless the clinician specifically requests that for an agreed purpose.</p>\n<h2>Why a negative result may need follow-up</h2><p>Parasite shedding can be intermittent, some infections are at a stage when eggs are not being produced, and different methods detect different organisms. A result therefore has to be interpreted alongside signs and exposure. A veterinarian may recommend repeating a sample or using another test if suspicion remains.</p><p>This is not a reason to disregard testing. It is a reason to understand what the chosen test can answer. Ask what a negative result changes and what it leaves uncertain.</p>\n<h2>Treatment should fit the finding</h2><p>Not every deworming product treats every parasite, and a suitable dose depends on the animal and formulation. Avoid repeatedly switching products based only on a stool photograph. Share the names and dates of all products already given so the veterinarian can interpret the result and plan treatment safely.</p>\n<h2>Do not wait through serious illness</h2><p>A puppy or kitten with marked lethargy, vomiting, dehydration or bloody diarrhoea needs prompt assessment. An apparently reassuring stool test does not exclude other serious disease. Bring vaccination records and describe contact with other animals. Keep a sick animal separated as advised while its cause of illness is assessed.</p><p>At the end of the visit, ask about environmental cleaning, follow-up testing and the prevention plan for other animals in the household.</p>",
+    "image": "https://images.unsplash.com/photo-1558788353-f76d92427f16?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Golden retriever looking toward the camera",
+    "seoTitle": "Why your vet asks for a stool sample",
+    "seoDescription": "A clean sample can help investigate parasites, but one negative test does not rule out every cause of diarrhoea.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "culture-tests-and-antibiotics",
+    "title": "Why your vet may recommend a culture before antibiotics",
+    "subtitle": "A laboratory result can help choose treatment more precisely—and explain when an antibiotic is not the answer.",
+    "authorId": "dr-ritesh-verma",
+    "category": "veterinary-medicine",
+    "tags": ["dogs", "cats", "diagnostics", "antibiotics"],
+    "references": [
+      {
+        "title": "WOAH — Antimicrobial resistance",
+        "url": "https://www.woah.org/en/what-we-do/global-initiatives/antimicrobial-resistance/",
+        "year": ""
+      },
+      {
+        "title": "VCA Animal Hospitals — Urinalysis",
+        "url": "https://vcahospitals.com/know-your-pet/urinalysis",
+        "year": ""
+      }
+    ],
+    "content": "<aside class=\"key-takeaways\"><p><strong>Antibiotic selection is a clinical decision.</strong> The site of infection, sample quality, test results and the patient's condition all matter. Do not start a leftover course before contacting the clinic.</p></aside>\n<h2>What a culture is trying to answer</h2><p>When a bacterial infection is suspected, a culture can investigate whether bacteria grow from a collected sample. Further testing may help assess which medicines could be effective. It is one part of choosing treatment; the veterinarian also considers where the infection is, the animal's health and whether another intervention is needed.</p><p>A wound, urine sample or other specimen can have different collection requirements. Material from a contaminated surface may not represent the organism causing deeper disease. The person collecting the sample needs to know the clinical question.</p>\n<h2>Tell the clinic about previous treatment</h2><p>Recent antibiotics can affect test interpretation. Report the product, amount, dates and any doses missed. Do not stop necessary treatment by yourself to make a sample more useful. If a sample before treatment is desirable, the veterinarian decides whether the animal can safely wait for collection.</p><p>In a very sick patient, urgent treatment may need to begin while results are pending. A culture is not a requirement to delay lifesaving care. The team can explain how it will reconsider treatment as new information arrives.</p>\n<h2>A result is not a shopping list</h2><p>Laboratory susceptibility findings do not mean every listed medicine is equally appropriate for every patient. Drug safety, absorption, access to the affected tissue and local prescribing guidance all influence the choice. A prescription for another animal may use a different formulation or be unsuitable for this infection.</p><p>Equally, bacterial growth from a sample does not always mean antibiotics are needed. Contamination or colonisation may have to be distinguished from infection. Ask how the report relates to your animal's symptoms and examination.</p>\n<h2>Questions worth asking</h2><ul><li>What infection are we investigating?</li><li>How was the sample collected, and could contamination affect it?</li><li>When should results be available and who will contact me?</li><li>What should I do if my animal worsens before then?</li><li>Will the medicine or treatment duration change after the result?</li></ul>\n<h2>Use the agreed plan carefully</h2><p>Give the prescribed course exactly as directed, and contact the prescriber about side effects, missed doses or a lack of improvement. Do not share medicines, add a second antibiotic or extend a course without advice. Dispose of leftovers through a suitable local route rather than keeping them for the next illness.</p><p>Responsible prescribing protects the current patient and helps limit antimicrobial resistance. It is also why an examination may appropriately end with supportive care or another treatment instead of an antibiotic.</p>",
+    "image": "https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Golden retriever outdoors",
+    "seoTitle": "Why your vet may recommend a culture before antibiotics",
+    "seoDescription": "A laboratory result can help choose treatment more precisely—and explain when an antibiotic is not the answer.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "repeat-blood-tests-and-lab-trends",
+    "title": "Why a repeat blood test can be worth doing",
+    "subtitle": "A trend can answer a different question from a single result—especially during recovery or long-term treatment.",
+    "authorId": "dr-ritesh-verma",
+    "category": "veterinary-medicine",
+    "tags": ["dogs", "cats", "blood tests", "monitoring"],
+    "references": [
+      {
+        "title": "VCA Animal Hospitals — Complete blood count",
+        "url": "https://vcahospitals.com/know-your-pet/complete-blood-count",
+        "year": ""
+      },
+      {
+        "title": "VCA Animal Hospitals — Urinalysis",
+        "url": "https://vcahospitals.com/know-your-pet/urinalysis",
+        "year": ""
+      }
+    ],
+    "content": "<aside class=\"key-takeaways\"><p><strong>Ask what change the team is looking for.</strong> A repeat test should have a purpose, a timing plan and an explanation of how the result could change care.</p></aside>\n<h2>One sample is a snapshot</h2><p>A blood result reflects an animal at a particular point in time. Hydration, illness, treatment and sample factors can influence what is measured. The veterinarian may need to know whether a finding is stable, improving or worsening, rather than simply whether one number sits outside the laboratory interval.</p><p>A repeat sample may monitor recovery, assess a treatment's effects or clarify a finding that did not fit the examination. These are different reasons with different time frames. Asking why the test is being repeated is reasonable and helps you understand the plan.</p>\n<h2>Keep reports complete</h2><p>Save the whole report, including date, units, laboratory reference intervals and clinical notes. Different laboratories and methods can use different intervals. A graph assembled from cropped screenshots or mixed units can create a misleading trend.</p><p>Include the medicines and dose changes in your record. Note whether your pet was eating normally, vomiting or drinking unusually at the time. Those details help the clinician connect a laboratory change with the animal's condition.</p>\n<h2>Prepare according to the clinic's instructions</h2><ul><li>Ask whether fasting is needed; do not assume it is required for every test.</li><li>Confirm instructions for water and scheduled medicines.</li><li>Tell the team if an instruction was not followed.</li><li>Use calm transport and let the clinic know about handling difficulties.</li></ul><p>Do not withhold medication or drinking water simply to make a result look better. Preparation needs to be safe for the individual animal, particularly with diabetes, young age or ongoing illness.</p>\n<h2>Numbers and clinical progress belong together</h2><p>A pet may look brighter while still needing monitoring, or look worse despite a result that appears reassuring. Explain changes in appetite, activity, breathing, urination and comfort. If the animal deteriorates, contact the clinic before the scheduled recheck.</p><p>Some investigations also need urine testing or imaging. A blood panel alone cannot answer every question about an organ or disease. Ask how the proposed combination of tests will narrow the uncertainty.</p>\n<h2>Leave with clear next steps</h2><p>Ask which result would change treatment, how and when you will receive the report, and what signs need an earlier call. For an ongoing condition, a simple dated table of symptoms, medications and key results can improve continuity between clinics.</p><p>The point is not to chase every value into the middle of a reference interval. It is to use meaningful evidence to guide care for the animal in front of the veterinarian.</p>",
+    "image": "https://images.unsplash.com/photo-1573865526739-10659fec78a5?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Ginger cat resting indoors",
+    "seoTitle": "Why a repeat blood test can be worth doing",
+    "seoDescription": "A trend can answer a different question from a single result—especially during recovery or long-term treatment.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  }
+]

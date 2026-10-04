@@ -872,9 +872,9 @@ function Admin() {
                     Show more articles
                   </button>
                 )}
-                {loaded && rows.length === 0 && (
+                {loaded && (
                   <div className="panel">
-                    <h2>Start with practical reader questions.</h2>
+                    <h2>Your 30-guide content pack.</h2>
                     <p>
                       30 practical articles, five assigned to each founder,
                       covering all eight specialties. Suggested authors must
@@ -888,12 +888,17 @@ function Admin() {
                           const { launchDrafts } = await import(
                             "../data/launch-drafts"
                           );
-                          for (const a of launchDrafts)
-                            await saveDraft(a, user!.uid);
+                          const existing = new Set(
+                            (await manuscripts()).map((m) => m.article.id),
+                          );
+                          for (const a of launchDrafts) {
+                            if (!existing.has(a.id))
+                              await saveDraft(a, user!.uid);
+                          }
                         })
                       }
                     >
-                      Add 30 article drafts
+                      Add missing article drafts
                     </button>
                   </div>
                 )}

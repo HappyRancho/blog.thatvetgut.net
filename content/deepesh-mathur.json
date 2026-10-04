@@ -1,0 +1,137 @@
+[
+  {
+    "id": "useful-herd-health-records",
+    "title": "Keep herd records that help a veterinarian act",
+    "subtitle": "Individual identification, event timelines and practical handover information for field visits.",
+    "category": "livestock-large-animals",
+    "authorId": "dr-deepesh-mathur",
+    "tags": ["livestock", "herd health", "records", "India"],
+    "content": "<h2>A useful record supports a decision</h2><p>Farm records do not need to be elaborate to improve a veterinary visit. Consistent identification, a clear event timeline and accurate treatment details can help the team understand individual cases and patterns across a herd. Choose a system the people doing daily care can maintain.</p><h2>Identify the animal consistently</h2><p>Use the agreed identification method and record species, age or date of birth, reproductive status and relevant production information. Avoid changing an animal’s identifier between notebooks or shifts. Group-level observations should be labelled clearly rather than attributed to one individual.</p><h2>Record what changed and when</h2><p>Note changes in feeding, water access, housing, movement and contact with other animals. Describe observed signs and their timing. Record how many animals are affected and any deaths. A dated observation is more useful than an undated description such as “often unwell”.</p><h2>Keep treatment and withdrawal instructions together</h2><p>Record the product, prescribing veterinarian, animal or group treated, date and instructions. Follow the product label and veterinarian’s advice for milk, meat or egg withdrawal periods. Do not use a general internet table as a substitute for the specific product and local requirements.</p><h2>Prepare a handover for the field visit</h2><p>Have previous records, product packaging and contact details available. Ask the service about safe handling facilities, sample collection and biosecurity precautions before arrival. Explain constraints such as water, electricity, transport and staffing so the plan can be adapted to the farm.</p><h2>Review patterns with the veterinary team</h2><p>Routine review can identify questions about nutrition, housing, vaccination and disease prevention. Changes in multiple animals or rapid deterioration require timely veterinary advice. Records support investigation; they do not establish a diagnosis on their own.</p><h2>Keep a daily exception list</h2><p>Record which animals ate less, moved differently, produced less or needed a closer check. Add who observed the change and whether the veterinarian was contacted. A blank entry should mean “not recorded,” not “normal.” Agree on this distinction across shifts so missing information does not become a false reassurance.</p><p>For a group problem, record the number affected out of the total group and when new cases appeared. Keep purchase, movement and feed-change records nearby. These links can be important when investigating a pattern rather than an isolated animal.</p>",
+    "references": [
+      {
+        "title": "WOAH — Terrestrial Animal Health Code",
+        "url": "https://www.woah.org/en/what-we-do/standards/codes-and-manuals/terrestrial-code-online-access/",
+        "year": ""
+      },
+      {
+        "title": "WOAH — Antimicrobial resistance",
+        "url": "https://www.woah.org/en/what-we-do/global-initiatives/antimicrobial-resistance/",
+        "year": ""
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1546445317-29f4545e9d53?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Cattle outdoors",
+    "seoTitle": "Keep herd records that help a veterinarian act",
+    "seoDescription": "Individual identification, event timelines and practical handover information for field visits.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "heat-stress-dairy-cattle",
+    "title": "Heat stress in dairy cattle: notice the animal before the milk drop",
+    "subtitle": "Shade, water, airflow and observation belong in the same hot-weather plan.",
+    "authorId": "dr-deepesh-mathur",
+    "category": "livestock-large-animals",
+    "tags": ["cattle", "herd health", "heat"],
+    "references": [
+      {
+        "title": "University of Minnesota Extension — Heat stress in dairy cattle",
+        "url": "https://extension.umn.edu/agriculture/animals-and-livestock/dairy/heat-stress-in-dairy-cattle",
+        "year": ""
+      },
+      {
+        "title": "WOAH — Terrestrial Animal Health Code",
+        "url": "https://www.woah.org/en/what-we-do/standards/codes-and-manuals/terrestrial-code-online-access/",
+        "year": ""
+      }
+    ],
+    "content": "<aside class=\"clinical-alert\"><p><strong>Open-mouth breathing, marked distress or unsteadiness requires urgent action.</strong> Contact the herd veterinarian and begin the farm's agreed cooling response. Do not wait for production records to confirm a problem.</p></aside>\n<h2>Heat stress is a balance problem</h2><p>Cattle produce heat through digestion and other activity and gain heat from their surroundings. Trouble develops when they cannot lose enough of it. Humidity, direct sun, airflow, production level and housing all influence the load. The conditions a stockperson finds tolerable may already challenge a high-producing cow.</p><p>University of Minnesota Extension describes reduced feed intake and milk production, altered behaviour and poorer health as consequences of heat stress. Production changes can lag behind the heat exposure. Watching the animals provides information before a bulk-tank result does.</p>\n<h2>Look across the group</h2><ul><li>Observe breathing effort and panting without unnecessarily moving the cattle.</li><li>Watch whether animals crowd near water or the few shaded areas.</li><li>Note reduced feeding, prolonged standing or reluctance to move.</li><li>Check vulnerable groups, including sick animals and late-pregnant cattle.</li></ul><p>Record observations at comparable times, especially during the hottest period and after cooling measures are operating. One comfortable animal near a fan does not show that the whole shed is adequately cooled.</p>\n<h2>Start with water and usable shade</h2><p>Make sure water is clean, accessible and replenished quickly enough for demand. Inspect trough function rather than assuming a connected pipe supplies sufficient flow. Provide enough shaded space that animals can use it without crowding. Shade that moves off the resting area at midday may not help when it is most needed.</p><p>Review airflow at animal level. Fans, inlets and other equipment need maintenance and safe installation. A veterinarian or qualified farm adviser can help design cooling suited to the local humidity, drainage, water supply and building. Simply spraying water into a poorly ventilated shed is not a complete plan.</p>\n<h2>Reduce extra load</h2><p>Schedule handling, movement and other demanding work for cooler periods where possible. Reduce avoidable waiting in crowded holding areas. Maintain feeding and water access and seek ration advice rather than abruptly changing the diet in response to a hot day.</p>\n<h2>Make the response measurable</h2><p>Agree with the herd veterinarian which observations trigger additional cooling, clinical examination or emergency help. Keep records of weather, actions and animal response. Avoid importing one numerical threshold without considering breed, acclimatisation, housing and local conditions.</p><p>Review the plan after the hot spell: where were animals crowding, which trough failed, and did airflow reach every group? Heat protection is a daily management system, not a fan switched on after milk yield falls.</p>",
+    "image": "https://images.unsplash.com/photo-1546445317-29f4545e9d53?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Cattle outdoors",
+    "seoTitle": "Heat stress in dairy cattle: notice the animal before the milk drop",
+    "seoDescription": "Shade, water, airflow and observation belong in the same hot-weather plan.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "horse-colic-first-response",
+    "title": "A horse with colic needs an early call",
+    "subtitle": "Recognise abdominal discomfort, keep people safe and prepare a useful veterinary handover.",
+    "authorId": "dr-deepesh-mathur",
+    "category": "livestock-large-animals",
+    "tags": ["horses", "colic", "emergency"],
+    "references": [
+      {
+        "title": "American College of Veterinary Surgeons — Colic in horses",
+        "url": "https://www.acvs.org/large-animal/colic-in-horses/",
+        "year": ""
+      },
+      {
+        "title": "WOAH — Terrestrial Animal Health Code",
+        "url": "https://www.woah.org/en/what-we-do/standards/codes-and-manuals/terrestrial-code-online-access/",
+        "year": ""
+      }
+    ],
+    "content": "<aside class=\"clinical-alert\"><p><strong>Call a veterinarian promptly when colic is suspected.</strong> Severity can change quickly. A horse briefly looking more comfortable is not proof the cause has resolved.</p></aside>\n<h2>Colic describes pain, not one disease</h2><p>Colic is a term for abdominal pain in a horse. Causes vary, and some need urgent surgical care. The American College of Veterinary Surgeons stresses early assessment because delay can worsen the outlook for some conditions. An online checklist cannot determine which cause is present.</p><p>Signs may include repeatedly looking at the flank, pawing, sweating, reduced interest in feed, repeated lying down and rising, rolling or a change in manure output. Some horses show pain less dramatically than others. Compare behaviour with that horse's normal routine.</p>\n<h2>Make the first call useful</h2><ul><li>Give the horse's location and when signs began.</li><li>Describe behaviour, appetite, manure and any visible abdominal swelling.</li><li>Report recent changes in feed, travel, routine or medication.</li><li>Explain previous colic episodes and any treatment already given.</li><li>Ask what to do while the veterinarian travels and whether referral transport may be needed.</li></ul><p>Take observations such as pulse or temperature only if you know how and can do so safely. Do not delay the call to complete a chart. A distressed horse can injure a handler who is concentrating on a measurement.</p>\n<h2>Avoid well-meant interventions</h2><p>Do not give oils, drench the horse or insert a tube. Fluids put into the mouth can enter the airway, and treatment depends on the cause. Do not give painkillers or repeat an earlier prescription without speaking to the veterinarian; medicines can affect assessment and may be unsuitable.</p><p>Follow advice about feed, water and movement. Remove access to feed while obtaining instructions. Gentle movement may sometimes be advised if safe, but do not exhaust a horse by forcing it to walk continuously or put yourself in the path of rolling. Keep the environment clear and wait for professional direction.</p>\n<h2>Prepare for examination and possible referral</h2><p>Have identification, records and contact details ready. Clear safe access, arrange lighting and identify a suitable area for examination. If the veterinarian recommends referral, discuss transport, the receiving facility and who will accompany the horse. Earlier planning can prevent a rushed delay later.</p>\n<h2>Follow-up matters even after improvement</h2><p>Ask how feeding should restart, what signs require another call and whether dental care, parasite control or management changes need review. Not every episode is preventable, and an earlier mild episode does not guarantee the next one will be mild. Keep a written record of the event for future assessments.</p>",
+    "image": "https://images.unsplash.com/photo-1553284965-83fd3e82fa5a?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "White horse moving beside woodland",
+    "seoTitle": "A horse with colic needs an early call",
+    "seoDescription": "Recognise abdominal discomfort, keep people safe and prepare a useful veterinary handover.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "bringing-new-animals-into-herd",
+    "title": "New animals, fewer surprises: a practical herd biosecurity plan",
+    "subtitle": "Plan introductions before arrival so health checks, separation and records can work together.",
+    "authorId": "dr-deepesh-mathur",
+    "category": "livestock-large-animals",
+    "tags": ["cattle", "livestock", "biosecurity"],
+    "references": [
+      {
+        "title": "WOAH — Terrestrial Animal Health Code",
+        "url": "https://www.woah.org/en/what-we-do/standards/codes-and-manuals/terrestrial-code-online-access/",
+        "year": ""
+      },
+      {
+        "title": "WOAH — Antimicrobial resistance",
+        "url": "https://www.woah.org/en/what-we-do/global-initiatives/antimicrobial-resistance/",
+        "year": ""
+      }
+    ],
+    "content": "<aside class=\"key-takeaways\"><p><strong>Prepare before the vehicle arrives.</strong> Source records, a separate holding area and a veterinary plan are more useful than improvising after new animals mix with the herd.</p></aside>\n<h2>A healthy appearance is only one piece of information</h2><p>An animal may be incubating disease or carrying an infection without obvious signs. Movement between farms can also expose it to unfamiliar conditions. Biosecurity aims to reduce the chance of introducing or spreading disease; it cannot certify an animal safe by appearance alone.</p><p>Discuss the species, source, local diseases and destination with the herd veterinarian. Testing, vaccination, treatment and isolation decisions should fit the actual risk. A quarantine duration copied from a different species or region may not answer the relevant problem.</p>\n<h2>Ask for records before purchase</h2><ul><li>Animal identification and source herd details.</li><li>Available vaccination, testing and treatment history.</li><li>Recent illness, deaths or unusual reproductive problems in the source group.</li><li>Movement documentation required locally.</li><li>Any current medicine withdrawal restrictions.</li></ul><p>Missing information is a reason to assess uncertainty, not an invitation to invent a clean record. Share the gaps with the veterinarian and decide how they affect the introduction plan.</p>\n<h2>Make separation workable</h2><p>A separate pen is useful only if routine contact is also considered. Think about shared water, equipment, footwear, drainage and the order of daily work. Where practical, use dedicated equipment and attend to the resident healthy group before the isolated animals. Clean visible dirt before applying an appropriate disinfectant according to its instructions.</p><p>Separation must still provide adequate space, water, nutrition, shelter and daily observation. Avoid managing infection risk in a way that creates heat stress, injury or distress. Design the holding area for both welfare and useful assessment.</p>\n<h2>Observe and report changes</h2><p>Record appetite, activity, breathing, faeces and other species-appropriate observations. Arrange veterinary assessment for illness and follow advice about testing and treatment. If a potentially notifiable disease is suspected, contact the relevant veterinary authority rather than moving the animals to another premises.</p>\n<h2>Agree when and how introduction happens</h2><p>Release from isolation should follow the agreed criteria, not only the calendar. Keep identification and findings linked to each animal. After introduction, continue observation and review whether mixing caused competition or injury.</p><p>A good biosecurity plan is specific enough that a replacement worker can follow it. Put the contact numbers, cleaning steps and reporting triggers where people actually work. Review near misses as well as confirmed outbreaks.</p>",
+    "image": "https://images.unsplash.com/photo-1546445317-29f4545e9d53?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Cattle outdoors",
+    "seoTitle": "New animals, fewer surprises: a practical herd biosecurity plan",
+    "seoDescription": "Plan introductions before arrival so health checks, separation and records can work together.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "responsible-antibiotics-on-farms",
+    "title": "Antibiotics on the farm: protect treatment and the food supply",
+    "subtitle": "Good records, veterinary oversight and withdrawal instructions are part of the same responsible treatment plan.",
+    "authorId": "dr-deepesh-mathur",
+    "category": "livestock-large-animals",
+    "tags": ["cattle", "livestock", "antibiotics", "food safety"],
+    "references": [
+      {
+        "title": "WOAH — Antimicrobial resistance",
+        "url": "https://www.woah.org/en/what-we-do/global-initiatives/antimicrobial-resistance/",
+        "year": ""
+      },
+      {
+        "title": "WOAH — Terrestrial Animal Health Code",
+        "url": "https://www.woah.org/en/what-we-do/standards/codes-and-manuals/terrestrial-code-online-access/",
+        "year": ""
+      }
+    ],
+    "content": "<aside class=\"key-takeaways\"><p><strong>Record the animal, product and instructions.</strong> Use antimicrobials under appropriate veterinary direction and keep treated animals' milk, eggs or meat out of the food supply for the required withdrawal period.</p></aside>\n<h2>A diagnosis should guide the treatment</h2><p>Not every fever, cough or production drop is a bacterial infection. Parasites, nutrition, housing, injury and other problems can need different interventions. Veterinary assessment helps decide whether an antimicrobial is appropriate and whether a sample or other diagnostic step is useful.</p><p>WOAH identifies responsible antimicrobial use as part of controlling resistance in animal populations. Medicines remain important when indicated. Responsible use means selecting and administering them correctly while also addressing the reason animals became ill.</p>\n<h2>Make each treatment traceable</h2><ul><li>Record an unambiguous animal or group identifier.</li><li>Note the diagnosis or reason for treatment and the prescribing clinician.</li><li>Record the product, formulation, amount, route and dates actually given.</li><li>Write down the final treatment date and the applicable withdrawal instructions.</li><li>Record response, adverse effects and the planned review.</li></ul><p>Two products with a similar name may have different concentrations, routes or withdrawal conditions. Do not calculate a new regimen by comparing bottle colours or reusing another farm's instructions.</p>\n<h2>Withdrawal periods need explicit instructions</h2><p>Withdrawal requirements depend on the medicine, animal species, product use and applicable regulations. Ask the veterinarian for the exact instruction for milk, meat or eggs where relevant. Do not substitute a general online number or assume that milk looks safe because its appearance is normal.</p><p>Mark treated animals clearly and make sure everyone involved in milking, transport or sale receives the information. If a dose was repeated or a course changed, confirm whether the withdrawal plan also changes. Keep records when animals move between groups or farms.</p>\n<h2>Do not hide a treatment failure with another bottle</h2><p>If an animal fails to improve or becomes worse, call the veterinarian. The cause, medicine selection, delivery or another complication may need reassessment. Adding multiple products can increase risk and make the history harder to interpret.</p><p>Follow storage and expiry instructions and use suitable disposal routes. Do not pour unwanted medicines into drains or routinely keep partially used courses for unspecified future illness.</p>\n<h2>Reduce the need for treatment</h2><p>Appropriate vaccination, nutrition, colostrum management where relevant, clean housing and biosecurity can reduce disease pressure. Review recurring treatment patterns with the herd veterinarian: repeated cases may point to a management issue that prescribing alone cannot solve. Reliable records turn those patterns into decisions.</p>",
+    "image": "https://images.unsplash.com/photo-1546445317-29f4545e9d53?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Cattle outdoors",
+    "seoTitle": "Antibiotics on the farm: protect treatment and the food supply",
+    "seoDescription": "Good records, veterinary oversight and withdrawal instructions are part of the same responsible treatment plan.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  }
+]

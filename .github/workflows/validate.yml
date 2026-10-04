@@ -19,6 +19,7 @@ jobs:
       - run: npm ci --no-fund --no-audit
       - run: npm run lint
       - run: npm test
+      - run: npm run test:content
       - run: npm run build
       - run: npm run test:worker
       - name: Validate Cloudflare static deployment
@@ -40,6 +41,7 @@ jobs:
             firestore-debug.log
             package-lock.json
             src/
+            content/
             docs/
             tests/
             screenshots/

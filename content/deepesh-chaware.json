@@ -1,0 +1,132 @@
+[
+  {
+    "id": "less-stressful-cat-carrier-travel",
+    "title": "Make the cat carrier part of everyday life",
+    "subtitle": "Prepare for calmer transport and tell the clinic what helps your cat feel safer.",
+    "category": "animal-welfare",
+    "authorId": "dr-deepesh-chaware",
+    "tags": ["cats", "behaviour", "handling", "vet visits"],
+    "content": "<h2>Begin before appointment day</h2><p>For many cats, a carrier predicts an unfamiliar journey and handling. Leaving an appropriate carrier accessible at home can allow it to become part of a familiar environment. Preparation works best when it is gradual and adapted to the individual cat.</p><h2>Choose a practical carrier</h2><p>Ask the clinic about a secure, easy-to-open carrier that allows safe examination and handling. Check the door, clips and base before travel. A damaged or unsecured carrier can create an escape risk. Avoid forcing a distressed cat through a small opening.</p><h2>Create familiarity without pressure</h2><p>A familiar blanket and voluntary exploration can help. Keep sessions short, reward approaches the cat is comfortable making and allow retreat. Do not chase the cat repeatedly into the carrier. If transport remains difficult, ask the clinic for a plan ahead of time.</p><h2>Plan the journey</h2><p>Keep the carrier stable and safely restrained during travel. Avoid opening it in an unsecured area. Ask the clinic about arrival arrangements and a quieter waiting space when available. Tell the team about previous fear, motion sickness or handling difficulties.</p><h2>Recognise when support is needed</h2><p>Preparation is not always enough for a highly fearful cat. A veterinarian can assess whether medication or a modified appointment plan is appropriate. Use only medication prescribed for that cat and follow the instructions; another animal’s prescription is not a suitable shortcut.</p><h2>Keep the goal realistic</h2><p>The aim is safer transport and less distress, not perfect behaviour. After the visit, let the cat settle in a familiar space and review which steps helped. For urgent illness, contact the clinic promptly rather than postponing care while trying to complete training.</p><h2>A practical carrier checklist</h2><ul><li>The door and clips fasten securely.</li><li>The base stays stable when lifted.</li><li>The interior is comfortable and easy to clean.</li><li>The carrier can be opened without pulling the cat through a narrow gap.</li><li>It is restrained safely during the journey.</li></ul><p>Keep the carrier closed outside a secure room, even if the cat appears calm. Ask the clinic where to wait and whether the cat can remain partly covered if that is reassuring. Comfort measures should not block ventilation or hide signs of breathing difficulty.</p>",
+    "references": [
+      {
+        "title": "Feline Veterinary Medical Association — Cat carrier tips",
+        "url": "https://catfriendly.com/cat-care-at-home/cat-carrier-tips/",
+        "year": ""
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1573865526739-10659fec78a5?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Ginger cat resting indoors",
+    "seoTitle": "Make the cat carrier part of everyday life",
+    "seoDescription": "Prepare for calmer transport and tell the clinic what helps your cat feel safer.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "bringing-dog-home-after-surgery",
+    "title": "Your dog’s first days at home after surgery",
+    "subtitle": "Turn the discharge sheet into a workable plan for rest, medicines, eating and follow-up.",
+    "authorId": "dr-deepesh-chaware",
+    "category": "veterinary-medicine",
+    "tags": ["dogs", "surgery", "recovery"],
+    "references": [
+      {
+        "title": "VCA Animal Hospitals — Post-operative instructions in dogs",
+        "url": "https://vcahospitals.com/know-your-pet/post-operative-instructions-in-dogs",
+        "year": ""
+      },
+      {
+        "title": "American College of Veterinary Surgeons — Cranial cruciate ligament disease",
+        "url": "https://www.acvs.org/small-animal/cranial-cruciate-ligament-disease/",
+        "year": ""
+      }
+    ],
+    "content": "<aside class=\"key-takeaways\"><p><strong>The discharge plan takes priority.</strong> Recovery restrictions depend on the operation and patient. General guidance cannot replace the surgeon's instructions.</p></aside>\n<h2>Ask questions before leaving the clinic</h2><p>The journey home is easier when you know what to expect. Confirm when food and water may be offered, when the next medicine is due, how activity must be restricted and who to call outside normal hours. Request a written copy and explain any practical difficulty following it.</p><p>Some sleepiness can follow anaesthesia, but the team should explain what is expected for your dog and how long it should last. Difficulty breathing, collapse, uncontrolled bleeding or an animal that cannot be roused normally needs urgent help. Do not dismiss serious signs as simply the anaesthetic wearing off.</p>\n<h2>Prepare a recovery space</h2><p>Choose a quiet, clean area with comfortable bedding and non-slip footing. Prevent access to stairs, furniture and play that the surgeon has restricted. Separate from other animals when their attention would encourage activity or disturb rest. A dog feeling livelier may still have tissues or implants that need protection.</p><p>Ask about suitable support for toilet trips and whether a lead is required. Do not begin exercises or stretching from an online video. Rehabilitation plans depend on the operation and stage of healing.</p>\n<h2>Use a medicine chart</h2><ul><li>Write the medicine name, amount, time and any food instructions.</li><li>Mark each dose after it is given so another person does not repeat it.</li><li>Know whom to contact after vomiting, a missed dose or an unexpected reaction.</li><li>Keep human and other pets' medicines separate.</li></ul><p>Do not add a human painkiller if the dog seems uncomfortable. Contact the clinic; pain control can be adjusted appropriately, and discomfort may be a sign that the surgical site needs examination.</p>\n<h2>Protect and observe the incision</h2><p>Use the recommended collar or protective garment consistently. Licking can damage a wound quickly. Keep the area dry unless instructed otherwise, and avoid applying creams, powders or antiseptics that were not prescribed. Inspect without pulling on the skin or removing sutures.</p><p>Ask which degree of swelling or redness is expected for this procedure. Increasing swelling, discharge, an opening or a sudden change should be reported promptly. A clear photograph may support a call but does not replace an examination when needed.</p>\n<h2>Keep the follow-up appointment</h2><p>Record eating, toileting, comfort and any changes. Attend the planned recheck even when the surface looks healed. Internal healing and return to activity may follow a different timetable. Recovery is complete when the treating team confirms the next stage, not when the dog first asks to chase a ball.</p>",
+    "image": "https://images.unsplash.com/photo-1558788353-f76d92427f16?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Golden retriever looking toward the camera",
+    "seoTitle": "Your dog’s first days at home after surgery",
+    "seoDescription": "Turn the discharge sheet into a workable plan for rest, medicines, eating and follow-up.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "checking-surgical-wounds-at-home",
+    "title": "Surgical wound checks: what to watch and what to leave alone",
+    "subtitle": "A daily observation routine can help you report a problem early without disturbing healing.",
+    "authorId": "dr-deepesh-chaware",
+    "category": "veterinary-medicine",
+    "tags": ["dogs", "cats", "surgery", "wound care"],
+    "references": [
+      {
+        "title": "VCA Animal Hospitals — Post-operative instructions in dogs",
+        "url": "https://vcahospitals.com/know-your-pet/post-operative-instructions-in-dogs",
+        "year": ""
+      },
+      {
+        "title": "AVMA — Household hazards",
+        "url": "https://www.avma.org/resources-tools/pet-owners/petcare/household-hazards",
+        "year": ""
+      }
+    ],
+    "content": "<aside class=\"clinical-alert\"><p><strong>Seek urgent advice for an opening incision, active bleeding or rapid deterioration.</strong> Contact the operating clinic; do not try to close the wound with glue, tape or a home stitch.</p></aside>\n<h2>Learn what is normal for this operation</h2><p>Wounds look different depending on their location, closure method and reason for surgery. The discharge team should explain what to expect and whether a dressing, drain or protective garment needs particular care. A generic photograph cannot establish that your animal's wound is healing normally.</p><p>Before leaving, ask whether a baseline photograph would be useful. Keep the clinic's contact details with the discharge sheet. If you are worried, asking early is more useful than comparing images on social media.</p>\n<h2>Use a gentle daily check</h2><ul><li>Look in good light without pulling at the wound edges.</li><li>Note changes in redness, swelling, discharge or the animal's comfort.</li><li>Check that the prescribed protective device is fitted and functioning.</li><li>Record whether licking, scratching or unexpected activity has occurred.</li></ul><p>If photographing, use a similar distance and lighting each time. Tell the clinician when the picture was taken and what has changed. Do not repeatedly handle a painful area just to obtain a better angle.</p>\n<h2>Protect the site from interference</h2><p>Keep the wound dry according to the instructions and prevent licking. A few unobserved minutes can allow an animal to damage a closure. Discuss an alternative protective device if the current one prevents eating or causes distress; do not simply remove it for long periods.</p><p>Do not put household disinfectants, essential oils, herbal pastes, human creams or powders on the site unless the treating veterinarian explicitly directs their use. Products can irritate tissue, be swallowed during grooming or hide useful signs.</p>\n<h2>Dressings need their own instructions</h2><p>A wet, slipped, foul-smelling or damaged dressing needs a call. If toes are visible beyond a limb bandage, ask the clinic how to check them and what changes require attention. Do not tighten, trim or rebuild a surgical bandage without guidance; pressure and fit matter.</p><p>Tell the team if the animal has been chewing a dressing. Swallowed material and loss of wound protection are both relevant, even if the skin underneath looks unchanged.</p>\n<h2>Watch the animal as well as the wound</h2><p>Reduced appetite, unusual lethargy, worsening pain or a sudden change in behaviour can matter even before the incision looks dramatically different. Follow medicine instructions and keep the recheck. The visible skin is only part of healing.</p><p>A useful call includes the operation date, site, change observed, current medicines and any lapse in protection or activity restriction. Honest details help the clinic choose the safest next step.</p>",
+    "image": "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Black-and-white cat looking over a wooden surface",
+    "seoTitle": "Surgical wound checks: what to watch and what to leave alone",
+    "seoDescription": "A daily observation routine can help you report a problem early without disturbing healing.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "dog-limping-next-steps",
+    "title": "A limping dog: rest, observe and arrange the right assessment",
+    "subtitle": "Why a limp deserves an explanation, even when your dog still wants to play.",
+    "authorId": "dr-deepesh-chaware",
+    "category": "pet-health",
+    "tags": ["dogs", "lameness", "orthopaedics"],
+    "references": [
+      {
+        "title": "American College of Veterinary Surgeons — Cranial cruciate ligament disease",
+        "url": "https://www.acvs.org/small-animal/cranial-cruciate-ligament-disease/",
+        "year": ""
+      },
+      {
+        "title": "VCA Animal Hospitals — Post-operative instructions in dogs",
+        "url": "https://vcahospitals.com/know-your-pet/post-operative-instructions-in-dogs",
+        "year": ""
+      }
+    ],
+    "content": "<aside class=\"clinical-alert\"><p><strong>Severe pain, a deformed limb, major trauma or inability to stand needs urgent care.</strong> Limit movement and call for safe transport instructions.</p></aside>\n<h2>A limp tells you there is a problem, not where it starts</h2><p>A dog may limp because of the paw, muscles, joints, bones or nerves. Some problems begin suddenly; others worsen gradually. Continued enthusiasm for walks does not exclude pain. Dogs can still try to play while an injury needs protection.</p><p>Cranial cruciate ligament disease is one possible cause of hindlimb lameness, but a limp alone cannot diagnose it. The American College of Veterinary Surgeons describes the role of examination and individual treatment planning. Not every limping dog needs the same scan, brace or operation.</p>\n<h2>What you can usefully record</h2><ul><li>When the limp began and whether there was a fall, collision or twist.</li><li>Which limb seems affected and whether weight is placed on it.</li><li>Whether stiffness changes after rest or activity.</li><li>Visible swelling, wounds or paw damage, if safely observable.</li><li>Any previous episodes and medicines already given.</li></ul><p>A short video of the natural gait can help when a limp is intermittent. Do not repeatedly walk an uncomfortable dog to capture it, and never delay urgent care for filming.</p>\n<h2>Reduce strain while you seek advice</h2><p>Prevent running, jumping and rough play. Use brief controlled toilet outings if the dog can move safely, and ask the clinic about appropriate support if it cannot. Provide non-slip surfaces and keep stairs inaccessible where possible.</p><p>Do not force a joint through movement, try to pop something back into place or apply a homemade splint. Handling may worsen an injury or result in a bite. A protective response in a painful dog is a reason to stop, not to restrain harder.</p>\n<h2>Do not prescribe from the medicine cupboard</h2><p>Human painkillers can be dangerous for animals, and another pet's prescription may be unsuitable. Tell the veterinarian about existing medicines and health conditions before treatment is selected. If a medicine seems ineffective or causes a problem, call rather than adding another drug.</p>\n<h2>Ask how the plan will be reviewed</h2><p>After examination, clarify the diagnosis or remaining uncertainty, activity limits, medicine instructions and timing of reassessment. If surgery is discussed, ask about expected recovery, alternatives and the support needed at home. Cost and practical constraints belong in the conversation.</p><p>Improvement on a quiet day does not always mean the underlying problem is resolved. Follow the agreed return-to-activity plan and report deterioration. A useful outcome is comfortable, sustainable movement, not a quick test of whether the dog can sprint again.</p>",
+    "image": "https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Golden retriever outdoors",
+    "seoTitle": "A limping dog: rest, observe and arrange the right assessment",
+    "seoDescription": "Why a limp deserves an explanation, even when your dog still wants to play.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "human-painkillers-are-not-pet-medicines",
+    "title": "Why your painkiller is not your pet’s pain plan",
+    "subtitle": "What to do when an animal is uncomfortable—and when a tablet has already been swallowed.",
+    "authorId": "dr-deepesh-chaware",
+    "category": "emergency-critical-care",
+    "tags": ["dogs", "cats", "medicines", "poisoning"],
+    "references": [
+      {
+        "title": "AVMA — Household hazards",
+        "url": "https://www.avma.org/resources-tools/pet-owners/petcare/household-hazards",
+        "year": ""
+      },
+      {
+        "title": "VCA Animal Hospitals — Post-operative instructions in dogs",
+        "url": "https://vcahospitals.com/know-your-pet/post-operative-instructions-in-dogs",
+        "year": ""
+      }
+    ],
+    "content": "<aside class=\"clinical-alert\"><p><strong>If a pet has swallowed a human medicine, contact a veterinarian immediately.</strong> Keep the packet and report the product, strength, possible amount and time. Do not wait for symptoms.</p></aside>\n<h2>Species and formulation change the risk</h2><p>Animals do not handle every medicine in the same way people do. A tablet safe for a person can cause serious harm in a dog or cat, and a product prescribed for one species may be unsafe for another. Human painkillers such as ibuprofen and paracetamol should never be used as a do-it-yourself pet treatment.</p><p>A smaller piece of a tablet is not a reliable safety calculation. Concentration, additional ingredients, the animal's weight, other medicines and organ health all matter. Combination cold-and-flu products can contain several active ingredients, making guesses especially risky.</p>\n<h2>Recognise discomfort without choosing the drug</h2><p>Limping, reluctance to jump, changes in posture, hiding, restlessness or a change in social behaviour can signal pain. They can also have different underlying causes. Record what changed and arrange an assessment rather than treating the behaviour alone.</p><p>An animal recovering from surgery should have a clear pain plan. If comfort is inadequate, contact the operating clinic. Do not add a human product to a prescription or double a dose because the animal still seems sore.</p>\n<h2>If exposure has already happened</h2><ol><li>Prevent further access and keep other animals away.</li><li>Find the original packaging or photograph the label clearly.</li><li>Estimate what may be missing without delaying the call.</li><li>Tell the clinic about the animal's species, weight, signs and existing medicines.</li><li>Follow the team's transport and treatment instructions.</li></ol><p>Do not induce vomiting or give milk, oil, salt or another home remedy unless a veterinarian gives case-specific instructions. Some exposures need treatment before visible signs appear. An animal that seems normal now still needs the exposure assessed.</p>\n<h2>Keep prescribed treatment safe</h2><p>Use medicines only for the animal named on the prescription. Keep a dose chart when several people provide care. Ask what to do after a missed dose, vomiting or an accidental repeat; the answer depends on the medicine.</p><p>Report reduced appetite, vomiting, diarrhoea, unusual lethargy or another unexpected change during treatment. Do not assume these are unrelated, and do not make a new treatment plan without the prescriber.</p>\n<h2>Prevent the next accident</h2><p>Store medicines in closed cupboards, including handbags, bedside supplies and travel packs. Pick up dropped tablets promptly. Keep human and veterinary products clearly separated and check the label each time. A few organised habits are easier than managing an avoidable poisoning.</p>",
+    "image": "https://images.unsplash.com/photo-1573865526739-10659fec78a5?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Ginger cat resting indoors",
+    "seoTitle": "Why your painkiller is not your pet’s pain plan",
+    "seoDescription": "What to do when an animal is uncomfortable—and when a tablet has already been swallowed.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  }
+]

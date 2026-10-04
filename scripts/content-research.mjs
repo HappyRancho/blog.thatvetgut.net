@@ -45,6 +45,7 @@ const sources = {
   petmd: "https://www.petmd.com/",
 };
 const images = {
+  bird: "photo-1444464666168-49d633b86797",
   dog: "photo-1552053831-71594a27632d",
   cat: "photo-1514888286974-6c03e2ca1dba",
   puppy: "photo-1558788353-f76d92427f16",
