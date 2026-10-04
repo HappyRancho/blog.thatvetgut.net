@@ -376,3 +376,38 @@ test("each of the six founders can edit only their mapped profile", async () => 
     );
   }
 });
+test("source reservations are private, tied to a manuscript and cannot be overwritten", async () => {
+  const a = db("author"),
+    key = "a".repeat(64),
+    source = "https://www.linkedin.com/pulse/shared-source";
+  let b = writeBatch(a);
+  b.set(ref(a), { ...manuscript, article: { ...article, sourceUrl: source } });
+  b.set(doc(a, "source_imports", key), {
+    articleId: article.id,
+    sourceUrl: source,
+    importedBy: "author",
+    importedAt: serverTimestamp(),
+  });
+  await assertSucceeds(b.commit());
+  await assertFails(
+    getDoc(
+      doc(env.unauthenticatedContext().firestore(), "source_imports", key),
+    ),
+  );
+  await assertFails(
+    setDoc(doc(a, "source_imports", key), {
+      articleId: "another-article",
+      sourceUrl: source,
+      importedBy: "author",
+      importedAt: serverTimestamp(),
+    }),
+  );
+  await assertFails(
+    setDoc(doc(a, "source_imports", "b".repeat(64)), {
+      articleId: article.id,
+      sourceUrl: "https://www.linkedin.com/pulse/different-source",
+      importedBy: "author",
+      importedAt: serverTimestamp(),
+    }),
+  );
+});

@@ -8,6 +8,8 @@ import {
   validateArticle,
   emptyArticle,
   readingTime,
+  dateISO,
+  sourceKey,
 } from "../src/lib/domain.ts";
 test("slugs remove accents and unsafe path characters", () => {
   assert.equal(
@@ -57,4 +59,27 @@ test("submission validates content and sources", () => {
   assert.equal(validateArticle(a).length, 0);
   assert.equal(validateArticle(a, true).length, 2);
   assert.equal(readingTime("<p>Short article.</p>"), 1);
+});
+
+test("URLs reject backslashes, credentials and encoded LinkedIn path tricks", () => {
+  for (const u of [
+    "/\\evil.test/image",
+    "https://user:pass@evil.test/image",
+    "https://example.com/a b",
+  ])
+    assert.equal(safeUrl(u, true), "");
+  for (const u of [
+    "https://linkedin.com/pulse/%2f%2f127.0.0.1",
+    "https://linkedin.com/pulse/%0asecret",
+  ])
+    assert.throws(() => normalizeLinkedInUrl(u));
+});
+test("metadata dates omit unavailable or invalid values and source keys canonicalise duplicates", async () => {
+  assert.equal(dateISO("not a date"), "");
+  assert.equal(dateISO(null), "");
+  assert.equal(dateISO({ seconds: 0 }), "1970-01-01T00:00:00.000Z");
+  assert.equal(
+    await sourceKey("https://linkedin.com/pulse/example?tracking=1"),
+    await sourceKey("https://www.linkedin.com/pulse/example"),
+  );
 });

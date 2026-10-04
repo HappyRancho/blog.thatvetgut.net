@@ -115,3 +115,136 @@ test("Firestore REST values preserve nested articles and real timestamps", () =>
     { title: "Article", tags: ["dogs"], publishedAt: "2026-10-01T12:00:00Z" },
   );
 });
+test("SSR returns only published content, safe metadata and real not-found status", async () => {
+  const { default: config } = await import("../worker/public-config.js");
+  const previous = config.projectId,
+    originalFetch = globalThis.fetch,
+    originalRewriter = globalThis.HTMLRewriter;
+  config.projectId = "demo-thatvetguy";
+  class Rewriter {
+    handlers = [];
+    on(selector, handler) {
+      this.handlers.push([selector, handler]);
+      return this;
+    }
+    transform(response) {
+      let appended = "",
+        root = "",
+        title = "";
+      for (const [selector, h] of this.handlers) {
+        const e = {
+          remove() {},
+          append(v) {
+            appended += v;
+          },
+          setInnerContent(v) {
+            if (selector === "title") title = v;
+            else if (selector === "#root") root = v;
+          },
+        };
+        h.element(e);
+      }
+      return new Response(
+        `<html><head><title>${title}</title>${appended}</head><body><div id="root">${root}</div></body></html>`,
+        { headers: response.headers },
+      );
+    }
+  }
+  globalThis.HTMLRewriter = Rewriter;
+  const encode = (v) =>
+    typeof v === "string"
+      ? { stringValue: v }
+      : Array.isArray(v)
+        ? { arrayValue: { values: v.map(encode) } }
+        : v === null
+          ? { nullValue: null }
+          : typeof v === "number"
+            ? { integerValue: String(v) }
+            : {
+                mapValue: {
+                  fields: Object.fromEntries(
+                    Object.entries(v).map(([k, val]) => [k, encode(val)]),
+                  ),
+                },
+              };
+  const article = {
+    id: "published-guide",
+    title: "A safe veterinary guide",
+    subtitle: "Useful context",
+    category: "pet-health",
+    tags: [],
+    authorId: "dr-chirag-patidar",
+    content:
+      '<h2>Useful context</h2><p>Published body<script>alert(1)</script><a href="javascript:alert(1)">Unsafe link</a></p>',
+    image: "",
+    imageAlt: "",
+    references: [],
+  };
+  const publication = {
+    article,
+    revision: 1,
+    reviewerAuthorId: "dr-ritesh-verma",
+    reviewedAt: "2026-10-01T12:00:00Z",
+    publishedAt: "2026-10-02T12:00:00Z",
+  };
+  globalThis.fetch = async (input) => {
+    const url = String(input);
+    if (url.includes("/authors")) return Response.json({ documents: [] });
+    if (url.includes("/publications/published-guide"))
+      return Response.json({ fields: encode(publication).mapValue.fields });
+    if (url.includes("/publications/"))
+      return new Response("", { status: 404 });
+    if (url.endsWith(":runQuery"))
+      return Response.json([
+        { document: { fields: encode(publication).mapValue.fields } },
+      ]);
+    if (url.includes("/publications?"))
+      return Response.json({
+        documents: [{ fields: encode(publication).mapValue.fields }],
+      });
+    throw new Error("Unexpected request " + url);
+  };
+  const env = {
+    ASSETS: {
+      fetch: async () =>
+        new Response("<html>shell</html>", {
+          headers: { "content-type": "text/html" },
+        }),
+    },
+  };
+  try {
+    let response = await worker.fetch(
+      new Request("https://blog.thatvetguy.net/article/published-guide"),
+      env,
+    );
+    assert.equal(response.status, 200);
+    const html = await response.text();
+    assert.match(html, /Published body/);
+    assert.match(html, /application\/ld\+json/);
+    assert.ok(!html.includes("javascript:alert"));
+    assert.ok(!html.includes("<script>alert"));
+    response = await worker.fetch(
+      new Request("https://blog.thatvetguy.net/article/private-draft"),
+      env,
+    );
+    assert.equal(response.status, 404);
+    assert.match(response.headers.get("x-robots-tag"), /noindex/);
+    response = await worker.fetch(
+      new Request("https://blog.thatvetguy.net/article/published-guide/extra"),
+      env,
+    );
+    assert.equal(response.status, 404);
+    response = await worker.fetch(
+      new Request("https://blog.thatvetguy.net/sitemap.xml"),
+      env,
+    );
+    const sitemap = await response.text();
+    assert.match(sitemap, /published-guide/);
+    assert.ok(!sitemap.includes("private-draft"));
+    assert.ok(!sitemap.includes("/admin"));
+  } finally {
+    config.projectId = previous;
+    globalThis.fetch = originalFetch;
+    globalThis.HTMLRewriter = originalRewriter;
+  }
+});

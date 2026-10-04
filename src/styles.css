@@ -2613,3 +2613,8 @@ dialog > button {
     font-size: 0.9rem;
   }
 }
+
+.header .nav.server-nav {
+  display: flex;
+  flex-wrap: wrap;
+}

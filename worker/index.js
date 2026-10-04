@@ -87,7 +87,7 @@ const articleList = (items) =>
     })
     .join("");
 const nav =
-  '<header class="header"><div class="masthead"><a class="wordmark" href="/">ThatVetGuy.</a></div><nav class="nav"><a href="/articles">Articles</a> · <a href="/categories">Topics</a> · <a href="/contributors">Our veterinarians</a> · <a href="/search">Search</a></nav></header>';
+  '<header class="header"><div class="masthead"><a class="wordmark" href="/">ThatVetGuy.</a></div><nav class="nav server-nav"><a href="/articles">Articles</a> · <a href="/categories">Topics</a> · <a href="/contributors">Our veterinarians</a> · <a href="/search">Search</a></nav></header>';
 const footer = `<footer><p>${esc(disclaimer)}</p><a href="/about">Editorial standards</a> · <a href="/contact">Contact</a> · <a href="https://www.thatvetguy.net/">The Collective</a></footer>`;
 const clean = (html) =>
   sanitizeHtml(html, {
@@ -545,7 +545,13 @@ export default {
               meta +
                 '<script id="journal-data" type="application/json">' +
                 JSON.stringify({
-                  items: initialItems,
+                  items: initialItems.map((p) => ({
+                    ...p,
+                    article: {
+                      ...p.article,
+                      content: clean(p.article.content),
+                    },
+                  })),
                   authors: initialAuthors,
                 }).replace(/</g, "\\u003c") +
                 "</script>",

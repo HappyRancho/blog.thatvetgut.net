@@ -148,7 +148,10 @@ try {
       `Homepage horizontal overflow at ${width}px`,
     );
     await page.getByRole("button", { name: "Open menu" }).click();
-    await page.getByRole("link", { name: "All articles", exact: true }).click();
+    await page
+      .locator("#navigation")
+      .getByRole("link", { name: "All articles", exact: true })
+      .click();
     await page.getByRole("heading", { name: "The reading room." }).waitFor();
     assert.ok(
       await page.evaluate(
