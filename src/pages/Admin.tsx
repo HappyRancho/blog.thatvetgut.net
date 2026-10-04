@@ -167,9 +167,11 @@ function Profile({
         ownerId={a.id}
         onChange={(url) => setA({ ...a, image: url })}
       />
-      <label>
+      <label htmlFor="profile-biography">
         Biography
         <textarea
+          id="profile-biography"
+          aria-label="Biography"
           rows={6}
           value={a.bio}
           maxLength={4000}
