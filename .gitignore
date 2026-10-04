@@ -8,3 +8,6 @@ dist/
 playwright-report/
 test-results/
 .firebase.deploy.json
+
+worker/public-config.js
+research/

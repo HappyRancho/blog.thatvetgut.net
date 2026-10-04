@@ -4,6 +4,7 @@ import {
   type Article,
   emptyArticle,
 } from "./domain";
+import { auth } from "./auth-context";
 import { sanitize, plain } from "./sanitize";
 export function parseLinkedInHtml(
   html: string,
@@ -28,9 +29,34 @@ export function parseLinkedInHtml(
   const body = doc.querySelector(
     ".article-main__content, .reader-article-content, .attributed-text-segment-list, article",
   );
-  const content = body
-    ? sanitize(body.innerHTML)
-    : `<p>${sanitize(summary)}</p>`;
+  if (body) {
+    for (const img of body.querySelectorAll("img")) {
+      const source =
+        img.getAttribute("src") ||
+        img.getAttribute("data-delayed-url") ||
+        img.getAttribute("data-src") ||
+        "";
+      try {
+        const full = new URL(source, url).href;
+        if (
+          !source ||
+          !/^https:/.test(full) ||
+          !img.getAttribute("alt")?.trim()
+        ) {
+          img.remove();
+          continue;
+        }
+        img.setAttribute("src", full);
+      } catch {
+        img.remove();
+      }
+    }
+  }
+  const content = body ? sanitize(body.innerHTML) : "";
+  if (!body)
+    throw new Error(
+      "LinkedIn returned only a preview. The complete article must be publicly accessible to import it.",
+    );
   if (plain(content).trim().length < 60)
     throw new Error(
       "No useful article content was returned. Paste the text or HTML below.",
@@ -60,31 +86,23 @@ export function parseLinkedInHtml(
 export async function importLinkedIn(
   url: string,
   authorId: string,
-  allowProxy: boolean,
+  _allowProxy = false,
 ) {
   const canonical = normalizeLinkedInUrl(url);
-  const endpoints = allowProxy
-    ? [
-        canonical,
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(canonical)}`,
-      ]
-    : [canonical];
-  for (const endpoint of endpoints) {
-    try {
-      const response = await fetch(endpoint, {
-        signal: AbortSignal.timeout(10000),
-        credentials: "omit",
-        referrerPolicy: "no-referrer",
-      });
-      if (!response.ok) continue;
-      const html = await response.text();
-      if (html.length > 2000000) throw new Error("Page is too large.");
-      return parseLinkedInHtml(html, canonical, authorId);
-    } catch {
-      /* Try next permitted route. */
-    }
-  }
-  throw new Error(
-    "LinkedIn blocked URL extraction or the page could not be reached. Paste the article text or HTML to continue; the source URL will be kept.",
-  );
+  const token = await auth?.currentUser?.getIdToken();
+  if (!token) throw new Error("Sign in before importing.");
+  const response = await fetch("/api/linkedin", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ url: canonical }),
+    signal: AbortSignal.timeout(45000),
+    credentials: "omit",
+  });
+  const result = await response.json();
+  if (!response.ok)
+    throw new Error(result.error || "LinkedIn import could not be completed.");
+  return parseLinkedInHtml(result.html, canonical, authorId);
 }

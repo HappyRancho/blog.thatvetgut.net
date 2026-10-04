@@ -1,10 +1,17 @@
+import { MediaImage, useInlineMedia } from "../components/MediaImage";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Bookmark, Share2, Clock, ShieldCheck, X, Copy } from "lucide-react";
 import { useCatalog } from "../lib/contexts";
 import { configured } from "../lib/firebase";
 import { getPublication } from "../lib/repository";
-import { readingTime, safeUrl, type Publication } from "../lib/domain";
+import {
+  readingTime,
+  safeUrl,
+  dateISO,
+  dateLabel,
+  type Publication,
+} from "../lib/domain";
 import { sanitize } from "../lib/sanitize";
 import { categoryName } from "../data/editorial";
 import { SEO, Disclaimer, Loading, Empty } from "../components/Layout";
@@ -12,8 +19,9 @@ import { ArticleCard } from "../components/ArticleCard";
 export default function ArticlePage() {
   const { slug = "" } = useParams();
   const { items, authors } = useCatalog();
-  const [item, setItem] = useState<Publication | null>(null);
-  const [loading, setLoading] = useState(true);
+  const seed = items.find((p) => p.article.id === slug);
+  const [item, setItem] = useState<Publication | null>(seed || null);
+  const [loading, setLoading] = useState(!seed);
   const [error, setError] = useState("");
   const [large, setLarge] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -21,7 +29,9 @@ export default function ArticlePage() {
   const [message, setMessage] = useState("");
   useEffect(() => {
     let active = true;
-    setLoading(true);
+    setLoading(!items.some((p) => p.article.id === slug));
+    if (items.some((p) => p.article.id === slug))
+      setItem(items.find((p) => p.article.id === slug)!);
     setError("");
     async function fetchArticle() {
       try {
@@ -74,6 +84,7 @@ export default function ArticlePage() {
     });
     return { html: doc.body.innerHTML, headings };
   }, [item]);
+  const resolvedBody = useInlineMedia(body.html);
   useEffect(() => {
     if (!share) return;
     const dialog = document.getElementById("share-dialog") as HTMLDialogElement;
@@ -136,48 +147,72 @@ export default function ArticlePage() {
       <SEO
         title={a.seoTitle || a.title}
         description={a.seoDescription || a.subtitle}
+        image={a.image}
+        article={item}
       />
       <div className="article-heading container">
+        <nav className="breadcrumbs" aria-label="Breadcrumb">
+          <Link to="/">Home</Link>
+          <span>/</span>
+          <Link to={`/category/${a.category}`}>{categoryName(a.category)}</Link>
+        </nav>
         <Link className="eyebrow" to={`/category/${a.category}`}>
           {categoryName(a.category)}
         </Link>
         <h1>{a.title}</h1>
         <p className="standfirst">{a.subtitle}</p>
         <div className="article-attribution">
-          <div>
-            <Link to={`/author/${a.authorId}`}>
-              <strong>{author?.name}</strong>
-            </Link>
-            <span>{author?.qualifications}</span>
+          <div className="article-author">
+            {author?.image && (
+              <MediaImage
+                className="byline-photo"
+                src={safeUrl(author.image, true)}
+                alt=""
+                width={44}
+                height={44}
+              />
+            )}
+            <div>
+              <Link to={`/author/${a.authorId}`}>
+                <strong>
+                  {!configured && "Proposed contributor: "}
+                  {author?.name}
+                </strong>
+              </Link>
+              <span>{author?.qualifications}</span>
+            </div>
           </div>
           <span>
             <Clock size={16} /> {readingTime(a.content)} min read
           </span>
           <span>{a.audience}</span>
         </div>
+        {dateLabel(item.publishedAt) && (
+          <p className="publication-date">
+            Published {dateLabel(item.publishedAt)}
+            {dateISO(item.updatedAt) &&
+            dateISO(item.updatedAt) !== dateISO(item.publishedAt)
+              ? " · Updated " + dateLabel(item.updatedAt)
+              : ""}
+          </p>
+        )}
         {!configured ? (
           <div className="review-badge pending">
             Launch draft · Clinical review pending · Not a published veterinary
             recommendation
           </div>
-        ) : (
+        ) : dateISO(item.reviewedAt) &&
+          authors.some((p) => p.id === item.reviewerAuthorId) ? (
           <div className="review-badge">
             <ShieldCheck size={17} /> Reviewed by{" "}
-            {authors.find((p) => p.id === item.reviewerAuthorId)?.name ||
-              "the clinical review team"}{" "}
-            ·{" "}
-            {new Date(item.reviewedAt).toLocaleDateString("en-GB", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}{" "}
-            · Revision {item.revision}
+            {authors.find((p) => p.id === item.reviewerAuthorId)?.name || ""} ·{" "}
+            {dateLabel(item.reviewedAt)} · Revision {item.revision}
           </div>
-        )}
+        ) : null}
       </div>
       {a.image && safeUrl(a.image, true) && (
         <figure className="article-cover container">
-          <img src={safeUrl(a.image, true)} alt={a.imageAlt} />
+          <MediaImage src={safeUrl(a.image, true)} alt={a.imageAlt} />
         </figure>
       )}
       <div className="reading-layout container">
@@ -212,37 +247,52 @@ export default function ArticlePage() {
         <div>
           <div
             className={large ? "prose large" : "prose"}
-            dangerouslySetInnerHTML={{ __html: body.html }}
+            dangerouslySetInnerHTML={{ __html: resolvedBody }}
           />
           <Disclaimer />
-          <section className="references">
-            <h2>Read the evidence</h2>
+          {a.references.length > 0 && (
+            <section className="references">
+              <h2>Read the evidence</h2>
+              <p className="muted">
+                Sources for further reading. Recommendations should be
+                interpreted in their clinical and local context.
+              </p>
+              {a.references.map((r, i) => (
+                <details key={i}>
+                  <summary>
+                    {i + 1}. {r.title}
+                    {r.year ? ` (${r.year})` : ""}
+                  </summary>
+                  <p>
+                    <a
+                      href={safeUrl(r.url)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Open source
+                    </a>
+                    {r.doi && <span> · DOI: {r.doi}</span>}
+                  </p>
+                </details>
+              ))}
+            </section>
+          )}
+          {a.sourceUrl && safeUrl(a.sourceUrl) && (
             <p className="muted">
-              Sources for further reading. Recommendations should be interpreted
-              in their clinical and local context.
+              Adapted from{" "}
+              <a
+                href={safeUrl(a.sourceUrl)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                the contributor’s LinkedIn publication
+              </a>
+              .
             </p>
-            {a.references.map((r, i) => (
-              <details key={i}>
-                <summary>
-                  {i + 1}. {r.title}
-                  {r.year ? ` (${r.year})` : ""}
-                </summary>
-                <p>
-                  <a
-                    href={safeUrl(r.url)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Open source
-                  </a>
-                  {r.doi && <span> · DOI: {r.doi}</span>}
-                </p>
-              </details>
-            ))}
-          </section>
+          )}
           <div className="article-tags">
             {a.tags.map((t) => (
-              <Link key={t} to={`/articles?tag=${encodeURIComponent(t)}`}>
+              <Link key={t} to={`/tag/${encodeURIComponent(t)}`}>
                 {t}
               </Link>
             ))}

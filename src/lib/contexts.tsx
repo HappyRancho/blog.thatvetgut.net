@@ -1,108 +1,17 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useState,
+  useEffect,
   useCallback,
+  useRef,
   type ReactNode,
 } from "react";
-import {
-  GoogleAuthProvider,
-  signInWithPopup,
-  onAuthStateChanged,
-  signOut,
-  type User,
-} from "firebase/auth";
-import {
-  doc,
-  getDoc,
-  type QueryDocumentSnapshot,
-  type DocumentData,
-} from "firebase/firestore";
-import { auth, db, configured } from "./firebase";
-import { publishedPage, profiles } from "./repository";
+import type { Publication, Author } from "./domain";
+import { configured } from "./firebase";
 import { authors as defaults } from "../data/editorial";
-import type { Author, Publication, Member } from "./domain";
-const AuthContext = createContext<{
-  user: User | null;
-  member: Member | null;
-  loading: boolean;
-  error: string;
-  login: () => Promise<void>;
-  logout: () => Promise<void>;
-}>({
-  user: null,
-  member: null,
-  loading: true,
-  error: "",
-  login: async () => {},
-  logout: async () => {},
-});
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [member, setMember] = useState<Member | null>(null);
-  const [loading, setLoading] = useState(!!auth);
-  const [error, setError] = useState("");
-  useEffect(() => {
-    if (!auth || !db) return;
-    let generation = 0;
-    return onAuthStateChanged(auth, async (u) => {
-      const current = ++generation;
-      setUser(u);
-      setMember(null);
-      setError("");
-      if (!u) {
-        setLoading(false);
-        return;
-      }
-      setLoading(true);
-      try {
-        const s = await getDoc(doc(db!, "cms_users", u.uid));
-        if (current !== generation) return;
-        const m = s.exists() ? (s.data() as Member) : null;
-        if (
-          m?.role === "CO_FOUNDER" &&
-          m.status === "ACTIVE" &&
-          defaults.some((a) => a.id === m.authorId) &&
-          u.emailVerified
-        )
-          setMember(m);
-        else
-          setError(
-            "This Google account has not been approved for the editorial team.",
-          );
-      } catch {
-        if (current === generation)
-          setError("Unable to verify editorial access. Please try again.");
-      } finally {
-        if (current === generation) setLoading(false);
-      }
-    });
-  }, []);
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        member,
-        loading,
-        error,
-        login: async () => {
-          if (!auth) throw new Error("Connect Firebase before signing in.");
-          const provider = new GoogleAuthProvider();
-          provider.setCustomParameters({ prompt: "select_account" });
-          await signInWithPopup(auth, provider);
-        },
-        logout: async () => {
-          if (auth) await signOut(auth);
-          setMember(null);
-        },
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
-}
-export const useAuth = () => useContext(AuthContext);
+import { profiles, publishedPage } from "./repository";
+import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 const CatalogContext = createContext<{
   items: Publication[];
   authors: Author[];
@@ -120,15 +29,29 @@ const CatalogContext = createContext<{
   reload: async () => {},
   loadMore: async () => {},
 });
+function bootstrap(): { items: Publication[]; authors: Author[] } | null {
+  try {
+    const raw = document.getElementById("journal-data")?.textContent;
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    return Array.isArray(d.items) && Array.isArray(d.authors) ? d : null;
+  } catch {
+    return null;
+  }
+}
 export function CatalogProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<Publication[]>([]);
-  const [authors, setAuthors] = useState(defaults);
-  const [loading, setLoading] = useState(true);
+  const initial = useRef(bootstrap());
+  const ready = useRef(!!initial.current);
+  const [items, setItems] = useState<Publication[]>(
+    initial.current?.items || [],
+  );
+  const [authors, setAuthors] = useState(initial.current?.authors || defaults);
+  const [loading, setLoading] = useState(!initial.current);
   const [error, setError] = useState("");
   const [more, setMore] = useState(false);
   const [cursor, setCursor] = useState<QueryDocumentSnapshot<DocumentData>>();
   const reload = useCallback(async () => {
-    setLoading(true);
+    setLoading(!ready.current);
     setError("");
     try {
       if (!configured) {
@@ -158,6 +81,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
       setItems([]);
       setError("The publication could not be loaded. Please try again.");
     } finally {
+      ready.current = true;
       setLoading(false);
     }
   }, []);

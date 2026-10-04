@@ -2,17 +2,24 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, Search, ShieldCheck, BookOpen } from "lucide-react";
 import { configured } from "../lib/firebase";
+import { dateISO, safeUrl, type Publication } from "../lib/domain";
+import { useCatalog } from "../lib/contexts";
 import { categories, disclaimer } from "../data/editorial";
 export function SEO({
   title,
   description,
   noindex = false,
+  image = "",
+  article,
 }: {
   title: string;
   description: string;
   noindex?: boolean;
+  image?: string;
+  article?: Publication;
 }) {
   const location = useLocation();
+  const { authors } = useCatalog();
   useEffect(() => {
     document.title = `${title} | ThatVetGuy`;
     const set = (key: string, value: string, property = false) => {
@@ -30,7 +37,9 @@ export function SEO({
     set("robots", noindex || !configured ? "noindex,nofollow" : "index,follow");
     set("og:title", title, true);
     set("og:description", description, true);
-    set("twitter:card", "summary");
+    set("twitter:card", image ? "summary_large_image" : "summary");
+    set("og:type", article ? "article" : "website", true);
+    set("og:site_name", "ThatVetGuy", true);
     set("twitter:title", title);
     set("twitter:description", description);
     let link = document.head.querySelector<HTMLLinkElement>(
@@ -47,7 +56,50 @@ export function SEO({
         "",
       ) + location.pathname;
     set("og:url", link.href, true);
-  }, [title, description, noindex, location.pathname]);
+    const imageURL = safeUrl(image, true)
+      ? new URL(safeUrl(image, true), link.href).href
+      : "";
+    set("og:image", imageURL, true);
+    set("twitter:image", imageURL);
+    document.getElementById("structured-data")?.remove();
+    if (article && configured) {
+      const a = article.article,
+        person = authors.find((p) => p.id === a.authorId);
+      const schema = {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        headline: a.title,
+        description: a.subtitle,
+        mainEntityOfPage: link.href,
+        ...(person
+          ? {
+              author: {
+                "@type": "Person",
+                name: person.name,
+                url: new URL("/author/" + person.id, link.href).href,
+              },
+            }
+          : {}),
+        ...(dateISO(article.publishedAt)
+          ? { datePublished: dateISO(article.publishedAt) }
+          : {}),
+        ...(dateISO(article.updatedAt)
+          ? { dateModified: dateISO(article.updatedAt) }
+          : {}),
+        ...(imageURL ? { image: imageURL } : {}),
+        publisher: {
+          "@type": "Organization",
+          name: "ThatVetGuy",
+          url: new URL("/", link.href).href,
+        },
+      };
+      const script = document.createElement("script");
+      script.id = "structured-data";
+      script.type = "application/ld+json";
+      script.textContent = JSON.stringify(schema);
+      document.head.append(script);
+    }
+  }, [title, description, noindex, image, article, authors, location.pathname]);
   return null;
 }
 export function Layout({ children }: { children: ReactNode }) {
@@ -57,7 +109,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const location = useLocation();
   useEffect(() => {
     setOpen(false);
-    window.scrollTo(0, 0);
+    if (!location.hash) window.scrollTo(0, 0);
     document.getElementById("main")?.focus();
   }, [location.pathname]);
   return (
@@ -112,6 +164,9 @@ export function Layout({ children }: { children: ReactNode }) {
             className="icon-button mobile"
             onClick={() => setOpen(!open)}
             aria-expanded={open}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setOpen(false);
+            }}
             aria-controls="navigation"
             aria-label={open ? "Close menu" : "Open menu"}
           >
@@ -168,7 +223,7 @@ export function Layout({ children }: { children: ReactNode }) {
             <Link to="/about">Editorial standards</Link>
             <Link to="/contact">Contact & corrections</Link>
             <Link to="/privacy">Privacy</Link>
-            <Link to="/admin">Editorial workspace</Link>
+            <a href="https://www.thatvetguy.net/">The ThatVetGuy Collective</a>
           </div>
           <div>
             <ShieldCheck size={24} />

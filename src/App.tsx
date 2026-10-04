@@ -1,6 +1,6 @@
 import { lazy, Suspense, Component, type ReactNode } from "react";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-import { AuthProvider, CatalogProvider } from "./lib/contexts";
+import { CatalogProvider } from "./lib/contexts";
 import { Layout, Loading, SEO } from "./components/Layout";
 import Home from "./pages/Home";
 const Archive = lazy(() => import("./pages/Archive"));
@@ -48,42 +48,41 @@ export default function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <AuthProvider>
-          <CatalogProvider>
-            <Layout>
-              <Suspense fallback={<Loading />}>
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/articles" element={<Archive />} />
-                  <Route path="/search" element={<Archive />} />
-                  <Route path="/category/:slug" element={<Archive />} />
-                  <Route path="/article/:slug" element={<Article />} />
-                  <Route path="/categories" element={<Categories />} />
-                  <Route path="/contributors" element={<Contributors />} />
-                  <Route path="/author/:slug" element={<Author />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/contact" element={<Contact />} />
-                  <Route path="/privacy" element={<Privacy />} />
-                  <Route path="/admin" element={<Admin />} />
-                  <Route
-                    path="*"
-                    element={
-                      <div className="container section">
-                        <SEO
-                          title="Page not found"
-                          description="The requested page does not exist."
-                          noindex
-                        />
-                        <h1>This page is not in the journal.</h1>
-                        <Link to="/">Return to the homepage</Link>
-                      </div>
-                    }
-                  />
-                </Routes>
-              </Suspense>
-            </Layout>
-          </CatalogProvider>
-        </AuthProvider>
+        <CatalogProvider>
+          <Layout>
+            <Suspense fallback={<Loading />}>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/articles" element={<Archive />} />
+                <Route path="/search" element={<Archive />} />
+                <Route path="/tag/:tagSlug" element={<Archive />} />
+                <Route path="/category/:slug" element={<Archive />} />
+                <Route path="/article/:slug" element={<Article />} />
+                <Route path="/categories" element={<Categories />} />
+                <Route path="/contributors" element={<Contributors />} />
+                <Route path="/author/:slug" element={<Author />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route
+                  path="*"
+                  element={
+                    <div className="container section">
+                      <SEO
+                        title="Page not found"
+                        description="The requested page does not exist."
+                        noindex
+                      />
+                      <h1>This page is not in the journal.</h1>
+                      <Link to="/">Return to the homepage</Link>
+                    </div>
+                  }
+                />
+              </Routes>
+            </Suspense>
+          </Layout>
+        </CatalogProvider>
       </BrowserRouter>
     </ErrorBoundary>
   );

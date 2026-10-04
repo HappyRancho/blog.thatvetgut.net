@@ -1,36 +1,42 @@
 import { Link } from "react-router-dom";
-import { BookOpen, ShieldCheck, Users, HeartPulse } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { useCatalog } from "../lib/contexts";
 import { configured } from "../lib/firebase";
-import { readingTime } from "../lib/domain";
+import { readingTime, safeUrl } from "../lib/domain";
 import { categories, categoryName } from "../data/editorial";
 import { SEO, Disclaimer, Empty, Loading } from "../components/Layout";
 import { ArticleCard } from "../components/ArticleCard";
-import { Newsletter } from "../components/Newsletter";
+import { MediaImage } from "../components/MediaImage";
 export default function Home() {
   const { items, authors, loading, error, reload } = useCatalog();
   const lead = items[0]?.article;
+  const featuredAuthor = authors.find((a) => a.id === lead?.authorId);
   return (
     <>
       <SEO
-        title="Veterinary medicine, clearly explained"
-        description="Thoughtful veterinary reading for informed animal care. Explore pet health, nutrition, preventive care and clinical perspectives from ThatVetGuy."
+        title="Animal care, with context"
+        description="Practical veterinary reading for people who care for animals. Explore pet health, prevention, nutrition, welfare and clinical perspectives."
       />
-      <section className="journal-intro container">
+      <section className="publication-intro container">
         <div>
-          <span className="eyebrow">The independent veterinary journal</span>
+          <span className="eyebrow">The ThatVetGuy journal</span>
           <h1>
-            Better understanding.
+            Animal care,
             <br />
-            <em>Better animal care.</em>
+            <em>with context.</em>
           </h1>
         </div>
-        <p>
-          From the clinic to your everyday.
-          <br />
-          Thoughtful reading at the intersection
-          <br className="desktop" /> of veterinary science and animal care.
-        </p>
+        <div className="intro-aside">
+          <p>
+            Good questions deserve clear answers.
+            <br />
+            Veterinary knowledge for the decisions
+            <br className="desktop" /> you make every day.
+          </p>
+          <Link className="text-link" to="/articles">
+            Find your next read <ArrowUpRight size={16} />
+          </Link>
+        </div>
       </section>
       {loading ? (
         <Loading />
@@ -40,57 +46,58 @@ export default function Home() {
           <button onClick={() => void reload()}>Try again</button>
         </div>
       ) : lead ? (
-        <section className="lead-grid container">
-          <Link to={`/article/${lead.id}`} className="lead-image">
-            <img
-              src={
-                lead.image ||
-                "https://images.unsplash.com/photo-1576201836106-db1758fd1c97?auto=format&fit=crop&q=80&w=1200"
-              }
-              alt={lead.imageAlt || "A golden puppy running across grass"}
-            />
-            <span className="image-caption">
-              THE BIG READ · {readingTime(lead.content)} MINUTES
+        <section
+          className={`editorial-feature container ${lead.image ? "has-image" : ""}`}
+        >
+          {lead.image && safeUrl(lead.image, true) && (
+            <Link
+              to={`/article/${lead.id}`}
+              className="feature-photo"
+              aria-label={lead.title}
+            >
+              <MediaImage
+                src={safeUrl(lead.image, true)}
+                alt={lead.imageAlt}
+                width={960}
+                height={720}
+                fetchPriority="high"
+              />
+            </Link>
+          )}
+          <div className="feature-copy">
+            <span className="eyebrow">
+              Featured reading · {categoryName(lead.category)}
             </span>
-          </Link>
-          <div className="lead-story">
-            <div className="eyebrow">
-              {categoryName(lead.category)} <span className="rule" />
-            </div>
             <h2>
               <Link to={`/article/${lead.id}`}>{lead.title}</Link>
             </h2>
             <p>{lead.subtitle}</p>
-            <div className="byline">
-              <span className="initials">
-                {authors
-                  .find((a) => a.id === lead.authorId)
-                  ?.name.replace("Dr. ", "")
-                  .split(" ")
-                  .map((s) => s[0])
-                  .slice(0, 2)
-                  .join("")}
-              </span>
-              <div>
-                <strong>
-                  {authors.find((a) => a.id === lead.authorId)?.name}
-                </strong>
-                <small>
-                  {configured
-                    ? "Veterinary perspective"
-                    : "Launch manuscript · awaiting review"}
-                </small>
-              </div>
+            <div className="feature-byline">
+              {featuredAuthor && (
+                <>
+                  <MediaImage
+                    src={featuredAuthor.image}
+                    alt=""
+                    width={40}
+                    height={40}
+                  />
+                  <span>
+                    {!configured ? "Proposed contributor: " : ""}
+                    {featuredAuthor.name}
+                  </span>
+                </>
+              )}
+              <span>{readingTime(lead.content)} min read</span>
             </div>
             <Link className="button" to={`/article/${lead.id}`}>
-              Read the story
+              Read the story <ArrowUpRight size={17} />
             </Link>
           </div>
-          <aside className="reading-list">
-            <span className="eyebrow">On the reading list</span>
+          <aside className="feature-reading">
+            <span className="eyebrow">Also in the journal</span>
             {items.slice(1, 4).map((p, i) => (
               <Link key={p.article.id} to={`/article/${p.article.id}`}>
-                <span className="list-number">0{i + 1}</span>
+                <span className="reading-number">0{i + 1}</span>
                 <div>
                   <small>{categoryName(p.article.category)}</small>
                   <h3>{p.article.title}</h3>
@@ -102,115 +109,98 @@ export default function Home() {
         </section>
       ) : (
         <div className="container">
-          <Empty />
+          <Empty
+            title="The journal is preparing its first publications."
+            text="Our founders are developing practical guides and reviewing their sources. Meet the contributors or explore our editorial standards."
+          />
         </div>
       )}
-      <section className="trust-strip container">
+      <section className="topic-ledger container">
         <div>
-          <Users />
-          <span>Six founding veterinarians</span>
+          <span className="eyebrow">Start with what matters</span>
+          <h2>Explore animal health.</h2>
         </div>
-        <div>
-          <ShieldCheck />
-          <span>A documented clinical review process</span>
-        </div>
-        <div>
-          <BookOpen />
-          <span>Sources you can explore</span>
-        </div>
-      </section>
-      <section className="section container">
-        <div className="section-title">
-          <div>
-            <span className="eyebrow">Follow your curiosity</span>
-            <h2>One journal. Every kind of care.</h2>
-          </div>
-          <Link className="text-link" to="/categories">
-            All specialties
-          </Link>
-        </div>
-        <div className="category-strip">
+        <div className="topic-links">
           {categories.map((c, i) => (
             <Link key={c.id} to={`/category/${c.id}`}>
-              <span className="category-index">0{i + 1}</span>
-              <h3>{c.name}</h3>
-              <span>
-                {items.filter((p) => p.article.category === c.id).length} reads
-                in this collection
-              </span>
+              <span>0{i + 1}</span>
+              <strong>{c.name}</strong>
+              <ArrowUpRight size={18} />
             </Link>
           ))}
         </div>
       </section>
-      <section className="section container">
-        <div className="section-title">
-          <div>
-            <span className="eyebrow">Fresh from the clinic</span>
-            <h2>Worth a closer look.</h2>
+      {items.length > 1 && (
+        <section className="section container">
+          <div className="section-title">
+            <div>
+              <span className="eyebrow">
+                {configured
+                  ? "Recently published"
+                  : "Manuscripts awaiting review"}
+              </span>
+              <h2>More to understand.</h2>
+            </div>
+            <Link className="text-link" to="/articles">
+              All articles <ArrowUpRight size={16} />
+            </Link>
           </div>
-          <Link className="text-link" to="/articles">
-            Browse the journal
-          </Link>
-        </div>
-        <div className="article-grid">
-          {items.slice(1, 4).map((p) => (
-            <ArticleCard key={p.article.id} item={p} />
-          ))}
-        </div>
-      </section>
-      <section className="emergency-band container">
-        <HeartPulse size={34} />
+          <div className="article-grid">
+            {items.slice(1, 4).map((p) => (
+              <ArticleCard key={p.article.id} item={p} />
+            ))}
+          </div>
+        </section>
+      )}
+      <section className="care-note container">
+        <span className="eyebrow">When it cannot wait</span>
         <div>
-          <span className="eyebrow">When it cannot wait</span>
-          <h2>Recognise urgency. Get help early.</h2>
+          <h2>Urgent symptoms need direct care.</h2>
           <p>
             Difficulty breathing, collapse, suspected poisoning or repeated
-            unproductive retching needs urgent veterinary attention.
+            unproductive retching warrants urgent veterinary attention. Contact
+            a clinic before reading further.
           </p>
         </div>
-        <Link
-          className="button secondary"
-          to="/category/emergency-critical-care"
-        >
-          Read emergency guidance
+        <Link className="text-link" to="/category/emergency-critical-care">
+          Emergency reading <ArrowUpRight size={16} />
         </Link>
       </section>
-      <section className="section container team-section">
+      <section className="section container contributors-ledger">
         <div>
-          <span className="eyebrow">The people behind the publication</span>
+          <span className="eyebrow">The people behind the reading</span>
           <h2>
-            Different perspectives.
+            Six perspectives.
             <br />A shared duty of care.
           </h2>
           <p>
-            Six co-founders bring perspectives from companion animal practice,
-            pathology, surgery, wildlife and herd health.
+            Companion animals, wildlife, pathology and herd health. Meet the
+            clinicians shaping the journal.
           </p>
           <Link className="text-link" to="/contributors">
-            Meet the collaborative
+            Our contributors <ArrowUpRight size={16} />
           </Link>
         </div>
-        <div className="team-mini">
+        <div className="contributor-rows">
           {authors.map((a) => (
             <Link key={a.id} to={`/author/${a.id}`}>
-              <span className="initials">
-                {a.name
-                  .replace("Dr. ", "")
-                  .split(" ")
-                  .map((s) => s[0])
-                  .slice(0, 2)
-                  .join("")}
-              </span>
-              <strong>
-                {a.name}
-                <small>{a.qualifications}</small>
-              </strong>
+              <MediaImage
+                src={safeUrl(a.image, true)}
+                alt=""
+                width={64}
+                height={64}
+                loading="lazy"
+              />
+              <div>
+                <strong>{a.name}</strong>
+                <small>{a.role}</small>
+              </div>
+              <ArrowUpRight size={17} />
             </Link>
           ))}
         </div>
       </section>
       <div className="container">
-        <Newsletter />
         <Disclaimer />
       </div>
     </>

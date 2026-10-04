@@ -1,213 +1,156 @@
 import { emptyArticle, type Article } from "../lib/domain";
-// Original starter manuscripts. Never automatically publish or claim clinical review.
-const drafts: Array<
-  [
-    string,
-    string,
-    string,
-    string,
-    string,
-    string[],
-    string,
-    Array<[string, string, string]>,
-  ]
-> = [
-  [
-    "vomiting-in-dogs-when-to-call-a-vet",
-    "Your dog is vomiting. What should you do next?",
-    "The observations that help your veterinarian—and the warning signs that should not wait.",
-    "pet-health",
-    "dr-chirag-patidar",
-    ["dogs", "vomiting", "triage"],
-    `
-<p>Vomiting is a symptom, not a diagnosis. A dog may vomit after eating something unsuitable, but vomiting can also accompany intestinal obstruction, toxin exposure, pancreatitis or disease outside the digestive tract. The appearance of vomit alone cannot identify the cause.</p>
-<h2>When to seek urgent help</h2><aside class="clinical-alert"><strong>Contact a veterinary hospital immediately</strong><p>Repeated unproductive retching, a swollen abdomen, collapse, breathing difficulty, blood in vomit, or possible toxin or foreign-object ingestion need prompt veterinary attention. Do not wait to see whether a home remedy works.</p></aside>
-<p>Puppies, frail older dogs and dogs with existing illness can deteriorate more quickly. Repeated vomiting, inability to keep water down, marked lethargy or pain warrants timely veterinary advice even without the warning signs above.</p>
-<h2>What to record before calling</h2><ul><li>When vomiting started and how often it has happened.</li><li>Changes in appetite, drinking, stools, urination or activity.</li><li>Access to medicines, rubbish, plants, toys or unusual food.</li><li>Current medications and any relevant medical conditions.</li></ul>
-<p>A photograph can help describe what you saw. Distinguish forceful vomiting from passive regurgitation if possible, but do not delay care while trying to decide. Take packaging from a suspected exposure to the clinic.</p>
-<h2>Avoid treatment by guesswork</h2><p>Do not give human painkillers or anti-vomiting medicines without veterinary direction. Do not induce vomiting unless a veterinarian specifically instructs you to do so. Some substances and objects can cause further injury on the way back up.</p>
-<p>Ask your veterinarian about food and water while arranging care; a universal fasting rule is inappropriate, particularly for young or medically vulnerable animals. An examination and, when indicated, imaging or laboratory tests help distinguish a self-limiting problem from a condition requiring treatment.</p>
-<aside class="key-takeaways"><strong>What matters most</strong><p>Assess the whole dog, not just the vomit. Recognise urgent signs, collect useful observations and let the examination guide treatment.</p></aside>`,
-    [
-      [
-        "Vomiting in Dogs — Merck Veterinary Manual",
-        "https://www.merckvetmanual.com/dog-owners/digestive-disorders-of-dogs/vomiting-in-dogs",
-        "",
-      ],
-    ],
-  ],
-  [
-    "reading-pet-food-labels",
-    "A better way to read your pet’s food label",
-    "Start with nutritional suitability, then look beyond ingredient-list marketing.",
-    "animal-nutrition",
-    "dr-shivam-singh-thakur",
-    ["nutrition", "dogs", "cats"],
-    `
-<p>Choosing food is easier when you begin with your animal’s needs rather than a striking ingredient claim. Species, life stage, health conditions and calorie requirements all affect what is appropriate. No single food is the best choice for every pet.</p>
-<h2>Look for nutritional suitability</h2><p>Find the statement explaining whether a food is complete and balanced for the intended species and life stage, under the standards applicable where it is sold. Foods labelled for complementary or intermittent feeding should not automatically become the whole diet. Ask your veterinarian about therapeutic diets when disease changes nutritional needs.</p>
-<h2>Ingredients are only part of the story</h2><p>An ingredient list does not establish digestibility, nutrient availability or manufacturing quality. Terms such as natural, premium and holistic are not a substitute for nutritional evidence. Ask who formulates the diet, what nutritional expertise they hold, and how the manufacturer checks consistency and safety.</p>
-<h2>Feed the animal in front of you</h2><p>Package feeding directions are a starting point. Measure portions and monitor body weight and body condition over time. Treats and table food contribute calories too. Your veterinary team can help set a practical feeding plan and adjust it as your pet grows or becomes less active.</p>
-<aside class="pro-tip"><strong>Bring useful information</strong><p>Photograph the complete label and record all foods, treats and supplements before a nutrition consultation. Include the amount actually offered each day.</p></aside>
-<h2>When to ask for individual advice</h2><p>Unexplained weight change, persistent digestive signs, poor growth or a diagnosed health condition deserves a nutritional assessment. Avoid adding mineral or vitamin supplements to a balanced diet without advice. Home-prepared diets need careful formulation; a recipe that sounds wholesome may still be nutritionally incomplete.</p>`,
-    [
-      [
-        "WSAVA Global Nutrition Guidelines",
-        "https://wsava.org/global-guidelines/global-nutrition-guidelines/",
-        "",
-      ],
-    ],
-  ],
-  [
-    "vaccination-plan-for-your-pet",
-    "Vaccination is a plan, not just a date",
-    "How age, exposure and local disease risk shape preventive care.",
-    "preventive-care",
-    "dr-chirag-patidar",
-    ["vaccination", "prevention"],
-    `
-<p>Vaccines prepare the immune system to respond to particular infections. Choosing and timing them requires more than copying another animal’s schedule. Your veterinarian considers species, age, previous vaccination, lifestyle, health and local disease risk.</p>
-<h2>Core and risk-based protection</h2><p>Core vaccines protect against important diseases for a species. Other vaccines may be recommended because of local exposure, travel, boarding or other lifestyle factors. Rabies requirements also depend on local law and public-health guidance. A veterinarian should interpret these requirements for your animal and location.</p>
-<h2>Why young animals need a series</h2><p>Antibodies received from the mother can interfere with vaccination while declining at different rates between individuals. A primary series helps address that uncertainty. Timing and follow-up depend on the vaccine and current guidance, so keep written records rather than relying on memory.</p>
-<h2>Prepare for the appointment</h2><ul><li>Bring previous vaccine records and details of any earlier reaction.</li><li>Describe travel, boarding, outdoor access and contact with other animals.</li><li>Tell the veterinarian about illness and medication.</li><li>Ask when protection is expected and what exposure to avoid beforehand.</li></ul>
-<aside class="clinical-alert"><strong>After vaccination</strong><p>Breathing difficulty, collapse or significant facial swelling needs urgent veterinary attention. Contact the clinic about any other concerning change after a vaccination.</p></aside>
-<p>Vaccination works alongside parasite control, hygiene and sensible exposure management. It does not prevent every cause of illness, and a vaccinated animal with concerning symptoms still needs assessment. Avoid publishing a one-size-fits-all schedule without a species, region, product and clinical context.</p>`,
-    [
-      [
-        "WSAVA Vaccination Guidelines",
-        "https://wsava.org/global-guidelines/vaccination-guidelines/",
-        "2024",
-      ],
-    ],
-  ],
-  [
-    "pet-poisoning-first-response",
-    "Suspected poisoning: the first decisions matter",
-    "What to do while arranging urgent veterinary care.",
-    "emergency-critical-care",
-    "dr-deepesh-chaware",
-    ["poisoning", "emergency", "first-aid"],
-    `
-<p>A possible poison exposure needs prompt professional advice, even if your pet seems well. The effects of some substances are delayed. Risk depends on the substance, amount, route of exposure, time elapsed and the animal’s size and health.</p>
-<aside class="clinical-alert"><strong>Act promptly</strong><p>Contact your veterinarian or an emergency veterinary hospital now if poisoning is suspected. If your animal is unconscious, having seizures or struggling to breathe, arrange emergency transport immediately.</p></aside>
-<h2>Stop further exposure safely</h2><p>Move the animal away from the source without putting yourself at risk. Prevent other animals from reaching it. Keep the packaging, a photograph of the label, or a sample in a closed container if this can be done safely. Do not handle unidentified chemicals with bare hands.</p>
-<h2>Give the clinic specific information</h2><ul><li>The product name and ingredients, if known.</li><li>The earliest and latest possible exposure times.</li><li>The amount missing, without assuming all of it was swallowed.</li><li>Your animal’s approximate weight, symptoms and medications.</li></ul>
-<h2>Do not improvise a remedy</h2><p>Do not induce vomiting or give salt, oil, milk, activated charcoal or human medicines unless a veterinarian directs a specific action. Inducing vomiting can be dangerous after exposure to corrosive substances and in animals with impaired consciousness.</p>
-<p>Follow the clinic’s advice about transport and decontamination. Bring the product information with you. An online toxicity calculation cannot replace assessment, because labels may be incomplete and exposure estimates are often uncertain.</p>`,
-    [
-      [
-        "ASPCA Animal Poison Control",
-        "https://www.aspca.org/pet-care/animal-poison-control",
-        "",
-      ],
-    ],
-  ],
-  [
-    "understanding-your-pets-blood-tests",
-    "A blood test is a clue, not a verdict",
-    "Why reference intervals and clinical context belong together.",
-    "veterinary-medicine",
-    "dr-ritesh-verma",
-    ["diagnostics", "blood-tests"],
-    `
-<p>A number outside a laboratory reference interval does not automatically identify a disease. A result within that interval does not rule out every problem either. Blood tests become useful when interpreted with the history, examination and other findings.</p>
-<h2>What a reference interval means</h2><p>Reference intervals describe results from a defined reference population using a particular method. Laboratories, species and life stages can differ. A small deviation may have a different meaning from a large change or a consistent trend across repeated tests.</p>
-<h2>Several factors can influence a result</h2><p>Hydration, stress, recent food intake, medication and sample handling can affect measurements. Your veterinarian considers these factors before deciding whether an unexpected result needs repeating, further investigation or treatment.</p>
-<h2>Ask about patterns</h2><p>A complete blood count looks at blood cells. A biochemistry profile assesses selected chemical measurements. These are different kinds of information. Related abnormalities may be more informative together than one highlighted value considered alone.</p>
-<aside class="pro-tip"><strong>Questions for the consultation</strong><ul><li>Which results matter most for the symptoms we are investigating?</li><li>Could medication or sample quality have influenced them?</li><li>What is the next step, and when should we repeat testing?</li><li>Which changes at home should prompt an earlier call?</li></ul></aside>
-<p>Keep copies of reports with dates and the laboratory’s intervals. Do not start supplements, restrict food groups or stop prescribed treatment based on an isolated value or an online interpretation. Urgency depends on the animal and the result; contact the treating clinic for individual guidance.</p>`,
-    [
-      [
-        "Clinical Pathology — Merck Veterinary Manual",
-        "https://www.merckvetmanual.com/clinical-pathology-and-procedures",
-        "",
-      ],
-    ],
-  ],
-  [
-    "rabies-prevention-one-health",
-    "Rabies prevention starts with shared responsibility",
-    "Animal vaccination, bite prevention and prompt human care work together.",
-    "one-health",
-    "dr-amaan-ahmed",
-    ["rabies", "zoonoses", "public-health"],
-    `
-<p>Rabies is a viral disease that affects mammals and is almost invariably fatal after clinical symptoms begin. It is preventable through coordinated animal vaccination and timely human post-exposure care. This makes rabies a practical example of One Health.</p>
-<h2>After a possible human exposure</h2><aside class="clinical-alert"><strong>Seek medical care without delay</strong><p>Wash bites and scratches thoroughly with soap and running water for at least 15 minutes, then seek urgent medical assessment for rabies post-exposure prophylaxis. Do not wait for symptoms or for an animal to become visibly unwell.</p></aside>
-<p>Saliva contacting broken skin or a mucous membrane can also matter. A medical professional assesses the exposure and decides which vaccines and other preventive treatment are needed. Previous vaccination does not mean an exposure should be ignored.</p>
-<h2>Protect animals and communities</h2><p>Keep animal rabies vaccination current under local veterinary and legal guidance. Avoid handling unfamiliar animals, wildlife or animals behaving unusually. Teach children to report bites and scratches immediately, even when a wound appears small.</p>
-<h2>Report and coordinate</h2><p>If an animal may have been exposed, contact a veterinarian and the appropriate local public-health or animal-health authority. Do not attempt to capture a suspect animal yourself. Observation and testing decisions must follow local protocols, not informal advice.</p>
-<p>Population-level vaccination programmes, accessible human care and reliable reporting reinforce one another. Compassionate management of free-roaming animals should support evidence-based prevention, with veterinary and public-health teams working together.</p>`,
-    [
-      [
-        "Rabies — World Health Organization",
-        "https://www.who.int/news-room/fact-sheets/detail/rabies",
-        "",
-      ],
-    ],
-  ],
-  [
-    "calmer-veterinary-visits",
-    "A calmer veterinary visit begins at home",
-    "Practical preparation that respects your animal’s behaviour.",
-    "animal-welfare",
-    "dr-shivam-singh-thakur",
-    ["behaviour", "cats", "dogs", "welfare"],
-    `
-<p>Fear at the clinic can make examination harder and leave animals and caregivers distressed. Preparation, observation and considerate handling can help. The aim is not to force an animal to tolerate everything, but to make care safer and more manageable.</p>
-<h2>Practise in small steps</h2><p>Leave a cat carrier accessible as part of the home environment rather than bringing it out only for appointments. Reward voluntary approaches. For dogs, practise brief, comfortable handling and transport experiences at a pace the individual can tolerate. Stop before the animal becomes overwhelmed.</p>
-<h2>Tell the clinic what helps</h2><p>Explain any history of fear, biting, pain or difficulty travelling when booking. Ask about quieter appointment times, waiting outside or bringing familiar bedding. The team can plan handling and decide whether a prescribed pre-visit medication is appropriate.</p>
-<h2>Observe, rather than punish</h2><p>Freezing, struggling, hiding and growling can signal distress. Punishing warnings does not remove the underlying fear and can make handling less predictable. Pain or illness may also change behaviour, so new sensitivity deserves veterinary assessment.</p>
-<aside class="pro-tip"><strong>Pack thoughtfully</strong><p>Bring a secure carrier or suitable lead, familiar bedding, relevant records and rewards approved by the clinic. Ask about food restrictions if a procedure or test is planned.</p></aside>
-<p>For ongoing difficulties, request an individual behaviour and handling plan. Training is most effective when it is gradual and reward-based. Emergency care should never be delayed to complete training; tell the receiving hospital about handling concerns so it can prepare.</p>`,
-    [
-      [
-        "AAFP / ISFM Cat Friendly Veterinary Interaction Guidelines",
-        "https://icatcare.org/veterinary",
-        "2022",
-      ],
-    ],
-  ],
-  [
-    "herd-biosecurity-daily-habits",
-    "Herd biosecurity is built into the working day",
-    "A practical starting point for reducing avoidable disease movement.",
-    "livestock-large-animals",
-    "dr-deepesh-mathur",
-    ["livestock", "biosecurity", "herd-health"],
-    `
-<p>Biosecurity reduces the chance of introducing infection and limits its spread within a holding. A workable plan reflects the animals, diseases, facilities and people involved. The most useful measures are those that can be followed consistently and reviewed with the herd veterinarian.</p>
-<h2>Think about routes of entry</h2><p>New animals, returning animals, visitors, vehicles, feed, water and shared equipment can all be relevant. Keep records of animal movements and discuss sourcing, isolation and testing with your veterinarian. There is no single isolation period that fits every disease and production system.</p>
-<h2>Separate clean and contaminated work</h2><p>Plan movement between groups, particularly when caring for sick animals. Use dedicated equipment where feasible. Remove organic material before applying an appropriate disinfectant at the labelled concentration and contact time. Footbaths alone do not compensate for dirty boots and poor work flow.</p>
-<h2>Make early reporting routine</h2><ul><li>Record changes in appetite, production, behaviour and mortality.</li><li>Provide a clear route for staff to report concerns.</li><li>Agree with the veterinarian on isolation and sampling procedures.</li><li>Review visitor and equipment cleaning arrangements regularly.</li></ul>
-<aside class="clinical-alert"><strong>Unexpected disease patterns</strong><p>Sudden deaths, clusters of illness or suspected notifiable disease require prompt veterinary advice and may require reporting to the appropriate authority. Avoid moving affected animals until advised.</p></aside>
-<p>A written plan should identify responsibilities and be understandable to everyone working with the animals. Vaccination, nutrition, welfare and sensible stocking management complement biosecurity; none eliminates infection risk alone.</p>`,
-    [
-      [
-        "Terrestrial Animal Health Code — WOAH",
-        "https://www.woah.org/en/what-we-do/standards/codes-and-manuals/terrestrial-code-online-access/",
-        "",
-      ],
-    ],
-  ],
-];
-export const launchDrafts: Article[] = drafts.map(
-  ([id, title, subtitle, category, authorId, tags, content, refs], i) => ({
-    ...emptyArticle(authorId),
-    id,
-    title,
-    subtitle,
-    category,
-    tags,
-    content: content.trim(),
-    seoTitle: title,
-    seoDescription: subtitle,
-    audience: i === 4 || i === 7 ? "Veterinary professionals" : "Pet parents",
+// Editorial proposals only. Founders must verify sources, accept attribution and record independent review.
+const drafts = [
+  {
+    id: "prepare-for-veterinary-visit",
     image:
-      i === 0
-        ? "https://images.unsplash.com/photo-1576201836106-db1758fd1c97?auto=format&fit=crop&q=80&w=1200"
-        : "",
-    imageAlt: i === 0 ? "A golden puppy running across grass" : "",
-    references: refs.map(([title, url, year]) => ({ title, url, year })),
-  }),
-);
+      "https://images.unsplash.com/photo-1576201836106-db1758fd1c97?auto=format&fit=crop&q=80&w=1200",
+    imageAlt: "A golden puppy running across grass",
+    title: "Make your next vet visit more useful",
+    subtitle:
+      "A simple preparation guide: what to record, what to bring and which questions to ask.",
+    category: "pet-health",
+    authorId: "dr-chirag-patidar",
+    tags: ["dogs", "cats", "vet visits"],
+    content:
+      '<h2>Start with the change you noticed</h2><p>A veterinary appointment is more useful when the team can understand what has changed and when. Describe observations rather than deciding on a diagnosis: eating less, drinking more, struggling on the stairs or hiding are useful starting points. A symptom can have several causes, and an examination puts it in context.</p><h2>Build a short timeline</h2><p>Write down when the change began, whether it is continuous or intermittent, and any changes in food, medication, routine or environment. Record appetite, drinking, toileting and activity. A brief video of an intermittent behaviour can help, provided recording it does not delay care or distress the animal.</p><h2>Bring the information that changes decisions</h2><p>Bring vaccination and previous clinical records when available. Make a list of every medicine and supplement, including its packaging and the amount actually given. Include recent diet changes and possible access to plants, human medicines, rubbish or damaged toys. Ask the clinic whether a sample is needed and how it should be collected.</p><h2>Ask for a plan you can follow</h2><p>Useful questions include: What are we checking for? What will this test tell us? What should I watch for at home? When should I call again? Ask the team to explain instructions you do not understand. Confirm how to give prescribed treatment, the next review date and what to do if your animal will not take it.</p><h2>Make the journey safer</h2><p>Tell the clinic about fear, handling difficulties or a previous stressful visit before you arrive. Use appropriate transport: a secure carrier for a cat and safe restraint for a dog. The clinic can help plan arrival and handling. Do not give sedatives or other medication unless prescribed for this animal.</p><h2>When preparation should wait</h2><p>If your animal has difficulty breathing, collapses, has a suspected poisoning or is rapidly deteriorating, contact a veterinary service promptly. A checklist should support care, never delay an emergency examination.</p><aside class="key-takeaways"><p><strong>Put this into practice</strong></p><p>Keep useful records, ask clear questions and let the veterinary examination guide decisions for your animal.</p></aside>',
+    references: [
+      {
+        title: "AVMA \u2014 Resources for pet owners",
+        url: "https://www.avma.org/resources-tools/pet-owners",
+        year: "",
+      },
+    ],
+  },
+  {
+    id: "understanding-veterinary-blood-tests",
+    title: "A blood-test result is the start of a conversation",
+    subtitle:
+      "Why an out-of-range number needs clinical context, and how to discuss results with your veterinarian.",
+    category: "veterinary-medicine",
+    authorId: "dr-ritesh-verma",
+    tags: ["diagnostics", "blood tests", "clinical context"],
+    content:
+      '<h2>A number is not a diagnosis</h2><p>Laboratory tests help a veterinarian investigate health, monitor disease or check treatment. A result is interpreted alongside the animal\u2019s history, examination and other findings. Reading one highlighted number without that context can lead to unnecessary worry or false reassurance.</p><h2>Understand the reference interval</h2><p>The interval printed beside a result describes the laboratory\u2019s comparison range. Intervals can differ between laboratories and methods. The significance of a change also depends on species, age, clinical condition, sample quality and the pattern of other results. A value inside the interval does not by itself exclude illness.</p><h2>Ask what the test was designed to answer</h2><p>Some tests assess cell counts; others investigate organ function, metabolic changes or a specific infection. Ask which clinical question the test addresses and whether the finding is specific to one disease. Your veterinarian may need additional tests or a repeat sample to clarify the result.</p><h2>Keep the whole report</h2><p>Save the report with the date, laboratory, medicines being taken and the reason for testing. Previous results can make changes over time easier to interpret. Screenshots that crop out units, intervals or the animal\u2019s details can remove information needed for a useful comparison.</p><h2>Discuss the next step</h2><p>Ask which results affect decisions today, which will be monitored and when reassessment is recommended. If a repeat test is planned, clarify food, water and medicine instructions with the clinic. Do not stop a prescription or add a supplement solely because an online chart labels a result abnormal.</p><h2>Know when to call sooner</h2><p>A worsening animal needs advice even if an earlier result looked reassuring. Follow the clinic\u2019s instructions about symptoms requiring an earlier review. Testing supports clinical reasoning; it does not replace an examination.</p><aside class="key-takeaways"><p><strong>Put this into practice</strong></p><p>Keep useful records, ask clear questions and let the veterinary examination guide decisions for your animal.</p></aside>',
+    references: [
+      {
+        title:
+          "Merck Veterinary Manual \u2014 Clinical pathology and procedures",
+        url: "https://www.merckvetmanual.com/clinical-pathology-and-procedures",
+        year: "",
+      },
+    ],
+  },
+  {
+    id: "reading-pet-food-labels",
+    title: "What a pet-food label can\u2014and cannot\u2014tell you",
+    subtitle:
+      "Look beyond ingredient marketing to life stage, nutritional suitability and the questions a manufacturer should answer.",
+    category: "animal-nutrition",
+    authorId: "dr-shivam-singh-thakur",
+    tags: ["nutrition", "dogs", "cats", "food labels"],
+    content:
+      '<h2>Start with suitability</h2><p>Before judging a bag by its ingredient list, ask whether the food is intended for your animal\u2019s species and life stage, and whether it is designed to provide complete nutrition or to complement another diet. Labelling terms differ between markets. Ask your veterinarian to interpret unfamiliar statements in the local context.</p><h2>Ingredients are only one part of the picture</h2><p>An ingredient list does not by itself show how well a food is formulated, manufactured, digested or suited to an individual animal. Attractive marketing language is not a substitute for nutritional expertise or quality control. \u201cNatural\u201d or \u201cpremium\u201d does not tell you whether a diet meets this animal\u2019s needs.</p><h2>Ask about the people and process behind the food</h2><p>Useful manufacturer questions include who formulates the diets, what qualifications they have, what quality-control measures are used, and whether detailed nutritional and calorie information is available. A company should be able to answer these questions clearly rather than relying only on advertising.</p><h2>Use the feeding guide as a starting point</h2><p>The amount printed on a package cannot account for every animal\u2019s activity, body condition and household treats. Ask the clinic to assess body condition and help plan a suitable daily amount. Record the food, quantity, treats and supplements so adjustments are based on what is actually fed.</p><h2>Medical diets need individual advice</h2><p>An animal with a health condition may have nutritional needs that a general comparison chart cannot address. Changes to a prescribed diet, homemade recipe or supplement plan should be discussed with the treating veterinarian. Adding nutrients without knowing the existing diet can unbalance it.</p><h2>Take a photograph to the appointment</h2><p>Photograph the front, nutritional statement, feeding guide and manufacturer contact details. Bring the current diet history. These are more useful for a clinical discussion than a single ingredient ranking or a social-media score.</p><aside class="key-takeaways"><p><strong>Put this into practice</strong></p><p>Keep useful records, ask clear questions and let the veterinary examination guide decisions for your animal.</p></aside>',
+    references: [
+      {
+        title: "WSAVA \u2014 Global nutrition guidelines",
+        url: "https://wsava.org/global-guidelines/global-nutrition-guidelines/",
+        year: "",
+      },
+    ],
+  },
+  {
+    id: "plan-your-pets-preventive-care",
+    title: "Build a prevention plan around your animal\u2019s life",
+    subtitle:
+      "Vaccination records, parasite risk and dental care belong in one practical conversation.",
+    category: "preventive-care",
+    authorId: "dr-chirag-patidar",
+    tags: ["prevention", "vaccination", "parasites"],
+    content:
+      '<h2>Start with the animal, not a universal calendar</h2><p>Preventive care depends on species, age, previous records, health, exposure and local disease risks. A useful plan is made with the veterinarian who knows the animal. Internet schedules can help you prepare questions, but they cannot establish the right programme for every household.</p><h2>Bring previous vaccination records</h2><p>Take dated records rather than relying on memory. Your veterinarian can explain which vaccinations are recommended, what follow-up is required and how uncertainty in the history affects the plan. Travel, boarding and local legal requirements may also influence decisions.</p><h2>Discuss parasite exposure</h2><p>Tell the clinic about outdoor access, hunting, fleas or ticks, contact with other animals, travel and children in the household. Parasite control involves the animal and its environment. Do not transfer a product or dose between species: a product suitable for a dog may be unsafe for a cat.</p><h2>Include teeth, weight and behaviour</h2><p>A prevention visit is also an opportunity to discuss dental care, body condition, feeding, handling and changes in behaviour. Ask the clinic to demonstrate techniques rather than guessing at home. Explain what you can realistically maintain so the plan is workable.</p><h2>Leave with a clear record</h2><p>Ask for written next steps: what was given, what to monitor, when follow-up is due and how to contact the clinic with concerns. Keep documents accessible for a new clinic or travel. Set reminders based on the agreed plan rather than an unverified online timetable.</p><h2>Review when life changes</h2><p>A move, new animal, pregnancy, illness or change in outdoor access can alter risk. Prevention is an ongoing discussion. If your animal is unwell, arrange clinical advice rather than waiting for the next routine appointment.</p><aside class="key-takeaways"><p><strong>Put this into practice</strong></p><p>Keep useful records, ask clear questions and let the veterinary examination guide decisions for your animal.</p></aside>',
+    references: [
+      {
+        title: "WSAVA \u2014 Vaccination guidelines",
+        url: "https://wsava.org/global-guidelines/vaccination-guidelines/",
+        year: "",
+      },
+    ],
+  },
+  {
+    id: "suspected-pet-poisoning-first-actions",
+    title: "Suspected poisoning: the first call matters",
+    subtitle:
+      "Collect the right information, prevent further exposure and avoid treatment by guesswork.",
+    category: "emergency-critical-care",
+    authorId: "dr-amaan-ahmed",
+    tags: ["emergency", "poisoning", "dogs", "cats"],
+    content:
+      '<h2>Contact a veterinary service promptly</h2><p>If you suspect your animal has swallowed, inhaled or contacted a harmful substance, call a veterinarian promptly. Some exposures require action before signs appear. The absence of symptoms is not a reliable reason to wait.</p><h2>Make the situation safe</h2><p>Prevent further access to the substance if you can do so safely. Protect yourself and other animals from exposure. Do not enter an unsafe area or handle an aggressive, distressed animal without help. Ask the veterinary team how to transport the animal and whether any immediate decontamination is appropriate.</p><h2>Gather the details the team needs</h2><p>Have the animal\u2019s species, approximate weight and medical history ready. Describe the product or substance, estimated amount, time of exposure and current signs. Photograph the label and bring packaging when safe. Explain anything you have already given or done.</p><h2>Do not induce vomiting by yourself</h2><p>Whether vomiting is appropriate depends on the substance, the animal and the circumstances. Home methods can cause additional harm. Do not give salt, oils, human medicines or other improvised treatments. Follow case-specific veterinary instructions.</p><h2>Use a handover checklist</h2><p>Write down the time of the call, the clinic you are travelling to and the instructions given. Ask whether the service can manage the case or whether another facility is needed. Keep product information with the animal\u2019s records so it reaches the treating team.</p><h2>Review prevention afterward</h2><p>Once the immediate situation is managed, review how exposure happened. Secure medicines, chemicals, food waste and relevant plants; keep packaging and emergency clinic contacts accessible. Prevention reduces future risk, but it does not replace urgent advice during an exposure.</p><aside class="key-takeaways"><p><strong>Put this into practice</strong></p><p>Keep useful records, ask clear questions and let the veterinary examination guide decisions for your animal.</p></aside>',
+    references: [
+      {
+        title: "AVMA \u2014 Household hazards",
+        url: "https://www.avma.org/resources-tools/pet-owners/petcare/household-hazards",
+        year: "",
+      },
+    ],
+  },
+  {
+    id: "rabies-prevention-and-bite-response",
+    title: "Rabies prevention starts before a bite",
+    subtitle:
+      "Responsible vaccination, safe animal handling and prompt medical assessment after a possible exposure.",
+    category: "one-health",
+    authorId: "dr-amaan-ahmed",
+    tags: ["rabies", "India", "One Health"],
+    content:
+      '<h2>A shared health responsibility</h2><p>Rabies prevention connects animal vaccination, human healthcare, community education and safer interactions with animals. Public-health guidance is particularly relevant where canine rabies remains a risk. Local health authorities can explain current services and exposure protocols.</p><h2>Keep animal vaccination records</h2><p>Ask your veterinarian about the appropriate vaccination programme and documentation for your animal. Maintain dated records and discuss requirements after moving or travelling. A missing record should be addressed with the clinic rather than assumed to prove protection.</p><h2>Avoid unsafe handling</h2><p>Do not approach an unfamiliar animal behaving unusually or try to catch a potentially rabid animal. Keep children away and contact local veterinary or animal-control services. A frightened or injured animal also needs safe, trained handling.</p><h2>After a possible exposure, seek medical assessment</h2><p>WHO advises prompt washing of a bite wound with soap and running water for at least 15 minutes and urgent assessment for post-exposure care. Bites, scratches and saliva contact with broken skin or mucous membranes need assessment in context. Do not wait for symptoms or rely on a home remedy.</p><h2>Let clinicians decide the exposure plan</h2><p>A healthcare professional determines whether vaccination and other post-exposure measures are needed. Animal vaccination status, exposure circumstances and local guidance are part of the assessment. Follow the prescribed course and review dates; an internet article cannot decide an individual\u2019s treatment.</p><h2>Support prevention without misinformation</h2><p>Share verified public-health guidance and encourage humane, organised vaccination and animal-management programmes. Avoid claims that appearance alone proves an animal is safe or infected. One Health works best when communities, clinicians and veterinary services coordinate.</p><aside class="key-takeaways"><p><strong>Put this into practice</strong></p><p>Keep useful records, ask clear questions and let the veterinary examination guide decisions for your animal.</p></aside>',
+    references: [
+      {
+        title: "WHO \u2014 Rabies fact sheet",
+        url: "https://www.who.int/news-room/fact-sheets/detail/rabies",
+        year: "",
+      },
+    ],
+  },
+  {
+    id: "less-stressful-cat-carrier-travel",
+    title: "Make the cat carrier part of everyday life",
+    subtitle:
+      "Prepare for calmer transport and tell the clinic what helps your cat feel safer.",
+    category: "animal-welfare",
+    authorId: "dr-deepesh-chaware",
+    tags: ["cats", "behaviour", "handling", "vet visits"],
+    content:
+      '<h2>Begin before appointment day</h2><p>For many cats, a carrier predicts an unfamiliar journey and handling. Leaving an appropriate carrier accessible at home can allow it to become part of a familiar environment. Preparation works best when it is gradual and adapted to the individual cat.</p><h2>Choose a practical carrier</h2><p>Ask the clinic about a secure, easy-to-open carrier that allows safe examination and handling. Check the door, clips and base before travel. A damaged or unsecured carrier can create an escape risk. Avoid forcing a distressed cat through a small opening.</p><h2>Create familiarity without pressure</h2><p>A familiar blanket and voluntary exploration can help. Keep sessions short, reward approaches the cat is comfortable making and allow retreat. Do not chase the cat repeatedly into the carrier. If transport remains difficult, ask the clinic for a plan ahead of time.</p><h2>Plan the journey</h2><p>Keep the carrier stable and safely restrained during travel. Avoid opening it in an unsecured area. Ask the clinic about arrival arrangements and a quieter waiting space when available. Tell the team about previous fear, motion sickness or handling difficulties.</p><h2>Recognise when support is needed</h2><p>Preparation is not always enough for a highly fearful cat. A veterinarian can assess whether medication or a modified appointment plan is appropriate. Use only medication prescribed for that cat and follow the instructions; another animal\u2019s prescription is not a suitable shortcut.</p><h2>Keep the goal realistic</h2><p>The aim is safer transport and less distress, not perfect behaviour. After the visit, let the cat settle in a familiar space and review which steps helped. For urgent illness, contact the clinic promptly rather than postponing care while trying to complete training.</p><aside class="key-takeaways"><p><strong>Put this into practice</strong></p><p>Keep useful records, ask clear questions and let the veterinary examination guide decisions for your animal.</p></aside>',
+    references: [
+      {
+        title: "Feline Veterinary Medical Association \u2014 Cat carrier tips",
+        url: "https://catfriendly.com/cat-care-at-home/cat-carrier-tips/",
+        year: "",
+      },
+    ],
+  },
+  {
+    id: "useful-herd-health-records",
+    title: "Keep herd records that help a veterinarian act",
+    subtitle:
+      "Individual identification, event timelines and practical handover information for field visits.",
+    category: "livestock-large-animals",
+    authorId: "dr-deepesh-mathur",
+    tags: ["livestock", "herd health", "records", "India"],
+    content:
+      '<h2>A useful record supports a decision</h2><p>Farm records do not need to be elaborate to improve a veterinary visit. Consistent identification, a clear event timeline and accurate treatment details can help the team understand individual cases and patterns across a herd. Choose a system the people doing daily care can maintain.</p><h2>Identify the animal consistently</h2><p>Use the agreed identification method and record species, age or date of birth, reproductive status and relevant production information. Avoid changing an animal\u2019s identifier between notebooks or shifts. Group-level observations should be labelled clearly rather than attributed to one individual.</p><h2>Record what changed and when</h2><p>Note changes in feeding, water access, housing, movement and contact with other animals. Describe observed signs and their timing. Record how many animals are affected and any deaths. A dated observation is more useful than an undated description such as \u201coften unwell\u201d.</p><h2>Keep treatment and withdrawal instructions together</h2><p>Record the product, prescribing veterinarian, animal or group treated, date and instructions. Follow the product label and veterinarian\u2019s advice for milk, meat or egg withdrawal periods. Do not use a general internet table as a substitute for the specific product and local requirements.</p><h2>Prepare a handover for the field visit</h2><p>Have previous records, product packaging and contact details available. Ask the service about safe handling facilities, sample collection and biosecurity precautions before arrival. Explain constraints such as water, electricity, transport and staffing so the plan can be adapted to the farm.</p><h2>Review patterns with the veterinary team</h2><p>Routine review can identify questions about nutrition, housing, vaccination and disease prevention. Changes in multiple animals or rapid deterioration require timely veterinary advice. Records support investigation; they do not establish a diagnosis on their own.</p><aside class="key-takeaways"><p><strong>Put this into practice</strong></p><p>Keep useful records, ask clear questions and let the veterinary examination guide decisions for your animal.</p></aside>',
+    references: [
+      {
+        title: "WOAH \u2014 Codes and manuals",
+        url: "https://www.woah.org/en/what-we-do/standards/codes-and-manuals/",
+        year: "",
+      },
+    ],
+  },
+];
+export const launchDrafts: Article[] = drafts.map((d) => ({
+  ...emptyArticle(d.authorId),
+  ...d,
+}));

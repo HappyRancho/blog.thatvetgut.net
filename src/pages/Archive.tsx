@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import Fuse from "fuse.js";
 import { Search } from "lucide-react";
@@ -7,16 +7,19 @@ import { useCatalog } from "../lib/contexts";
 import { ArticleCard } from "../components/ArticleCard";
 import { Empty, SEO, Loading } from "../components/Layout";
 export default function Archive() {
-  const { slug } = useParams();
+  const { slug, tagSlug } = useParams();
   const [params, setParams] = useSearchParams();
   const { items, authors, loading, error, more, loadMore, reload } =
     useCatalog();
   const q = params.get("q") || "";
   const category = slug || params.get("category") || "";
-  const tag = params.get("tag") || "";
+  const tag = tagSlug || params.get("tag") || "";
   const audience = params.get("audience") || "";
   const sort = params.get("sort") || "newest";
   const bookmarked = params.get("saved") === "1";
+  useEffect(() => {
+    if ((q || category || tag) && more && !loading && !error) void loadMore();
+  }, [q, category, tag, more, loading, error, items.length]);
   let saved: string[] = [];
   try {
     const value = JSON.parse(localStorage.getItem("tvg-bookmarks") || "[]");
@@ -66,12 +69,32 @@ export default function Archive() {
     else next.delete(key);
     setParams(next, { replace: true });
   };
-  const title = category ? categoryName(category) : "The reading room";
+  const topic = categories.find((c) => c.id === category);
+  const title = category
+    ? categoryName(category)
+    : tag
+      ? `Articles tagged “${tag}”`
+      : "The reading room";
+  if (slug && !topic)
+    return (
+      <>
+        <SEO
+          title="Topic not found"
+          description="This topic does not exist."
+          noindex
+        />
+        <Empty title="Topic not found" />
+      </>
+    );
   return (
     <div className="container section">
       <SEO
         title={title}
-        description="Explore the ThatVetGuy veterinary journal by specialty, topic and audience."
+        description={
+          topic?.description ||
+          "Explore the ThatVetGuy veterinary journal by specialty, topic and audience."
+        }
+        noindex={!!q || bookmarked}
       />
       <span className="eyebrow">
         The journal / {category ? "Specialty collection" : "All articles"}
@@ -81,7 +104,8 @@ export default function Archive() {
         <span className="brand-dot">.</span>
       </h1>
       <p className="intro-text">
-        Find the context behind the question. Read at your own pace.
+        {topic?.description ||
+          "Find the context behind the question. Read at your own pace."}
       </p>
       <div className="filter-bar">
         <label className="search-field">
@@ -147,6 +171,7 @@ export default function Archive() {
           </button>
         )}
       </div>
+      {tag && !tagSlug && <p className="active-filter">Topic: {tag}</p>}
       {error && (
         <div className="error" role="alert">
           {error}
@@ -162,10 +187,21 @@ export default function Archive() {
           ))}
         </div>
       ) : (
-        <Empty
-          title="No matching articles yet."
-          text="Try a broader search, clear a filter, or return as the journal grows."
-        />
+        <div className="empty">
+          <h2>No matching articles yet.</h2>
+          <p>Try fewer words, a broader topic or clear your filters.</p>
+          <button
+            className="secondary"
+            onClick={() => setParams({}, { replace: true })}
+          >
+            Clear filters
+          </button>
+          {slug && (
+            <Link className="text-link" to="/articles">
+              Browse all articles
+            </Link>
+          )}
+        </div>
       )}
       {more && (
         <div className="center">
@@ -173,8 +209,8 @@ export default function Archive() {
             {loading ? "Loading…" : "Load more articles"}
           </button>
           <p>
-            Search applies to loaded articles. Load more to include older
-            publications.
+            Older publications are loaded in pages to keep the initial visit
+            light.
           </p>
         </div>
       )}

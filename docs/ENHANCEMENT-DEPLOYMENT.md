@@ -1,0 +1,33 @@
+# Deploying the enhancement
+
+## What remains unchanged
+
+Keep the main services/portfolio website at `www.thatvetguy.net`. The journal and its direct editorial URL use `blog.thatvetguy.net`. The Firebase project remains `adroit-bus-1ghtt`, with the named database `ai-studio-thatvetguy-7ee5cb09-c3e8-4d7e-8c1c-f5ef3b5df638`. Google sign-in and the same `cms_users` records are retained. No SMS, Firebase Storage, Cloud Functions, or billing upgrade is required.
+
+## Required owner actions
+
+1. Apply the reviewed `firestore.rules` to that named database using Firebase Console → Firestore Database → select database → Rules → Publish, or the existing deployment script. Publish rules before enabling the new upload and importer functionality. This changes access policy, not existing documents. Export/retain a copy of the current rules first. The last anonymous probe denied public reads of `publications` and `authors`; the new rules allow these intended public collections while protecting drafts and membership.
+2. Verify the six explicitly provisioned membership records `cms_users/{Firebase Authentication UID}`. Each has string fields `role: CO_FOUNDER`, `status: ACTIVE`, and its unique founding `authorId`. No client can provision these records. All six share equal editorial permissions. Credentials and IDs must be verified in Firebase Authentication; do not invent or guess the other founders' UIDs.
+3. Retain the existing Cloudflare **build** variables: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID`, `VITE_FIREBASE_DATABASE_ID`, and `VITE_SITE_URL=https://blog.thatvetguy.net`. The build generates the Worker's public Firebase configuration from these variables. There is no embedded service-account key.
+4. Merge the validated PR, build with `npm run build` (or `bun run build`), and deploy the existing Worker with `npx wrangler deploy`. Its existing name is `blog-thatvetgut-net`. The repository's Wrangler configuration now includes the Worker entry point and static-assets binding. Keep production branch `main` and the root directory `/`. A versions-upload preview alone does not change production traffic.
+5. Test a real founder login, profile save, image upload, draft save, independent review, publication, withdrawal, sitemap and article sharing. Each founder should review/adopt their own refreshed profile; the release does not overwrite existing Firestore profiles. Starter drafts are opt-in through the empty CMS only, and must not be published without clinical/source review.
+
+## Image constraints on a free backend
+
+Uploads accept JPEG/PNG/WebP up to 8 MB, scale the longest edge to at most 1400 px and compress to at most 240,000 characters of WebP data. Each file is a separate `media` document, so catalogue queries do not download image payloads. Draft media is readable by approved members only. Public access is allowed only while a published article or public author profile references the specific image. The `/media/{id}` Worker reads with ordinary public database permissions; it cannot bypass rules. Images use no-store responses so withdrawal takes effect on subsequent requests. Files already downloaded by a reader cannot be recalled.
+
+Optimisation and database-write stages have genuine progress feedback, rather than simulated byte-transfer progress. Media is immutable. Unreferenced uploads remain private, retained for manual cleanup; no automatic deletion of production media runs. This approach suits a modest publication, not an unlimited image library. It consumes Firestore document reads/writes and stored-data quota. No billable service is enabled by the code.
+
+## Importer and SEO
+
+The same Cloudflare Worker handles authenticated LinkedIn extraction, public HTML, media and sitemap. `/api/linkedin` verifies the Firebase token with Google's supported account lookup endpoint, checks the caller's own active membership record, restricts requests and redirects to eligible HTTPS LinkedIn paths, and bounds the streamed response. LinkedIn may still block extraction; private/blocked/preview-only pages produce an explanation and an original-text recovery option. No login, CAPTCHA or paywall is bypassed. The rate limit is per Worker isolate; Firebase/Cloudflare provider protections remain relevant. No external AllOrigins service is used.
+
+Public pages receive article content, canonical/OG metadata and real-data structured markup from the Worker before JavaScript runs. The client then enhances reading. A public-only bootstrap payload reduces redundant blank/loading states. Article content is checked against the live server on navigation. Sitemap records come only from `publications`; drafts never enter it. HTTP 404 is returned for missing public routes and HTTP 503 for backend access failures. Private routes have `X-Robots-Tag: noindex, nofollow` and are excluded from robots/sitemaps.
+
+App Check enforcement needs separate integration testing: anonymous server-side public REST reads and token-authenticated importer requests may be rejected by an enforced App Check policy. Do not switch enforcement on as part of this release without verifying the Worker paths. No production App Check setting was modified.
+
+## Limits of validation
+
+CI tests the emulator access policy, atomic review/publish/withdrawal operations, profile isolation for all six mappings, draft media privacy, importer bounds and redirects, editor formatting, responsive public routes, and the real mobile CMS workflow in isolated Auth/Firestore emulators. The CMS browser check uses test-only development entries that are absent from production: it verifies denied membership, draft save/preview, image optimisation/privacy, independent review, publishing/withdrawal, own-profile save, revocation, logout and recovery of unsaved article/profile text after a connection pause. Unsaved text stays only in the current workspace memory, is hidden while access is unverified, and is cleared on account change or logout; it is not written to browser storage. Real Google account sessions and production Firebase/Cloudflare console settings cannot be exercised without the owner's connection. The live main site's author data was inspected, but credentials were not independently certified. New medical text still requires human clinical and source review.
+
+No private credentials were found in the current source. Firebase web configuration is public application configuration. Removing phone registries in the earlier rebuild did not erase Git history; review historical personal data separately if needed.

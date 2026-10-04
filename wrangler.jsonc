@@ -7,6 +7,12 @@
   },
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
-  }
+    "not_found_handling": "single-page-application",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "main": "worker/index.js",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ]
 }

@@ -1,4 +1,8 @@
-# Connect Firebase without a payment card
+# Existing free Firebase project
+
+For this enhancement, use the existing AI Studio Starter/free project and named database. It does not require a new project or billing upgrade. Updated image uploads use bounded Firestore media documents, not Firebase Storage. Follow [ENHANCEMENT-DEPLOYMENT.md](ENHANCEMENT-DEPLOYMENT.md) for current setup and limitations.
+
+## Connect Firebase without a payment card
 
 ## 1. Use the correct project type
 
@@ -54,7 +58,11 @@ Use the correct author mapping for each person:
 
 Each founder should sign out and in after provisioning. Set `status` to `INACTIVE` to revoke protected access. Client code cannot create, list or modify these access records. Do not provide access to an account solely because it knows a founder's public name or email.
 
-## 6. Deploy from your own computer
+## 6. Legacy Firebase Hosting deployment
+
+For the current enhancement, deploy the database rules through the Console and use Cloudflare as described in [ENHANCEMENT-DEPLOYMENT.md](ENHANCEMENT-DEPLOYMENT.md). The commands below retain the original Firebase Hosting alternative; they do not deploy the Cloudflare Worker and therefore do not provide its importer, public HTML or media endpoint. Do not use this alternative to release the enhanced journal.
+
+### From your own computer
 
 With Node 22 installed, in the repository:
 
@@ -92,4 +100,4 @@ Run the manual workflow from the reviewed branch. No automatic production deploy
 
 Use App Check with a supported no-cost reCAPTCHA provider for the web app, test it, then enable Firestore enforcement. The application supports a reCAPTCHA v3 site key via `VITE_APPCHECK_SITE_KEY`. Public contact/interest forms cannot enforce per-IP rate limits using Firestore rules alone, so App Check and quota monitoring matter. A honeypot is a usability layer, not a security boundary.
 
-Check the current Spark quotas in your console. Do not attach billing to bypass a quota. Keep images optimized and served from `public/images`, avoid large polling workloads, and use manuscript exports for backups. App Check reduces abuse; it does not guarantee that quotas cannot be exhausted.
+Check the current Spark quotas in your console. Do not attach billing to bypass a quota. Keep uploaded Firestore media within its documented limits (or use optimised public HTTPS images), avoid large polling workloads, and use manuscript exports for backups. App Check reduces abuse; it does not guarantee that quotas cannot be exhausted.

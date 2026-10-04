@@ -2,6 +2,8 @@ import {
   collection,
   doc,
   getDoc,
+  getDocFromServer,
+  getDocsFromServer,
   getDocs,
   query,
   orderBy,
@@ -23,6 +25,7 @@ import {
   type Author,
   validateArticle,
   normalizeLinkedInUrl,
+  sourceKey,
 } from "./domain";
 export async function publishedPage(
   cursor?: QueryDocumentSnapshot<DocumentData>,
@@ -33,7 +36,7 @@ export async function publishedPage(
     ...(cursor ? [startAfter(cursor)] : []),
     limit(48),
   );
-  const snap = await getDocs(q);
+  const snap = await getDocsFromServer(q);
   return {
     items: snap.docs.map((d) => d.data() as Publication),
     cursor: snap.docs.at(-1),
@@ -41,7 +44,7 @@ export async function publishedPage(
   };
 }
 export async function getPublication(id: string) {
-  const snap = await getDoc(doc(database(), "publications", id));
+  const snap = await getDocFromServer(doc(database(), "publications", id));
   return snap.exists() ? (snap.data() as Publication) : null;
 }
 export async function manuscripts() {
@@ -64,8 +67,19 @@ export async function saveDraft(
   if (errors.length) throw new Error(errors.join(" "));
   const db = database();
   const ref = doc(db, "manuscripts", article.id);
-  await runTransaction(db, async (tx) => {
+  const sourceRef = article.sourceUrl
+    ? doc(db, "source_imports", await sourceKey(article.sourceUrl))
+    : null;
+  return await runTransaction(db, async (tx) => {
     const snap = await tx.get(ref);
+    const existingSource = sourceRef ? await tx.get(sourceRef) : null;
+    if (
+      existingSource?.exists() &&
+      existingSource.data().articleId !== article.id
+    )
+      throw new Error(
+        "This LinkedIn source has already been imported. Open the existing manuscript.",
+      );
     const old = snap.exists() ? (snap.data() as Manuscript) : null;
     if (old && expectedRevision === undefined)
       throw new Error("This slug is already used. Choose a different one.");
@@ -89,8 +103,16 @@ export async function saveDraft(
       updatedAt: new Date().toISOString(),
     };
     tx.set(ref, next);
+    if (sourceRef && !existingSource?.exists())
+      tx.set(sourceRef, {
+        articleId: article.id,
+        sourceUrl: article.sourceUrl,
+        importedBy: uid,
+        importedAt: serverTimestamp(),
+      });
     if (old?.status === "PUBLISHED")
       tx.delete(doc(db, "publications", article.id));
+    return next;
   });
 }
 export async function transition(
@@ -117,7 +139,7 @@ export async function transition(
       throw new Error(
         "The manuscript changed. Reload to see its latest state.",
       );
-    const next = {
+    const next: Manuscript = {
       ...live,
       status,
       updatedAt: new Date().toISOString(),
@@ -128,7 +150,7 @@ export async function transition(
       next.reviewerUid = uid;
       next.reviewerAuthorId = reviewer.data()?.authorId || "";
     }
-    if (status === "APPROVED") next.reviewedAt = new Date().toISOString();
+    if (status === "APPROVED") next.reviewedAt = serverTimestamp();
     tx.set(ref, next);
     if (status === "PUBLISHED")
       tx.set(doc(db, "publications", m.article.id), {
@@ -138,6 +160,7 @@ export async function transition(
         reviewerAuthorId: next.reviewerAuthorId,
         reviewedAt: next.reviewedAt,
         publishedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       });
     if (status === "UNPUBLISHED")
       tx.delete(doc(db, "publications", m.article.id));
@@ -148,6 +171,10 @@ export async function deleteDraft(m: Manuscript) {
   await runTransaction(db, async (tx) => {
     const ref = doc(db, "manuscripts", m.article.id);
     const snap = await tx.get(ref);
+    const source = m.article.sourceUrl
+      ? doc(db, "source_imports", await sourceKey(m.article.sourceUrl))
+      : null;
+    const imported = source ? await tx.get(source) : null;
     if (
       !snap.exists() ||
       snap.data().revision !== m.revision ||
@@ -155,11 +182,19 @@ export async function deleteDraft(m: Manuscript) {
     )
       throw new Error("Only a current, unpublished draft can be deleted.");
     tx.delete(ref);
+    if (source && imported?.data()?.articleId === m.article.id)
+      tx.delete(source);
   });
 }
 export async function duplicateSource(raw: string) {
   const url = normalizeLinkedInUrl(raw);
-  return (await manuscripts()).some((m) => m.article.sourceUrl === url);
+  const reservation = await getDoc(
+    doc(database(), "source_imports", await sourceKey(url)),
+  );
+  return (
+    reservation.exists() ||
+    (await manuscripts()).some((m) => m.article.sourceUrl === url)
+  );
 }
 export async function subscribe(email: string, role: string) {
   await addDoc(collection(database(), "newsletter_signups"), {

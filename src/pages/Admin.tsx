@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   LogOut,
@@ -18,7 +18,8 @@ import {
   deleteDoc,
   doc,
 } from "firebase/firestore";
-import { useAuth, useCatalog } from "../lib/contexts";
+import { useCatalog } from "../lib/contexts";
+import { useAuth, AuthProvider, authMessage, auth } from "../lib/auth-context";
 import { configured, database } from "../lib/firebase";
 import {
   manuscripts,
@@ -33,18 +34,62 @@ import {
   type Author,
   STATUSES,
   safeUrl,
+  dateLabel,
 } from "../lib/domain";
 import { SEO, Loading } from "../components/Layout";
 import { ManuscriptEditor } from "../components/ManuscriptEditor";
 import { Importer } from "../components/Importer";
-function Profile({ onDone }: { onDone: () => void }) {
+import { ImageField } from "../components/ImageField";
+import { MediaImage } from "../components/MediaImage";
+import { authors as sourceProfiles } from "../data/editorial";
+function Profile({
+  onDone,
+  onDirty,
+  initial,
+  onDraftChange,
+}: {
+  onDone: () => void;
+  onDirty: (dirty: boolean) => void;
+  initial?: Author;
+  onDraftChange: (author: Author) => void;
+}) {
   const { member } = useAuth();
   const { authors } = useCatalog();
   const [a, setA] = useState<Author>(
-    authors.find((p) => p.id === member?.authorId)!,
+    initial || authors.find((p) => p.id === member?.authorId)!,
   );
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(
+    JSON.stringify(authors.find((p) => p.id === member?.authorId)),
+  );
+  useEffect(() => onDraftChange(a), [a, onDraftChange]);
+  const dirty = JSON.stringify(a) !== saved;
+  useEffect(() => {
+    onDirty(dirty);
+    const warn = (e: BeforeUnloadEvent) => {
+      if (dirty) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    const guard = (e: MouseEvent) => {
+      if (
+        dirty &&
+        (e.target as Element)?.closest?.("a[href]") &&
+        !window.confirm("Leave your profile and discard unsaved changes?")
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    window.addEventListener("beforeunload", warn);
+    document.addEventListener("click", guard, true);
+    return () => {
+      window.removeEventListener("beforeunload", warn);
+      document.removeEventListener("click", guard, true);
+    };
+  }, [dirty, onDirty]);
   return (
     <form
       className="panel form-stack"
@@ -60,6 +105,7 @@ function Profile({ onDone }: { onDone: () => void }) {
         setBusy(true);
         try {
           await saveProfile(a);
+          setSaved(JSON.stringify(a));
           setMsg("Your public profile was updated.");
           onDone();
         } catch (err) {
@@ -72,28 +118,67 @@ function Profile({ onDone }: { onDone: () => void }) {
       }}
     >
       <h2>Your professional profile</h2>
+      <button
+        type="button"
+        className="secondary"
+        onClick={() => {
+          if (
+            !dirty ||
+            window.confirm("Replace unsaved edits with your main-site profile?")
+          ) {
+            const source = sourceProfiles.find(
+              (p) => p.id === member?.authorId,
+            );
+            if (source) setA({ ...source });
+          }
+        }}
+      >
+        Use details from our main website
+      </button>
+      <small>
+        Loads your existing portfolio details into this form. Review them before
+        saving.
+      </small>
       {(
-        [
-          "name",
-          "role",
-          "qualifications",
-          "affiliation",
-          "image",
-          "linkedin",
-        ] as const
+        ["name", "role", "qualifications", "affiliation", "linkedin"] as const
       ).map((k) => (
         <label key={k}>
-          {k}
+          {
+            {
+              name: "Display name",
+              role: "Professional title",
+              qualifications: "Qualifications",
+              affiliation: "Clinical affiliation",
+              linkedin: "LinkedIn profile",
+            }[k]
+          }
           <input
             value={a[k]}
-            maxLength={k === "image" || k === "linkedin" ? 2000 : 150}
+            maxLength={
+              k === "linkedin"
+                ? 2000
+                : k === "name"
+                  ? 100
+                  : k === "affiliation"
+                    ? 300
+                    : 150
+            }
             onChange={(e) => setA({ ...a, [k]: e.target.value })}
           />
         </label>
       ))}
-      <label>
-        Bio
+      <ImageField
+        value={a.image}
+        alt={a.name}
+        ownerType="author"
+        ownerId={a.id}
+        onChange={(url) => setA({ ...a, image: url })}
+      />
+      <label htmlFor="profile-biography">
+        Biography
         <textarea
+          id="profile-biography"
+          aria-label="Biography"
           rows={6}
           value={a.bio}
           maxLength={4000}
@@ -115,6 +200,15 @@ function Profile({ onDone }: { onDone: () => void }) {
           }
         />
       </label>
+      <aside className="profile-preview">
+        <span className="eyebrow">Public profile preview</span>
+        {a.image && <MediaImage src={safeUrl(a.image, true)} alt={a.name} />}
+        <h3>{a.name}</h3>
+        <p>
+          {a.qualifications} · {a.role}
+        </p>
+        <p>{a.bio}</p>
+      </aside>
       <button disabled={busy}>{busy ? "Saving…" : "Update profile"}</button>
       <p role="status">{msg}</p>
     </form>
@@ -195,12 +289,13 @@ function EditorialInbox() {
     </section>
   );
 }
-export default function Admin() {
+function Admin() {
   const { user, member, loading, error: authError, login, logout } = useAuth();
   const { reload: reloadCatalog } = useCatalog();
   const [rows, setRows] = useState<Manuscript[]>([]);
   const [tab, setTab] = useState("articles");
   const [editor, setEditor] = useState<{
+    session: string;
     manuscript?: Manuscript;
     initial?: Article;
   } | null>(null);
@@ -210,6 +305,61 @@ export default function Admin() {
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [queryText, setQueryText] = useState("");
+  const [visible, setVisible] = useState(20);
+  const [profileDirty, setProfileDirty] = useState(false);
+  const [profileBuffer, setProfileBuffer] = useState<Author>();
+  const rememberProfile = useCallback((a: Author) => setProfileBuffer(a), []);
+  const rememberDraft = useCallback(
+    (article: Article) =>
+      setEditor((old) =>
+        !old || old.initial === article ? old : { ...old, initial: article },
+      ),
+    [],
+  );
+  const previousUid = useRef<string>();
+  useEffect(() => {
+    if (previousUid.current !== user?.uid) {
+      previousUid.current = user?.uid;
+      setEditor(null);
+      setProfileBuffer(undefined);
+      setProfileDirty(false);
+      setRows([]);
+      setLoaded(false);
+    }
+  }, [user?.uid]);
+  useEffect(() => {
+    if (member) return;
+    const unsaved =
+      profileDirty ||
+      !!(
+        editor?.initial &&
+        JSON.stringify(editor.initial) !==
+          JSON.stringify(editor.manuscript?.article)
+      );
+    const warn = (e: BeforeUnloadEvent) => {
+      if (unsaved) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    const guard = (e: MouseEvent) => {
+      if (
+        unsaved &&
+        (e.target as Element)?.closest?.("a[href]") &&
+        !window.confirm("Leave this workspace and discard unsaved changes?")
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    window.addEventListener("beforeunload", warn);
+    document.addEventListener("click", guard, true);
+    return () => {
+      window.removeEventListener("beforeunload", warn);
+      document.removeEventListener("click", guard, true);
+    };
+  }, [member, editor, profileDirty]);
+  useEffect(() => setVisible(20), [queryText, filter]);
   const reload = async () => {
     setBusy(true);
     try {
@@ -264,11 +414,7 @@ export default function Admin() {
           {configured ? (
             <button
               onClick={() => {
-                void login().catch((err) =>
-                  setStatus(
-                    err instanceof Error ? err.message : "Sign-in failed.",
-                  ),
-                );
+                void login().catch((err) => setStatus(authMessage(err)));
               }}
             >
               Continue with Google
@@ -277,7 +423,7 @@ export default function Admin() {
             <div className="notice">
               <strong>Firebase setup required</strong>
               <p>
-                This rebuild runs on the free Spark plan. Set the Firebase web
+                Connect the existing free Firebase project. Set the Firebase web
                 configuration, enable Google sign-in, deploy the security rules
                 and provision each founder. See{" "}
                 <code>docs/FIREBASE-SPARK.md</code> in the repository.
@@ -294,7 +440,18 @@ export default function Admin() {
                 Give this account ID to the Firebase project owner to request
                 editorial access.
               </p>
-              <button className="secondary" onClick={() => void logout()}>
+              <button
+                className="secondary"
+                onClick={() => {
+                  if (
+                    (!editor && !profileDirty) ||
+                    window.confirm(
+                      "Sign out? Save your draft first to keep changes.",
+                    )
+                  )
+                    void logout();
+                }}
+              >
                 Sign out
               </button>
             </>
@@ -322,35 +479,73 @@ export default function Admin() {
         </h2>
         <button
           className={tab === "articles" ? "active" : ""}
-          onClick={() => setTab("articles")}
+          onClick={() => {
+            if (
+              !profileDirty ||
+              window.confirm("Leave your profile and discard unsaved changes?")
+            )
+              setTab("articles");
+          }}
         >
           <LayoutDashboard size={18} />
           Manuscripts
         </button>
         <button
           className={tab === "profile" ? "active" : ""}
-          onClick={() => setTab("profile")}
+          onClick={() => {
+            if (
+              (!editor && !profileDirty) ||
+              window.confirm(
+                "Leave the editor? Save your draft first to keep changes.",
+              )
+            ) {
+              setEditor(null);
+              setTab("profile");
+            }
+          }}
         >
           <Users size={18} />
           My profile
         </button>
         <button
           className={tab === "inbox" ? "active" : ""}
-          onClick={() => setTab("inbox")}
+          onClick={() => {
+            if (
+              (!editor && !profileDirty) ||
+              window.confirm(
+                "Leave the editor? Save your draft first to keep changes.",
+              )
+            ) {
+              setEditor(null);
+              setTab("inbox");
+            }
+          }}
         >
           <Inbox size={18} />
           Reader inbox
         </button>
-        <button onClick={() => void logout()}>
+        <button
+          onClick={() => {
+            if (
+              (!editor && !profileDirty) ||
+              window.confirm("Sign out? Save your draft first to keep changes.")
+            )
+              void logout();
+          }}
+        >
           <LogOut size={18} />
           Sign out
         </button>
         <p>{user?.email}</p>
-        <small>Free Firebase plan · No paid SMS or Storage services used</small>
       </aside>
       <div className="admin-main">
         {tab === "profile" ? (
-          <Profile onDone={() => void reloadCatalog()} />
+          <Profile
+            initial={profileBuffer}
+            onDraftChange={rememberProfile}
+            onDone={() => void reloadCatalog()}
+            onDirty={setProfileDirty}
+          />
         ) : tab === "inbox" ? (
           <EditorialInbox />
         ) : (
@@ -363,12 +558,19 @@ export default function Admin() {
               <button
                 disabled={busy}
                 onClick={() => {
-                  setEditor({});
+                  if (
+                    editor &&
+                    !window.confirm(
+                      "Start another article? Save this draft first.",
+                    )
+                  )
+                    return;
+                  setEditor({ session: crypto.randomUUID() });
                   setImporting(false);
                 }}
               >
                 <FilePlus size={17} />
-                New article
+                Create article
               </button>
             </div>
             <div className="metrics">
@@ -400,13 +602,22 @@ export default function Admin() {
             </p>
             {editor ? (
               <ManuscriptEditor
-                key={
-                  editor.manuscript?.article.id || editor.initial?.id || "new"
-                }
+                key={editor.session}
                 {...editor}
-                onSaved={() => {
-                  setEditor(null);
-                  void run(async () => {});
+                onDraftChange={rememberDraft}
+                onSaved={(saved) => {
+                  if (auth?.currentUser?.uid !== user?.uid) return;
+                  if (editor.manuscript?.status === "PUBLISHED")
+                    void reloadCatalog();
+                  setRows((old) => [
+                    saved,
+                    ...old.filter((m) => m.article.id !== saved.article.id),
+                  ]);
+                  setEditor((old) =>
+                    old
+                      ? { ...old, manuscript: saved, initial: saved.article }
+                      : null,
+                  );
                 }}
                 onClose={() => setEditor(null)}
               />
@@ -415,7 +626,7 @@ export default function Admin() {
                 authorId={member.authorId}
                 onImport={(a) => {
                   setImporting(false);
-                  setEditor({ initial: a });
+                  setEditor({ session: crypto.randomUUID(), initial: a });
                 }}
                 onClose={() => setImporting(false)}
               />
@@ -487,6 +698,7 @@ export default function Admin() {
                             .toLowerCase()
                             .includes(queryText.toLowerCase()),
                       )
+                      .slice(0, visible)
                       .map((m) => (
                         <article key={m.article.id}>
                           <div>
@@ -497,8 +709,9 @@ export default function Admin() {
                             </span>
                             <h3>{m.article.title}</h3>
                             <p>
-                              Revision {m.revision} · Updated{" "}
-                              {new Date(m.updatedAt).toLocaleDateString()}
+                              Revision {m.revision}
+                              {dateLabel(m.updatedAt) &&
+                                " · Updated " + dateLabel(m.updatedAt)}
                             </p>
                             {m.reviewNote && (
                               <p className="review-note">
@@ -510,7 +723,12 @@ export default function Admin() {
                             <button
                               className="secondary"
                               disabled={busy}
-                              onClick={() => setEditor({ manuscript: m })}
+                              onClick={() =>
+                                setEditor({
+                                  session: crypto.randomUUID(),
+                                  manuscript: m,
+                                })
+                              }
                             >
                               Open editor
                             </button>
@@ -640,13 +858,27 @@ export default function Admin() {
                       ))}
                   </div>
                 )}
+                {rows.filter(
+                  (m) =>
+                    (!filter || m.status === filter) &&
+                    m.article.title
+                      .toLowerCase()
+                      .includes(queryText.toLowerCase()),
+                ).length > visible && (
+                  <button
+                    className="secondary"
+                    onClick={() => setVisible((n) => n + 20)}
+                  >
+                    Show more articles
+                  </button>
+                )}
                 {loaded && rows.length === 0 && (
                   <div className="panel">
-                    <h2>Begin with eight launch manuscripts.</h2>
+                    <h2>Start with practical reader questions.</h2>
                     <p>
-                      Original educational drafts covering all eight
-                      specialties. Suggested authors must verify and accept the
-                      material; no clinical review or publication is implied.
+                      New educational drafts covering all eight specialties.
+                      Suggested authors must verify and accept the material; no
+                      clinical review or publication is implied.
                     </p>
                     <button
                       disabled={busy}
@@ -670,5 +902,13 @@ export default function Admin() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function PrivateWorkspace() {
+  return (
+    <AuthProvider>
+      <Admin />
+    </AuthProvider>
   );
 }

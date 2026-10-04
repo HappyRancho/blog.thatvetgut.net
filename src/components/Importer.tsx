@@ -1,3 +1,4 @@
+import { auth } from "../lib/auth-context";
 import { useState } from "react";
 import { importLinkedIn } from "../lib/linkedin";
 import { duplicateSource } from "../lib/repository";
@@ -18,7 +19,6 @@ export function Importer({
   onClose: () => void;
 }) {
   const [url, setUrl] = useState("");
-  const [proxy, setProxy] = useState(false);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [html, setHtml] = useState(false);
@@ -57,15 +57,6 @@ export function Importer({
           placeholder="https://www.linkedin.com/pulse/…"
         />
       </label>
-      <label className="check-label">
-        <input
-          type="checkbox"
-          checked={proxy}
-          onChange={(e) => setProxy(e.target.checked)}
-        />
-        Allow an external reader (AllOrigins) to receive this public URL if
-        direct retrieval fails.
-      </label>
       <button
         disabled={busy || !url}
         onClick={async () => {
@@ -73,7 +64,7 @@ export function Importer({
           setMessage("");
           try {
             const canonical = await check();
-            const result = await importLinkedIn(canonical, authorId, proxy);
+            const result = await importLinkedIn(canonical, authorId);
             setSource(result.article);
             setTitle(result.article.title);
             setBody(result.article.content);
@@ -95,66 +86,79 @@ export function Importer({
       <p role="status" className="notice">
         {message}
       </p>
-      <h3>Or paste the original content</h3>
-      <label>
-        Title
-        <input
-          value={title}
-          maxLength={180}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-      </label>
-      <label className="check-label">
-        <input
-          type="checkbox"
-          checked={html}
-          onChange={(e) => setHtml(e.target.checked)}
-        />
-        Pasted content is HTML
-      </label>
-      <label>
-        Article content
-        <textarea
-          rows={9}
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-        />
-      </label>
-      <button
-        disabled={busy || !title.trim() || !body.trim()}
-        onClick={async () => {
-          setBusy(true);
-          try {
-            const canonical = await check();
-            let content = body;
-            if (!html) {
-              const el = document.createElement("div");
-              el.textContent = body;
-              content = `<p>${el.innerHTML.replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br>")}</p>`;
+      <details open={!!source} className="import-review">
+        <summary>
+          {source
+            ? "Review the imported article"
+            : "Alternative: use your original text if LinkedIn blocks access"}
+        </summary>
+        <h3>
+          {source
+            ? "Check before opening the editor"
+            : "Use content you have permission to publish"}
+        </h3>
+        <label>
+          Title
+          <input
+            value={title}
+            maxLength={180}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+        </label>
+        <label className="check-label">
+          <input
+            type="checkbox"
+            checked={html}
+            onChange={(e) => setHtml(e.target.checked)}
+          />
+          Pasted content is HTML
+        </label>
+        <label>
+          Article content
+          <textarea
+            rows={9}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+          />
+        </label>
+        <button
+          disabled={busy || !title.trim() || !body.trim()}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              const canonical = await check();
+              let content = body;
+              if (!html) {
+                const el = document.createElement("div");
+                el.textContent = body;
+                content = `<p>${el.innerHTML.replace(/\n\n/g, "</p><p>").replace(/\n/g, "<br>")}</p>`;
+              }
+              onImport({
+                ...emptyArticle(authorId),
+                ...source,
+                id: slugify(title),
+                title,
+                content: sanitize(content),
+                sourceUrl: canonical,
+                importedAt: new Date().toISOString(),
+                importedBy: auth?.currentUser?.uid || "",
+              });
+            } catch (err) {
+              setMessage(
+                err instanceof Error ? err.message : "Could not prepare draft.",
+              );
+            } finally {
+              setBusy(false);
             }
-            onImport({
-              ...emptyArticle(authorId),
-              ...source,
-              id: slugify(title),
-              title,
-              content: sanitize(content),
-              sourceUrl: canonical,
-            });
-          } catch (err) {
-            setMessage(
-              err instanceof Error ? err.message : "Could not prepare draft.",
-            );
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        Open in draft editor
-      </button>
+          }}
+        >
+          Open in draft editor
+        </button>
+      </details>
       <p className="muted">
         URL extraction is best effort: LinkedIn may block it or return only a
-        summary. Review every section against the original. No proxy runs on
-        your Firebase account.
+        preview. Review each section against the original. The importer runs on
+        your existing Cloudflare Worker and never publishes automatically.
       </p>
     </section>
   );
