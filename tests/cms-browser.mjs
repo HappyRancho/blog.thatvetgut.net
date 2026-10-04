@@ -85,7 +85,7 @@ try {
   const editor = page.getByRole("textbox", { name: "Article body" });
   await editor.click();
   await page.keyboard.insertText(
-    "Record changes in eating, drinking and behaviour before the appointment. Ask your veterinary surgeon what to monitor and when to call again.",
+    "Record changes in eating, drinking and behaviour before the appointment. Ask your veterinary surgeon what to monitor and when to call again. Bring previous clinical records and a list of current medicines. Keep the discussion specific to the animal being examined.",
   );
   await page.getByRole("button", { name: "Preview formatting" }).click();
   assert.match(await page.locator(".prose").innerText(), /Record changes/);
@@ -121,6 +121,17 @@ try {
     .inputValue();
   const anon = env.unauthenticatedContext().firestore();
   await assertFails(getDoc(doc(anon, "media", image.split("/").at(-1))));
+  await page
+    .getByRole("button", { name: "Add reference", exact: true })
+    .click();
+  await page
+    .locator("fieldset")
+    .getByLabel("title", { exact: true })
+    .fill("AVMA pet owner resources");
+  await page
+    .locator("fieldset")
+    .getByLabel("url", { exact: true })
+    .fill("https://www.avma.org/resources-tools/pet-owners");
   await page.getByRole("button", { name: "Save draft", exact: true }).click();
   await page.getByText("Draft saved to Firebase.", { exact: true }).waitFor();
   const articleId = "a-useful-clinic-visit-checklist";
@@ -200,6 +211,104 @@ try {
     ),
     "CMS mobile overflow",
   );
+  await page.getByRole("button", { name: "Articles", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Import LinkedIn article", exact: true })
+    .click();
+  const sourceURL =
+    "https://www.linkedin.com/pulse/reading-pet-food-labels-verification";
+  await page
+    .getByLabel("LinkedIn article URL")
+    .fill("https://evil.test/pulse/content");
+  await page
+    .getByRole("button", { name: "Try URL import", exact: true })
+    .click();
+  await page
+    .getByText("Use a public linkedin.com article, post or newsletter URL.", {
+      exact: true,
+    })
+    .waitFor();
+  await page.getByLabel("LinkedIn article URL").fill(sourceURL);
+  await page.route("**/api/linkedin", (route) =>
+    route.fulfill({
+      status: 403,
+      contentType: "application/json",
+      body: JSON.stringify({
+        error: "LinkedIn blocked public access to this article.",
+      }),
+    }),
+  );
+  await page
+    .getByRole("button", { name: "Try URL import", exact: true })
+    .click();
+  await page
+    .getByText("LinkedIn blocked public access to this article.", {
+      exact: true,
+    })
+    .waitFor();
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Open in draft editor", exact: true })
+      .isEnabled(),
+    false,
+  );
+  await page.unroute("**/api/linkedin");
+  await page.route("**/api/linkedin", async (route) => {
+    assert.match(route.request().headers().authorization, /^Bearer /);
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        html: '<html><head><meta property="og:title" content="Reading labels thoughtfully"><meta property="og:description" content="An editorial verification example"></head><body><article><h2>Read the label</h2><p>Review the life stage, feeding instructions and nutritional suitability with your veterinary surgeon. This example checks that an accessible public article is imported as a private draft. #nutrition</p><script>window.__unsafe=1</script><a href="javascript:alert(1)">Unsafe link</a></article></body></html>',
+      }),
+    });
+  });
+  await page
+    .getByRole("button", { name: "Try URL import", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Open in draft editor", exact: true })
+    .click();
+  assert.equal(
+    await page.getByLabel("Title", { exact: true }).inputValue(),
+    "Reading labels thoughtfully",
+  );
+  await page.getByRole("button", { name: "Save draft", exact: true }).click();
+  await page.getByText("Draft saved to Firebase.", { exact: true }).waitFor();
+  await env.withSecurityRulesDisabled(async (c) => {
+    const imported = (
+      await getDoc(
+        doc(c.firestore(), "manuscripts", "reading-labels-thoughtfully"),
+      )
+    ).data();
+    assert.equal(imported.status, "DRAFT");
+    assert.equal(imported.article.sourceUrl, sourceURL);
+    assert.equal(imported.article.importedBy, reviewer);
+    assert.ok(imported.article.tags.includes("nutrition"));
+    assert.ok(!/script|javascript:/.test(imported.article.content));
+  });
+  assert.equal(
+    (
+      await getDoc(doc(anon, "publications", "reading-labels-thoughtfully"))
+    ).exists(),
+    false,
+  );
+  await page.getByRole("button", { name: "Close editor", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Import LinkedIn article", exact: true })
+    .click();
+  await page
+    .getByLabel("LinkedIn article URL")
+    .fill(sourceURL + "?tracking=ignored");
+  await page
+    .getByRole("button", { name: "Try URL import", exact: true })
+    .click();
+  await page
+    .getByText(
+      "This source URL already exists in the CMS. Open the existing manuscript instead.",
+      { exact: true },
+    )
+    .waitFor();
+  assert.equal(await page.evaluate(() => window.__unsafe), undefined);
   await env.withSecurityRulesDisabled(async (c) =>
     updateDoc(doc(c.firestore(), "cms_users", reviewer), {
       status: "INACTIVE",

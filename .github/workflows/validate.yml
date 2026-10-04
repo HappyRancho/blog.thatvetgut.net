@@ -26,8 +26,10 @@ jobs:
       - run: npm run test:rules
       - run: npx playwright install --with-deps chromium
       - run: npm run test:browser
+        id: browser
         timeout-minutes: 3
       - run: npm run test:cms
+        if: ${{ success() || (failure() && steps.browser.outcome == 'failure') }}
         timeout-minutes: 4
       - uses: actions/upload-artifact@v4
         if: always()

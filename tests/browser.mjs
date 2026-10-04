@@ -153,6 +153,27 @@ try {
       .getByRole("link", { name: "All articles", exact: true })
       .click();
     await page.getByRole("heading", { name: "The reading room." }).waitFor();
+    await page.screenshot({
+      path: `screenshots/archive-${width}.png`,
+      fullPage: true,
+    });
+    const archiveOverflow = await page.evaluate(() =>
+      [...document.querySelectorAll("body *")]
+        .filter(
+          (e) =>
+            e.getBoundingClientRect().right > innerWidth + 1 &&
+            getComputedStyle(e).position !== "fixed",
+        )
+        .map((e) => ({
+          tag: e.tagName,
+          class: e.className,
+          right: e.getBoundingClientRect().right,
+          width: e.getBoundingClientRect().width,
+        }))
+        .slice(0, 25),
+    );
+    if (archiveOverflow.length)
+      console.log("Archive overflow", width, archiveOverflow);
     assert.ok(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth + 1,

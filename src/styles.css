@@ -2517,6 +2517,15 @@ dialog > button {
   border-radius: 50%;
   margin-left: 12px;
 }
+.article-attribution .article-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.article-author > div {
+  display: grid;
+  gap: 3px;
+}
 .article-attribution > div {
   flex-wrap: wrap;
 }

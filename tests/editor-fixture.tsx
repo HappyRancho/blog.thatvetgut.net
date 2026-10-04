@@ -17,7 +17,12 @@ function Fixture() {
         ownerId="verification-article"
         onUploadStart={() => {}}
       />
-      <pre data-testid="stored">{sanitize(html)}</pre>
+      <pre
+        data-testid="stored"
+        style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
+      >
+        {sanitize(html)}
+      </pre>
       <button
         onClick={() =>
           setHtml(

@@ -162,11 +162,7 @@ export default function ArticlePage() {
         <h1>{a.title}</h1>
         <p className="standfirst">{a.subtitle}</p>
         <div className="article-attribution">
-          <div>
-            <Link to={`/author/${a.authorId}`}>
-              <strong>{author?.name}</strong>
-            </Link>
-            <span>{author?.qualifications}</span>
+          <div className="article-author">
             {author?.image && (
               <MediaImage
                 className="byline-photo"
@@ -176,6 +172,15 @@ export default function ArticlePage() {
                 height={44}
               />
             )}
+            <div>
+              <Link to={`/author/${a.authorId}`}>
+                <strong>
+                  {!configured && "Proposed contributor: "}
+                  {author?.name}
+                </strong>
+              </Link>
+              <span>{author?.qualifications}</span>
+            </div>
           </div>
           <span>
             <Clock size={16} /> {readingTime(a.content)} min read
