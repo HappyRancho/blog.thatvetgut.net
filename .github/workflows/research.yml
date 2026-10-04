@@ -1,9 +1,6 @@
 name: Publication benchmark
 on:
-  pull_request:
-    paths:
-      - scripts/research.mjs
-      - .github/workflows/research.yml
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:

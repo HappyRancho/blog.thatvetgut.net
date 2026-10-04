@@ -100,21 +100,17 @@ try {
     return c.toDataURL("image/png").split(",")[1];
   });
   const field = page.locator(".image-field");
-  await field
-    .locator("input[type=file]")
-    .setInputFiles({
-      name: "unsafe.svg",
-      mimeType: "image/svg+xml",
-      buffer: Buffer.from("<svg></svg>"),
-    });
+  await field.locator("input[type=file]").setInputFiles({
+    name: "unsafe.svg",
+    mimeType: "image/svg+xml",
+    buffer: Buffer.from("<svg></svg>"),
+  });
   await field.getByRole("alert").filter({ hasText: "JPEG" }).waitFor();
-  await field
-    .locator("input[type=file]")
-    .setInputFiles({
-      name: "sample.png",
-      mimeType: "image/png",
-      buffer: Buffer.from(png, "base64"),
-    });
+  await field.locator("input[type=file]").setInputFiles({
+    name: "sample.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(png, "base64"),
+  });
   await page.waitForFunction(() =>
     document
       .querySelector(".image-field input:not([type=file])")

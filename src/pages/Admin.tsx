@@ -40,7 +40,14 @@ import { ManuscriptEditor } from "../components/ManuscriptEditor";
 import { Importer } from "../components/Importer";
 import { ImageField } from "../components/ImageField";
 import { MediaImage } from "../components/MediaImage";
-function Profile({ onDone }: { onDone: () => void }) {
+import { authors as sourceProfiles } from "../data/editorial";
+function Profile({
+  onDone,
+  onDirty,
+}: {
+  onDone: () => void;
+  onDirty: (dirty: boolean) => void;
+}) {
   const { member } = useAuth();
   const { authors } = useCatalog();
   const [a, setA] = useState<Author>(
@@ -48,6 +55,34 @@ function Profile({ onDone }: { onDone: () => void }) {
   );
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(JSON.stringify(a));
+  const dirty = JSON.stringify(a) !== saved;
+  useEffect(() => {
+    onDirty(dirty);
+    const warn = (e: BeforeUnloadEvent) => {
+      if (dirty) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    const guard = (e: MouseEvent) => {
+      if (
+        dirty &&
+        (e.target as Element)?.closest?.("a[href]") &&
+        !window.confirm("Leave your profile and discard unsaved changes?")
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    window.addEventListener("beforeunload", warn);
+    document.addEventListener("click", guard, true);
+    return () => {
+      window.removeEventListener("beforeunload", warn);
+      document.removeEventListener("click", guard, true);
+      onDirty(false);
+    };
+  }, [dirty, onDirty]);
   return (
     <form
       className="panel form-stack"
@@ -63,6 +98,7 @@ function Profile({ onDone }: { onDone: () => void }) {
         setBusy(true);
         try {
           await saveProfile(a);
+          setSaved(JSON.stringify(a));
           setMsg("Your public profile was updated.");
           onDone();
         } catch (err) {
@@ -75,6 +111,27 @@ function Profile({ onDone }: { onDone: () => void }) {
       }}
     >
       <h2>Your professional profile</h2>
+      <button
+        type="button"
+        className="secondary"
+        onClick={() => {
+          if (
+            !dirty ||
+            window.confirm("Replace unsaved edits with your main-site profile?")
+          ) {
+            const source = sourceProfiles.find(
+              (p) => p.id === member?.authorId,
+            );
+            if (source) setA({ ...source });
+          }
+        }}
+      >
+        Use details from our main website
+      </button>
+      <small>
+        Loads your existing portfolio details into this form. Review them before
+        saving.
+      </small>
       {(
         ["name", "role", "qualifications", "affiliation", "linkedin"] as const
       ).map((k) => (
@@ -239,6 +296,7 @@ function Admin() {
   const [loaded, setLoaded] = useState(false);
   const [queryText, setQueryText] = useState("");
   const [visible, setVisible] = useState(20);
+  const [profileDirty, setProfileDirty] = useState(false);
   useEffect(() => setVisible(20), [queryText, filter]);
   const reload = async () => {
     setBusy(true);
@@ -324,7 +382,7 @@ function Admin() {
                 className="secondary"
                 onClick={() => {
                   if (
-                    !editor ||
+                    (!editor && !profileDirty) ||
                     window.confirm(
                       "Sign out? Save your draft first to keep changes.",
                     )
@@ -368,7 +426,7 @@ function Admin() {
           className={tab === "profile" ? "active" : ""}
           onClick={() => {
             if (
-              !editor ||
+              (!editor && !profileDirty) ||
               window.confirm(
                 "Leave the editor? Save your draft first to keep changes.",
               )
@@ -385,7 +443,7 @@ function Admin() {
           className={tab === "inbox" ? "active" : ""}
           onClick={() => {
             if (
-              !editor ||
+              (!editor && !profileDirty) ||
               window.confirm(
                 "Leave the editor? Save your draft first to keep changes.",
               )
@@ -401,7 +459,7 @@ function Admin() {
         <button
           onClick={() => {
             if (
-              !editor ||
+              (!editor && !profileDirty) ||
               window.confirm("Sign out? Save your draft first to keep changes.")
             )
               void logout();
@@ -414,7 +472,10 @@ function Admin() {
       </aside>
       <div className="admin-main">
         {tab === "profile" ? (
-          <Profile onDone={() => void reloadCatalog()} />
+          <Profile
+            onDone={() => void reloadCatalog()}
+            onDirty={setProfileDirty}
+          />
         ) : tab === "inbox" ? (
           <EditorialInbox />
         ) : (

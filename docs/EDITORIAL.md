@@ -15,7 +15,7 @@ A reviewer cannot approve their own manuscript or take review when they are the 
 
 ## LinkedIn imports
 
-Try the public URL first. If direct access is blocked, an editor may explicitly permit the external reader or paste the content. Check completeness: metadata or login-wall text is not a full article. Preserve the source URL, repair formatting, add citations and review for the website's audience. Never represent a successful extraction as proof of permission or evidence quality.
+Try the public URL first. If the authenticated Worker cannot retrieve a public article, explain the provider limitation and optionally supply the original text. No third-party reader or access-control bypass is used. Check completeness: metadata or login-wall text is not a full article. Preserve the source URL, repair formatting, add citations and review for the website's audience. Never represent a successful extraction as proof of permission or evidence quality.
 
 ## Corrections
 

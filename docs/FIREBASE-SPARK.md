@@ -96,4 +96,4 @@ Run the manual workflow from the reviewed branch. No automatic production deploy
 
 Use App Check with a supported no-cost reCAPTCHA provider for the web app, test it, then enable Firestore enforcement. The application supports a reCAPTCHA v3 site key via `VITE_APPCHECK_SITE_KEY`. Public contact/interest forms cannot enforce per-IP rate limits using Firestore rules alone, so App Check and quota monitoring matter. A honeypot is a usability layer, not a security boundary.
 
-Check the current Spark quotas in your console. Do not attach billing to bypass a quota. Keep images optimized and served from `public/images`, avoid large polling workloads, and use manuscript exports for backups. App Check reduces abuse; it does not guarantee that quotas cannot be exhausted.
+Check the current Spark quotas in your console. Do not attach billing to bypass a quota. Keep uploaded Firestore media within its documented limits (or use optimised public HTTPS images), avoid large polling workloads, and use manuscript exports for backups. App Check reduces abuse; it does not guarantee that quotas cannot be exhausted.

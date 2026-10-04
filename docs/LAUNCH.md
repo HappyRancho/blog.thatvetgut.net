@@ -22,8 +22,8 @@ The new schema deliberately uses `manuscripts` and `publications` rather than th
 
 ## Search and social metadata
 
-The public bundle is split by route, with the CMS loaded only on demand. One catalog is used for homepage, search, specialties and profiles. Catalog reads are paged in batches of 48; readers can load more. Article detail fetches its current public record separately. Some social crawlers will see only the initial HTML metadata because the app is a static SPA; full crawlable article HTML requires a separately planned publication/deployment pipeline. Do not claim server rendering or immediate social-card indexing.
+The public bundle is split by route, with the CMS loaded only on demand. One catalog is used for homepage, search, specialties and profiles. Catalog reads are paged in batches of 48; readers can load more. Article detail fetches its current public record separately. The existing Cloudflare Worker now supplies public content and social metadata before JavaScript, reads current public snapshots, and generates the publications-only sitemap. Search engines and share services still control crawl/index timing.
 
 ## Rollback
 
-Keep the existing GitHub default branch and Firebase project intact until acceptance. The rebuild is on its own branch. Firebase Hosting releases can be rolled back in the console, but rules and data changes need their own reviewed rollback plan. A separate Spark project makes this boundary explicit.
+Keep the existing GitHub default branch and Firebase project intact until acceptance. The rebuild is on its own branch. Firebase Hosting releases can be rolled back in the console, but rules and data changes need their own reviewed rollback plan. Use the existing named free database and deploy the reviewed rules before merging the enhancement; no new project or production-data reset is required.
