@@ -2175,6 +2175,8 @@ dialog > button {
 }
 .card-image {
   aspect-ratio: 16/10;
+  width: 100%;
+  height: auto;
   border-radius: 0 !important;
 }
 .card-body {

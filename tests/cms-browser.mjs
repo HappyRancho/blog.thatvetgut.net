@@ -173,7 +173,7 @@ try {
     false,
   );
   await assertFails(getDoc(doc(anon, "media", image.split("/").at(-1))));
-  await page.getByRole("button", { name: "My Profile", exact: true }).click();
+  await page.getByRole("button", { name: "My profile", exact: true }).click();
   await page
     .getByLabel("Biography", { exact: true })
     .fill("A pathology biography saved through the real profile editor.");
@@ -211,7 +211,7 @@ try {
     ),
     "CMS mobile overflow",
   );
-  await page.getByRole("button", { name: "Articles", exact: true }).click();
+  await page.getByRole("button", { name: "Manuscripts", exact: true }).click();
   await page
     .getByRole("button", { name: "Import LinkedIn article", exact: true })
     .click();

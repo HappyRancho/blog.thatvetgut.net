@@ -286,6 +286,7 @@ function Admin() {
   const [rows, setRows] = useState<Manuscript[]>([]);
   const [tab, setTab] = useState("articles");
   const [editor, setEditor] = useState<{
+    session: string;
     manuscript?: Manuscript;
     initial?: Article;
   } | null>(null);
@@ -417,7 +418,13 @@ function Admin() {
         </h2>
         <button
           className={tab === "articles" ? "active" : ""}
-          onClick={() => setTab("articles")}
+          onClick={() => {
+            if (
+              !profileDirty ||
+              window.confirm("Leave your profile and discard unsaved changes?")
+            )
+              setTab("articles");
+          }}
         >
           <LayoutDashboard size={18} />
           Manuscripts
@@ -495,7 +502,7 @@ function Admin() {
                     )
                   )
                     return;
-                  setEditor({});
+                  setEditor({ session: crypto.randomUUID() });
                   setImporting(false);
                 }}
               >
@@ -532,16 +539,16 @@ function Admin() {
             </p>
             {editor ? (
               <ManuscriptEditor
-                key={
-                  editor.manuscript?.article.id || editor.initial?.id || "new"
-                }
+                key={editor.session}
                 {...editor}
                 onSaved={(saved) => {
                   setRows((old) => [
                     saved,
                     ...old.filter((m) => m.article.id !== saved.article.id),
                   ]);
-                  setEditor({ manuscript: saved });
+                  setEditor((old) =>
+                    old ? { ...old, manuscript: saved } : null,
+                  );
                 }}
                 onClose={() => setEditor(null)}
               />
@@ -550,7 +557,7 @@ function Admin() {
                 authorId={member.authorId}
                 onImport={(a) => {
                   setImporting(false);
-                  setEditor({ initial: a });
+                  setEditor({ session: crypto.randomUUID(), initial: a });
                 }}
                 onClose={() => setImporting(false)}
               />
@@ -646,7 +653,12 @@ function Admin() {
                             <button
                               className="secondary"
                               disabled={busy}
-                              onClick={() => setEditor({ manuscript: m })}
+                              onClick={() =>
+                                setEditor({
+                                  session: crypto.randomUUID(),
+                                  manuscript: m,
+                                })
+                              }
                             >
                               Open editor
                             </button>
