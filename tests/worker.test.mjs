@@ -322,3 +322,62 @@ test("LinkedIn requests verify identity and explicit active founder membership b
     globalThis.fetch = originalFetch;
   }
 });
+
+test("failed anonymous reads preserve the application shell without exposing drafts", async () => {
+  const { default: config } = await import("../worker/public-config.js");
+  const previous = config.projectId;
+  const originalFetch = globalThis.fetch;
+  const originalError = console.error;
+  config.projectId = "demo-thatvetguy";
+  globalThis.fetch = async () => new Response("denied", { status: 403 });
+  console.error = () => {};
+  const shell =
+    '<html><head><link rel="stylesheet" href="/assets/app.css"><script type="module" src="/assets/app.js"></script></head><body><div id="root"></div></body></html>';
+  let assetReads = 0;
+  const env = {
+    ASSETS: {
+      fetch: async () => {
+        assetReads++;
+        return new Response(shell, {
+          headers: { "content-type": "text/html" },
+        });
+      },
+    },
+  };
+  try {
+    for (const path of ["/", "/articles", "/article/example"]) {
+      const response = await worker.fetch(
+        new Request("https://blog.thatvetguy.net" + path),
+        env,
+      );
+      assert.equal(response.status, 503);
+      assert.equal(await response.text(), shell);
+      assert.equal(response.headers.get("cache-control"), "no-store");
+      assert.match(response.headers.get("x-robots-tag"), /noindex/);
+      assert.equal(response.headers.get("retry-after"), "60");
+    }
+    const before = assetReads;
+    for (const path of [
+      "/sitemap.xml",
+      "/media/00000000-0000-0000-0000-000000000000",
+    ]) {
+      const response = await worker.fetch(
+        new Request("https://blog.thatvetguy.net" + path),
+        env,
+      );
+      assert.equal(response.status, 503);
+      assert.match(response.headers.get("content-type"), /text\/plain/);
+      assert.ok(!(await response.text()).includes("<html>"));
+    }
+    assert.equal(assetReads, before);
+    const admin = await worker.fetch(
+      new Request("https://blog.thatvetguy.net/admin"),
+      env,
+    );
+    assert.equal(admin.status, 200);
+  } finally {
+    config.projectId = previous;
+    globalThis.fetch = originalFetch;
+    console.error = originalError;
+  }
+});
