@@ -1,0 +1,142 @@
+[
+  {
+    "id": "prepare-for-veterinary-visit",
+    "image": "https://images.unsplash.com/photo-1558788353-f76d92427f16?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Golden retriever looking toward the camera",
+    "title": "Make your next vet visit more useful",
+    "subtitle": "A simple preparation guide: what to record, what to bring and which questions to ask.",
+    "category": "pet-health",
+    "authorId": "dr-chirag-patidar",
+    "tags": ["dogs", "cats", "vet visits"],
+    "content": "<h2>Start with the change you noticed</h2><p>A veterinary appointment is more useful when the team can understand what has changed and when. Describe observations rather than deciding on a diagnosis: eating less, drinking more, struggling on the stairs or hiding are useful starting points. A symptom can have several causes, and an examination puts it in context.</p><h2>Build a short timeline</h2><p>Write down when the change began, whether it is continuous or intermittent, and any changes in food, medication, routine or environment. Record appetite, drinking, toileting and activity. A brief video of an intermittent behaviour can help, provided recording it does not delay care or distress the animal.</p><h2>Bring the information that changes decisions</h2><p>Bring vaccination and previous clinical records when available. Make a list of every medicine and supplement, including its packaging and the amount actually given. Include recent diet changes and possible access to plants, human medicines, rubbish or damaged toys. Ask the clinic whether a sample is needed and how it should be collected.</p><h2>Ask for a plan you can follow</h2><p>Useful questions include: What are we checking for? What will this test tell us? What should I watch for at home? When should I call again? Ask the team to explain instructions you do not understand. Confirm how to give prescribed treatment, the next review date and what to do if your animal will not take it.</p><h2>Make the journey safer</h2><p>Tell the clinic about fear, handling difficulties or a previous stressful visit before you arrive. Use appropriate transport: a secure carrier for a cat and safe restraint for a dog. The clinic can help plan arrival and handling. Do not give sedatives or other medication unless prescribed for this animal.</p><h2>When preparation should wait</h2><p>If your animal has difficulty breathing, collapses, has a suspected poisoning or is rapidly deteriorating, contact a veterinary service promptly. A checklist should support care, never delay an emergency examination.</p><h2>Your appointment note, in five lines</h2><ol><li>The main change and when it first appeared.</li><li>What your animal is eating, drinking and passing.</li><li>Medicines, supplements and recent treatments.</li><li>Possible exposures or changes at home.</li><li>The question you most want answered today.</li></ol><p>Tell the team about your practical limits, including budget, transport and who gives medicines at home. Ask which actions are essential today and which can be planned. A useful clinical plan needs to fit the animal and the household that will follow it.</p>",
+    "references": [
+      {
+        "title": "WSAVA — Global nutrition guidelines and tools",
+        "url": "https://wsava.org/global-guidelines/global-nutrition-guidelines/",
+        "year": ""
+      },
+      {
+        "title": "WSAVA — 2024 vaccination guidelines for dogs and cats",
+        "url": "https://wsava.org/global-guidelines/vaccination-guidelines/",
+        "year": "2024"
+      }
+    ],
+    "seoTitle": "Make your next vet visit more useful",
+    "seoDescription": "A simple preparation guide: what to record, what to bring and which questions to ask.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "plan-your-pets-preventive-care",
+    "title": "Build a prevention plan around your animal’s life",
+    "subtitle": "Vaccination records, parasite risk and dental care belong in one practical conversation.",
+    "category": "preventive-care",
+    "authorId": "dr-chirag-patidar",
+    "tags": ["prevention", "vaccination", "parasites"],
+    "content": "<h2>Start with the animal, not a universal calendar</h2><p>Preventive care depends on species, age, previous records, health, exposure and local disease risks. A useful plan is made with the veterinarian who knows the animal. Internet schedules can help you prepare questions, but they cannot establish the right programme for every household.</p><h2>Bring previous vaccination records</h2><p>Take dated records rather than relying on memory. Your veterinarian can explain which vaccinations are recommended, what follow-up is required and how uncertainty in the history affects the plan. Travel, boarding and local legal requirements may also influence decisions.</p><h2>Discuss parasite exposure</h2><p>Tell the clinic about outdoor access, hunting, fleas or ticks, contact with other animals, travel and children in the household. Parasite control involves the animal and its environment. Do not transfer a product or dose between species: a product suitable for a dog may be unsafe for a cat.</p><h2>Include teeth, weight and behaviour</h2><p>A prevention visit is also an opportunity to discuss dental care, body condition, feeding, handling and changes in behaviour. Ask the clinic to demonstrate techniques rather than guessing at home. Explain what you can realistically maintain so the plan is workable.</p><h2>Leave with a clear record</h2><p>Ask for written next steps: what was given, what to monitor, when follow-up is due and how to contact the clinic with concerns. Keep documents accessible for a new clinic or travel. Set reminders based on the agreed plan rather than an unverified online timetable.</p><h2>Review when life changes</h2><p>A move, new animal, pregnancy, illness or change in outdoor access can alter risk. Prevention is an ongoing discussion. If your animal is unwell, arrange clinical advice rather than waiting for the next routine appointment.</p><h2>Make reminders specific</h2><p>Write each animal’s name beside the product, date and next step. If several pets live together, one reminder saying “worming due” is easy to misapply. Keep the prescribed formulation and weight information with it. Ask what to do if a dose is missed or the animal vomits after treatment; do not automatically repeat it.</p><p>Schedule a review of the plan when travel, boarding or a new pet changes exposure. Prevention is also an opportunity to raise subtle changes in comfort, behaviour and weight before they become an emergency.</p>",
+    "references": [
+      {
+        "title": "WSAVA — 2024 vaccination guidelines for dogs and cats",
+        "url": "https://wsava.org/global-guidelines/vaccination-guidelines/",
+        "year": "2024"
+      },
+      {
+        "title": "AVMA — Pet dental care",
+        "url": "https://www.avma.org/resources-tools/pet-owners/petcare/pet-dental-care",
+        "year": ""
+      },
+      {
+        "title": "VCA Animal Hospitals — Fecal flotation",
+        "url": "https://vcahospitals.com/know-your-pet/fecal-flotation",
+        "year": ""
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Golden retriever outdoors",
+    "seoTitle": "Build a prevention plan around your animal’s life",
+    "seoDescription": "Vaccination records, parasite risk and dental care belong in one practical conversation.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "brushing-your-pets-teeth",
+    "title": "Better breath starts with better dental care",
+    "subtitle": "What brushing can do, what it cannot fix, and when a sore mouth needs an examination.",
+    "authorId": "dr-chirag-patidar",
+    "category": "preventive-care",
+    "tags": ["dogs", "cats", "dental care"],
+    "references": [
+      {
+        "title": "AVMA — Pet dental care",
+        "url": "https://www.avma.org/resources-tools/pet-owners/petcare/pet-dental-care",
+        "year": ""
+      },
+      {
+        "title": "AVMA — Household hazards",
+        "url": "https://www.avma.org/resources-tools/pet-owners/petcare/household-hazards",
+        "year": ""
+      }
+    ],
+    "content": "<aside class=\"key-takeaways\"><p><strong>The useful starting point:</strong> arrange a mouth check, introduce pet-safe brushing gradually, and have pain or bleeding assessed instead of brushing through it.</p></aside>\n<h2>Bad breath is worth mentioning</h2><p>A persistent smell, red gums, drooling, dropping food or chewing on one side can indicate a dental problem. Some animals continue eating despite a painful mouth. Appetite alone cannot tell you that the teeth and gums are healthy. A veterinary examination is the first step if you notice a change.</p><p>Dental disease involves more than visible brown deposits. Problems can lie beneath the gumline, where a home inspection cannot assess them. Your veterinarian may recommend a dental procedure with anaesthesia and dental radiographs to understand the full picture. Ask what is needed and why.</p>\n<h2>Build a brushing habit in small steps</h2><ol><li>Choose a quiet time and let your pet investigate the brush without restraint or pressure.</li><li>Use toothpaste intended for animals. Human toothpaste is not suitable for a pet to swallow.</li><li>Introduce gentle lip lifting, then very brief contact with the outer tooth surfaces. Reward calm participation.</li><li>Increase the area and duration gradually. Daily brushing is the goal, but comfort and safe handling come first.</li></ol><p>If the pet flinches, pulls away sharply, growls or seems painful, stop. Ask for an examination or a handling demonstration. A finger near a painful mouth can be bitten even by a normally gentle animal.</p>\n<h2>Chews support a plan; they do not replace one</h2><p>Some dental products can reduce plaque, but their effects differ and they cannot repair a broken tooth or established disease. Ask the clinic which products have suitable evidence and which fit your pet's size and chewing habits. Very hard objects can damage teeth. Supervise chewing and account for edible chews in the daily food allowance.</p>\n<h2>Do not scrape teeth at home</h2><p>Using metal instruments on an awake animal risks injury and leaves important disease beneath the gumline untreated. A clean-looking front tooth is not proof that the mouth is healthy. Home care is most useful as part of a plan following an appropriate examination.</p>\n<h2>Questions to take to the clinic</h2><ul><li>Is brushing comfortable and safe for this mouth today?</li><li>Does my pet need dental imaging or treatment?</li><li>Which brush and products suit this animal?</li><li>What changes should prompt an earlier recheck?</li></ul><p>Facial swelling, bleeding, difficulty eating or a damaged tooth warrants prompt advice. Do not use human painkillers while waiting.</p>",
+    "image": "https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Golden retriever outdoors",
+    "seoTitle": "Better breath starts with better dental care",
+    "seoDescription": "What brushing can do, what it cannot fix, and when a sore mouth needs an examination.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "puppy-vaccination-questions",
+    "title": "Puppy vaccinations: the questions that matter",
+    "subtitle": "Understand why a series is needed and how your veterinarian balances protection, exposure and early learning.",
+    "authorId": "dr-chirag-patidar",
+    "category": "preventive-care",
+    "tags": ["dogs", "puppies", "vaccination"],
+    "references": [
+      {
+        "title": "WSAVA — 2024 vaccination guidelines for dogs and cats",
+        "url": "https://wsava.org/global-guidelines/vaccination-guidelines/",
+        "year": "2024"
+      },
+      {
+        "title": "VCA Animal Hospitals — Vaccination failures in dogs",
+        "url": "https://vcahospitals.com/know-your-pet/vaccination-failures-in-dogs",
+        "year": ""
+      }
+    ],
+    "content": "<aside class=\"key-takeaways\"><p><strong>Bring the record, not just the puppy.</strong> Vaccine names, dates and previous care help your veterinarian plan the next step. A single injection does not complete every puppy's protection.</p></aside>\n<h2>Why there is more than one appointment</h2><p>Young puppies can receive antibodies from their mother. Those antibodies help early protection but can also interfere with the response to some vaccines. Their level falls at different times in different puppies. A vaccination series helps address that uncertainty; it is not simply the same unnecessary injection repeated.</p><p>The WSAVA vaccination guidelines distinguish vaccines broadly recommended for the population from others selected according to exposure and local disease patterns. Your veterinarian also considers product instructions, the puppy's health and previous documentation. An internet calendar cannot replace those details.</p>\n<h2>Ask for a written plan</h2><ul><li>Which infections does each vaccine cover?</li><li>Which doses remain, and on what dates?</li><li>When is protection expected, and what exposure should we avoid meanwhile?</li><li>What does local law require for rabies vaccination and documentation?</li><li>Which signs after vaccination should lead to a call?</li></ul><p>Tell the clinic about diarrhoea, reduced appetite, medication or a previous reaction before the appointment. The clinician decides whether to vaccinate that day or investigate first. Do not conceal illness to keep a timetable.</p>\n<h2>Protection and social learning both matter</h2><p>Avoid treating socialisation as unlimited contact with unfamiliar dogs or, at the other extreme, complete isolation. Ask the veterinarian for lower-risk ways to introduce normal sights, sounds, handling and trusted healthy animals. Risk varies by local outbreaks and the environments a puppy will enter.</p><p>A busy dog park, unknown faeces and unwell animals carry different risks from calm exposure at home. Classes should have a clear health policy. Follow local advice when an outbreak changes the usual recommendations.</p>\n<h2>What if a dose was missed?</h2><p>Call with the exact dates and product records. The catch-up plan depends on age, vaccine type and the gap; do not assume the series must restart or that the missing appointment no longer matters. Keep digital copies of completed records for boarding, travel and a change of clinic.</p>\n<h2>After the appointment</h2><p>Ask what mild short-term effects may occur and how to reach the clinic after hours. Breathing difficulty, collapse or facial swelling needs urgent veterinary assessment. Vaccination reduces important risks, but a vaccinated puppy with vomiting, diarrhoea or marked lethargy still needs attention. Read our <a href=\"/article/plan-your-pets-preventive-care\">preventive-care planning guide</a> to keep the whole plan together.</p>",
+    "image": "https://images.unsplash.com/photo-1558788353-f76d92427f16?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Golden retriever looking toward the camera",
+    "seoTitle": "Puppy vaccinations: the questions that matter",
+    "seoDescription": "Understand why a series is needed and how your veterinarian balances protection, exposure and early learning.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "hot-weather-dog-care",
+    "title": "Hot days, safer walks: protecting dogs from heat",
+    "subtitle": "Plan cooler outings, recognise trouble early and know what to do while arranging urgent care.",
+    "authorId": "dr-chirag-patidar",
+    "category": "pet-health",
+    "tags": ["dogs", "heat", "summer"],
+    "references": [
+      {
+        "title": "VCA Animal Hospitals — Heat stroke in dogs",
+        "url": "https://vcahospitals.com/know-your-pet/heat-stroke-in-dogs",
+        "year": ""
+      },
+      {
+        "title": "AVMA — Household hazards",
+        "url": "https://www.avma.org/resources-tools/pet-owners/petcare/household-hazards",
+        "year": ""
+      }
+    ],
+    "content": "<aside class=\"clinical-alert\"><p><strong>Possible heatstroke is an emergency.</strong> Heavy panting with weakness, confusion, collapse or breathing difficulty needs immediate cooling and urgent veterinary help. Do not wait for a temperature reading.</p></aside>\n<h2>Exercise can become dangerous before you expect it</h2><p>Dogs rely heavily on panting to lose heat. Hot or humid conditions, hard exercise and poor ventilation can overwhelm that process. Flat-faced dogs, animals with airway or heart disease, older dogs and overweight dogs may be particularly vulnerable. A dog keen to chase a ball does not necessarily recognise when to stop.</p><p>Heat risk is not limited to a locked car. A sunny balcony, a poorly ventilated room or a walk on a humid afternoon can also cause trouble. Parked cars are unsafe even with a window partly open. Plan transport and errands so an animal is never left waiting inside.</p>\n<h2>Build a cooler routine</h2><ul><li>Choose cooler parts of the day and shorten activity when conditions are uncomfortable.</li><li>Carry drinking water and offer regular rest in shade.</li><li>Check walking surfaces and choose shaded ground; hot paving can injure paws.</li><li>Provide shade, airflow and easy access to clean water at home.</li><li>Ask your veterinarian about special precautions for an animal with breathing or other health problems.</li></ul><p>There is no single outdoor temperature that makes every outing safe. Humidity, wind, fitness, coat, illness and exercise intensity all matter. Watch the dog and the conditions rather than relying on a phone's temperature alone.</p>\n<h2>If overheating is suspected</h2><p>Stop exercise and move the dog into shade or a cooler, ventilated place. Call a veterinary service immediately and begin cooling with cool tap water over the body and moving air while arranging transport. Keep water away from the airway; do not force a struggling dog to drink. Avoid wrapping the animal in wet towels, which can trap heat as they warm.</p><p>Do not force ice water into the mouth or use fever medicines. Ask the clinic for instructions during cooling and travel. A dog that appears to recover can still have internal complications and needs examination.</p>\n<h2>A useful household check</h2><p>Before a hot spell, confirm who checks the water bowls, which room stays coolest, how fans can be used safely and which clinic provides emergency care. For brachycephalic dogs, discuss noisy breathing rather than accepting it as normal for the breed. Prevention begins with changing the environment and activity, not testing how much heat a dog can tolerate.</p>",
+    "image": "https://images.unsplash.com/photo-1558788353-f76d92427f16?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Golden retriever looking toward the camera",
+    "seoTitle": "Hot days, safer walks: protecting dogs from heat",
+    "seoDescription": "Plan cooler outings, recognise trouble early and know what to do while arranging urgent care.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  }
+]

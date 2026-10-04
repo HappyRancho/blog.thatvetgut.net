@@ -42,7 +42,10 @@ try {
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("http://127.0.0.1:4173");
   await page
-    .getByRole("link", { name: "Read the story", exact: true })
+    .getByRole("link", {
+      name: "Make your next vet visit more useful",
+      exact: true,
+    })
     .waitFor();
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await page.waitForTimeout(800);
@@ -51,9 +54,14 @@ try {
     path: "screenshots/home-desktop.png",
     fullPage: true,
   });
-  assert.equal(await page.locator(".article-grid .article-card").count(), 3);
+  assert.equal(await page.locator(".article-grid .article-card").count(), 6);
   assert.equal(await page.locator('a[href="/admin"]').count(), 0);
-  await page.getByRole("link", { name: "Read the story", exact: true }).click();
+  await page
+    .getByRole("link", {
+      name: "Make your next vet visit more useful",
+      exact: true,
+    })
+    .click();
   await page
     .getByRole("heading", {
       name: "Make your next vet visit more useful",
@@ -83,7 +91,9 @@ try {
   await page.keyboard.press("Escape");
   assert.equal(await page.locator("dialog[open]").count(), 0);
   await page.goto("http://127.0.0.1:4173/search?q=rabies");
-  await page.getByRole("heading", { name: "The reading room." }).waitFor();
+  await page
+    .getByRole("heading", { name: "Pet health & animal care." })
+    .waitFor();
   await page
     .getByRole("link", {
       name: "Rabies prevention starts before a bite",
@@ -120,7 +130,10 @@ try {
     await page.setViewportSize({ width, height: 844 });
     await page.goto("http://127.0.0.1:4173");
     await page
-      .getByRole("link", { name: "Read the story", exact: true })
+      .getByRole("link", {
+        name: "Make your next vet visit more useful",
+        exact: true,
+      })
       .waitFor();
     const overflow = await page.evaluate(() =>
       [...document.querySelectorAll("body *")]
@@ -152,7 +165,9 @@ try {
       .locator("#navigation")
       .getByRole("link", { name: "All articles", exact: true })
       .click();
-    await page.getByRole("heading", { name: "The reading room." }).waitFor();
+    await page
+      .getByRole("heading", { name: "Pet health & animal care." })
+      .waitFor();
     await page.screenshot({
       path: `screenshots/archive-${width}.png`,
       fullPage: true,
@@ -184,13 +199,21 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("http://127.0.0.1:4173");
   await page
-    .getByRole("link", { name: "Read the story", exact: true })
+    .getByRole("link", {
+      name: "Make your next vet visit more useful",
+      exact: true,
+    })
     .waitFor();
   await page.screenshot({
     path: "screenshots/home-mobile.png",
     fullPage: true,
   });
-  await page.getByRole("link", { name: "Read the story", exact: true }).click();
+  await page
+    .getByRole("link", {
+      name: "Make your next vet visit more useful",
+      exact: true,
+    })
+    .click();
   await page.locator(".prose").waitFor();
   assert.ok(
     await page.evaluate(

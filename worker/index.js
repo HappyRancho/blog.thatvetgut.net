@@ -458,8 +458,8 @@ export default {
             (tag
               ? "Articles tagged " + tag
               : path === "/"
-                ? "Animal care, with context."
-                : "The reading room");
+                ? "Pet health, happier everyday lives."
+                : "Pet health & animal care");
           description = category?.description || description;
           const items = all.filter(
             (p) =>
@@ -519,14 +519,14 @@ export default {
         content =
           "<h1>Privacy, in plain language.</h1><p>Bookmarks remain on your device. Contact submissions are stored in Firebase for the editorial team. Approved accounts use Google sign-in.</p>";
       } else if (path === "/search") {
-        title = "Search the journal";
+        title = "Search the blog";
         content =
-          "<h1>Search the journal</h1><p>Search titles, topics and contributors.</p>";
+          "<h1>Search the blog</h1><p>Search titles, topics and contributors.</p>";
       } else {
         status = 404;
         title = "Page not found";
         content =
-          '<h1>This page is not in the journal.</h1><a href="/">Return to the homepage</a>';
+          '<h1>This page is not in the blog.</h1><a href="/">Return to the homepage</a>';
       }
       const canonical = origin() + path,
         meta = `<meta name="description" content="${esc(description)}"><meta name="robots" content="${status !== 200 || path === "/search" ? "noindex,follow" : "index,follow"}"><link rel="canonical" href="${esc(canonical)}"><meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}"><meta property="og:url" content="${esc(canonical)}"><meta property="og:type" content="${path.startsWith("/article/") ? "article" : "website"}"><meta name="twitter:card" content="${image ? "summary_large_image" : "summary"}">${image ? '<meta property="og:image" content="' + esc(new URL(image, origin()).href) + '">' : ""}${structured ? '<script id="structured-data" type="application/ld+json">' + JSON.stringify(structured).replace(/</g, "\\u003c") + "</script>" : ""}`;

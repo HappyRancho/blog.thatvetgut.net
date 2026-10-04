@@ -1,0 +1,132 @@
+[
+  {
+    "id": "suspected-pet-poisoning-first-actions",
+    "title": "Suspected poisoning: the first call matters",
+    "subtitle": "Collect the right information, prevent further exposure and avoid treatment by guesswork.",
+    "category": "emergency-critical-care",
+    "authorId": "dr-amaan-ahmed",
+    "tags": ["emergency", "poisoning", "dogs", "cats"],
+    "content": "<h2>Contact a veterinary service promptly</h2><p>If you suspect your animal has swallowed, inhaled or contacted a harmful substance, call a veterinarian promptly. Some exposures require action before signs appear. The absence of symptoms is not a reliable reason to wait.</p><h2>Make the situation safe</h2><p>Prevent further access to the substance if you can do so safely. Protect yourself and other animals from exposure. Do not enter an unsafe area or handle an aggressive, distressed animal without help. Ask the veterinary team how to transport the animal and whether any immediate decontamination is appropriate.</p><h2>Gather the details the team needs</h2><p>Have the animal’s species, approximate weight and medical history ready. Describe the product or substance, estimated amount, time of exposure and current signs. Photograph the label and bring packaging when safe. Explain anything you have already given or done.</p><h2>Do not induce vomiting by yourself</h2><p>Whether vomiting is appropriate depends on the substance, the animal and the circumstances. Home methods can cause additional harm. Do not give salt, oils, human medicines or other improvised treatments. Follow case-specific veterinary instructions.</p><h2>Use a handover checklist</h2><p>Write down the time of the call, the clinic you are travelling to and the instructions given. Ask whether the service can manage the case or whether another facility is needed. Keep product information with the animal’s records so it reaches the treating team.</p><h2>Review prevention afterward</h2><p>Once the immediate situation is managed, review how exposure happened. Secure medicines, chemicals, food waste and relevant plants; keep packaging and emergency clinic contacts accessible. Prevention reduces future risk, but it does not replace urgent advice during an exposure.</p><h2>Save this information before you need it</h2><ul><li>Your usual veterinary clinic and its opening hours.</li><li>A verified local emergency service and route to reach it.</li><li>Your pet’s current weight and regular medicines.</li><li>Photographs of product labels where chemicals or medicines are stored.</li></ul><p>Online poison advice may name services in another country. Confirm who can actually help in your area. If you cannot identify the substance, describe the container, location and observed exposure rather than guessing. Never taste or closely smell an unknown chemical to identify it.</p>",
+    "references": [
+      {
+        "title": "AVMA — Household hazards",
+        "url": "https://www.avma.org/resources-tools/pet-owners/petcare/household-hazards",
+        "year": ""
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1558788353-f76d92427f16?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Golden retriever looking toward the camera",
+    "seoTitle": "Suspected poisoning: the first call matters",
+    "seoDescription": "Collect the right information, prevent further exposure and avoid treatment by guesswork.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "rabies-prevention-and-bite-response",
+    "title": "Rabies prevention starts before a bite",
+    "subtitle": "Responsible vaccination, safe animal handling and prompt medical assessment after a possible exposure.",
+    "category": "one-health",
+    "authorId": "dr-amaan-ahmed",
+    "tags": ["rabies", "India", "One Health"],
+    "content": "<h2>A shared health responsibility</h2><p>Rabies prevention connects animal vaccination, human healthcare, community education and safer interactions with animals. Public-health guidance is particularly relevant where canine rabies remains a risk. Local health authorities can explain current services and exposure protocols.</p><h2>Keep animal vaccination records</h2><p>Ask your veterinarian about the appropriate vaccination programme and documentation for your animal. Maintain dated records and discuss requirements after moving or travelling. A missing record should be addressed with the clinic rather than assumed to prove protection.</p><h2>Avoid unsafe handling</h2><p>Do not approach an unfamiliar animal behaving unusually or try to catch a potentially rabid animal. Keep children away and contact local veterinary or animal-control services. A frightened or injured animal also needs safe, trained handling.</p><h2>After a possible exposure, seek medical assessment</h2><p>WHO advises prompt washing of a bite wound with soap and running water for at least 15 minutes and urgent assessment for post-exposure care. Bites, scratches and saliva contact with broken skin or mucous membranes need assessment in context. Do not wait for symptoms or rely on a home remedy.</p><h2>Let clinicians decide the exposure plan</h2><p>A healthcare professional determines whether vaccination and other post-exposure measures are needed. Animal vaccination status, exposure circumstances and local guidance are part of the assessment. Follow the prescribed course and review dates; an internet article cannot decide an individual’s treatment.</p><h2>Support prevention without misinformation</h2><p>Share verified public-health guidance and encourage humane, organised vaccination and animal-management programmes. Avoid claims that appearance alone proves an animal is safe or infected. One Health works best when communities, clinicians and veterinary services coordinate.</p><h2>Common reasons not to delay</h2><p>A small wound can still need assessment. An animal’s apparent good health or a remembered vaccination does not independently rule out risk. Do not wait to see whether a home-applied substance helps. Washing and prompt medical assessment are practical first actions while professionals evaluate the animal and exposure.</p><p>Keep children’s bite-prevention advice simple: do not disturb feeding or sleeping animals, and tell an adult immediately after a bite or scratch. Reassure children that reporting quickly helps; fear of being blamed can delay care.</p>",
+    "references": [
+      {
+        "title": "WHO — Rabies fact sheet",
+        "url": "https://www.who.int/news-room/fact-sheets/detail/rabies",
+        "year": ""
+      }
+    ],
+    "image": "https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Golden retriever outdoors",
+    "seoTitle": "Rabies prevention starts before a bite",
+    "seoDescription": "Responsible vaccination, safe animal handling and prompt medical assessment after a possible exposure.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "helping-injured-wildlife-safely",
+    "title": "Found an injured wild animal? Start with space, not handling",
+    "subtitle": "How to help without putting yourself, the animal or nearby pets at greater risk.",
+    "authorId": "dr-amaan-ahmed",
+    "category": "animal-welfare",
+    "tags": ["wildlife", "rescue", "One Health"],
+    "references": [
+      {
+        "title": "RSPCA — Helping injured wild animals",
+        "url": "https://www.rspca.org.uk/adviceandwelfare/wildlife/injured",
+        "year": ""
+      },
+      {
+        "title": "WHO — Rabies",
+        "url": "https://www.who.int/news-room/fact-sheets/detail/rabies",
+        "year": ""
+      }
+    ],
+    "content": "<aside class=\"key-takeaways\"><p><strong>Observe, protect the space and call qualified help.</strong> Not every animal alone needs rescuing, and an injured wild animal may bite or strike when approached.</p></aside>\n<h2>Pause before picking the animal up</h2><p>A bird on the ground or a young mammal alone can be part of a normal stage of development. Removing it without assessment can separate it from parental care. Obvious injury, entanglement, bleeding or inability to move normally needs expert advice, but the right action depends on the species and setting.</p><p>Observe from a safe distance. Keep children and pets away. Note the location, the animal's behaviour and any immediate hazard. A photograph taken without approaching can help a rescuer assess the situation. Avoid flash, crowding and repeatedly disturbing the animal to obtain a better video.</p>\n<h2>Use the right local service</h2><p>In India, contact the relevant state forest department, an authorised wildlife rescue service or a veterinarian familiar with wildlife. Explain the species if known, the precise location, visible injuries and whether roads, wires or other hazards are involved. Do not assume advice intended for a different country's species or services applies locally.</p><p>Ask whether you should remain nearby, keep an area clear or prepare a container. Transport and handling instructions should come from the responding professional. Some species are legally protected, and informal possession or relocation can cause additional harm.</p>\n<h2>Keep your own safety in the plan</h2><ul><li>Do not enter traffic, water, electrical hazards or unstable structures.</li><li>Do not handle snakes, bats, large mammals or birds with powerful beaks or talons.</li><li>Do not try to straighten a limb, cut deeply embedded material or administer medicine.</li><li>Keep domestic animals separated from wildlife and equipment used around it.</li></ul><p>A frightened animal's reaction is not a reliable guide to its disease status. If a bite, scratch or saliva exposure occurs, wash promptly and seek medical advice. Follow the <a href=\"/article/rabies-prevention-and-bite-response\">rabies exposure guidance</a>; do not wait for the animal's appearance to change.</p>\n<h2>Food is not the first treatment</h2><p>Giving milk, bread, water by syringe or a pet's medicine can be harmful. Feeding requirements differ widely, and forced fluids can enter the lungs. Wait for case-specific guidance. A rescue photo or a successful meal does not establish that an animal is ready for release.</p>\n<h2>Hand over useful observations</h2><p>Record when and where the animal was found, what happened before help arrived and anything already given. Share this with the rescuer rather than posting a precise sensitive location publicly. The aim is appropriate assessment and safe return where possible, not keeping a wild animal as a pet.</p>",
+    "image": "https://images.unsplash.com/photo-1444464666168-49d633b86797?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Small wild bird perched on a branch",
+    "seoTitle": "Found an injured wild animal? Start with space, not handling",
+    "seoDescription": "How to help without putting yourself, the animal or nearby pets at greater risk.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "leptospirosis-rainy-season-dogs",
+    "title": "Rain, puddles and leptospirosis: a practical dog-care guide",
+    "subtitle": "Why contaminated water matters, what vaccination can help with and which changes need a vet call.",
+    "authorId": "dr-amaan-ahmed",
+    "category": "one-health",
+    "tags": ["dogs", "monsoon", "leptospirosis"],
+    "references": [
+      {
+        "title": "VCA Animal Hospitals — Leptospirosis in dogs",
+        "url": "https://vcahospitals.com/know-your-pet/leptospirosis-in-dogs",
+        "year": ""
+      },
+      {
+        "title": "WSAVA — 2024 vaccination guidelines for dogs and cats",
+        "url": "https://wsava.org/global-guidelines/vaccination-guidelines/",
+        "year": "2024"
+      }
+    ],
+    "content": "<aside class=\"key-takeaways\"><p><strong>Reduce exposure and discuss vaccination.</strong> Illness after contact with floodwater or contaminated environments needs veterinary assessment. Leptospirosis can also affect people.</p></aside>\n<h2>How exposure happens</h2><p>Leptospira bacteria can be shed in the urine of infected animals and contaminate water or soil. Dogs may be exposed through mucous membranes or damaged skin. Rodents and other animals can contribute to environmental contamination, so risk is not confined to dogs living on farms.</p><p>Rain and standing water can make exposure harder to avoid. However, every puddle does not contain the bacteria, and avoiding visible mud cannot eliminate all risk. Local veterinary knowledge is useful when deciding what precautions and vaccination are appropriate.</p>\n<h2>Signs are not specific enough for home diagnosis</h2><p>Fever, reduced appetite, vomiting, lethargy and changes in drinking or urination can occur with many illnesses. Leptospirosis can cause serious organ injury, including kidney and liver problems. The veterinarian uses the exposure history, examination and suitable tests to investigate it. A social-media checklist cannot confirm the infection.</p><p>Call promptly if a dog becomes unwell after possible exposure. Marked weakness, breathing difficulty, collapse or an inability to keep water down calls for urgent attention. Do not wait for jaundice or every symptom on a list to appear.</p>\n<h2>Make outdoor routines safer</h2><ul><li>Choose routes away from floodwater, drains and stagnant pools where feasible.</li><li>Offer drinking water so a thirsty dog has a safer option during walks.</li><li>Store feed securely and manage waste to reduce rodent access.</li><li>Keep vaccination records and discuss local leptospirosis risk with the clinic.</li></ul><p>A vaccine plan depends on the animal, available products and regional recommendations. Vaccination can reduce risk but does not turn contaminated water into a safe play area. Your veterinarian can explain the required course and follow-up.</p>\n<h2>Protect the household if infection is suspected</h2><p>Tell the clinic about other animals and people who might have contacted urine. Avoid direct contact with urine, cover cuts and follow the team's cleaning and handling instructions. Pregnant or immunocompromised people should discuss exposure concerns with their healthcare professional. Human testing or treatment must be decided by a medical clinician.</p>\n<h2>What to tell the veterinarian</h2><p>Give dates of illness, recent travel, water exposure, rodent contact, vaccination records and all medicines already used. Do not start leftover antibiotics: they can complicate diagnosis and may be inappropriate. Ask how follow-up tests, home hygiene and other animals in the household should be managed.</p>",
+    "image": "https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Golden retriever outdoors",
+    "seoTitle": "Rain, puddles and leptospirosis: a practical dog-care guide",
+    "seoDescription": "Why contaminated water matters, what vaccination can help with and which changes need a vet call.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  },
+  {
+    "id": "one-health-at-home",
+    "title": "One Health starts at home: everyday habits that protect people and pets",
+    "subtitle": "Food hygiene, safer contact and sensible medicine use connect animal health with household health.",
+    "authorId": "dr-amaan-ahmed",
+    "category": "one-health",
+    "tags": ["dogs", "cats", "One Health", "hygiene"],
+    "references": [
+      {
+        "title": "WHO — Rabies",
+        "url": "https://www.who.int/news-room/fact-sheets/detail/rabies",
+        "year": ""
+      },
+      {
+        "title": "WOAH — Antimicrobial resistance",
+        "url": "https://www.woah.org/en/what-we-do/global-initiatives/antimicrobial-resistance/",
+        "year": ""
+      },
+      {
+        "title": "WSAVA — Global nutrition guidelines and tools",
+        "url": "https://wsava.org/global-guidelines/global-nutrition-guidelines/",
+        "year": ""
+      }
+    ],
+    "content": "<aside class=\"key-takeaways\"><p><strong>Small, repeatable habits matter.</strong> Keep animal vaccination records, practise food and hand hygiene, and use medicines only under appropriate professional direction.</p></aside>\n<h2>People and animals share an environment</h2><p>One Health recognises that people, animals and the environment affect each other's health. In a household, this can be as practical as cleaning a food bowl, managing waste and telling a clinician about an animal-related exposure. It does not mean avoiding a healthy relationship with a pet. It means making that relationship safer.</p><p>Different animals and households have different needs. Young children, older adults, pregnant people and those with reduced immunity may need tailored medical advice. Tell both the veterinary and human healthcare teams about relevant circumstances rather than assuming a general article covers every risk.</p>\n<h2>Keep routine care connected</h2><ul><li>Maintain an agreed vaccination and parasite-control plan for each animal.</li><li>Wash hands after handling animal waste and before preparing food.</li><li>Keep pet feeding equipment clean and separate from food-preparation surfaces.</li><li>Store feed securely, clean spills and manage rubbish to discourage pests.</li><li>Teach children to give animals space when eating, sleeping or caring for young.</li></ul><p>A pet that looks healthy can still carry organisms. Equally, a cough or an itchy patch does not prove a disease can spread to people. Seek a diagnosis instead of blaming or abandoning an animal.</p>\n<h2>Think carefully about raw food</h2><p>Raw animal products can expose pets and people to harmful microorganisms. Contamination may spread through preparation areas, bowls and handling. WSAVA's nutrition resources discuss those risks. A raw diet is not automatically more nutritious because it is less processed. Ask about an appropriate complete diet, particularly in a household with vulnerable people.</p>\n<h2>Antibiotics are a shared responsibility</h2><p>Resistant organisms make infections harder to treat across human and animal populations. Do not share antibiotics between people and pets, save a course for another illness or pressure a clinician for antibiotics when they are not indicated. Give prescribed treatment as directed and ask the prescriber before changing or stopping it. Adverse effects or deterioration deserve a call, not improvisation.</p>\n<h2>Take exposures seriously</h2><p>After an animal bite or potentially risky saliva exposure, wash the area promptly and seek medical assessment. Rabies prevention is time-sensitive; apparent animal health or a reassuring online answer does not replace an exposure assessment. Keep the animal's vaccination records available and let local professionals decide the next steps.</p><p>A practical starting task today is to put your veterinary contacts, animal records and household emergency contacts in one accessible place. Good communication connects prevention with timely care.</p>",
+    "image": "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=1200&q=80",
+    "imageAlt": "Black-and-white cat looking over a wooden surface",
+    "seoTitle": "One Health starts at home: everyday habits that protect people and pets",
+    "seoDescription": "Food hygiene, safer contact and sensible medicine use connect animal health with household health.",
+    "sourceUrl": "",
+    "audience": "Pet parents"
+  }
+]

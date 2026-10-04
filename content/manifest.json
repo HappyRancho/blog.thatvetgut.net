@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "articleCount": 30,
+  "target": "Existing Firestore manuscripts and publications; no second content database",
+  "requestedPublicationStatus": "PUBLISHED",
+  "currentStage": "Prepared manuscripts; clinical review and real Firebase publication outstanding",
+  "authorAttribution": "Assigned for founder adoption; no completed authorship or clinical review is asserted",
+  "preparedOn": "2026-10-04",
+  "files": [
+    "chirag-patidar.json",
+    "amaan-ahmed.json",
+    "shivam-singh-thakur.json",
+    "ritesh-verma.json",
+    "deepesh-mathur.json",
+    "deepesh-chaware.json"
+  ]
+}
