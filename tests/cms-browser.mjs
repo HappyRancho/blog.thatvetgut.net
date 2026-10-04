@@ -188,6 +188,16 @@ try {
   await page
     .getByLabel("Biography", { exact: true })
     .fill("A pathology biography saved through the real profile editor.");
+  await page.evaluate(() => window.fixtureNetwork(false));
+  await page.waitForFunction(
+    () => !document.querySelector("#profile-biography"),
+  );
+  await page.evaluate(() => window.fixtureNetwork(true));
+  await page.getByLabel("Biography", { exact: true }).waitFor();
+  assert.equal(
+    await page.getByLabel("Biography", { exact: true }).inputValue(),
+    "A pathology biography saved through the real profile editor.",
+  );
   await page
     .getByRole("button", { name: "Update profile", exact: true })
     .click();
@@ -341,7 +351,7 @@ try {
     .waitFor();
   assert.deepEqual(errors, []);
   console.log(
-    "CMS browser checks passed: denied membership, real editor/save/preview, image optimisation/privacy, independent review, publish/withdraw, own profile, cross-profile denial, revoked session and logout.",
+    "CMS browser checks passed: denied membership, real editor/save/preview, image optimisation/privacy, independent review, publish/withdraw, own profile, cross-profile denial, revoked session, logout and unsaved text recovery after connection loss.",
   );
 } catch (error) {
   await mkdir("screenshots", { recursive: true });

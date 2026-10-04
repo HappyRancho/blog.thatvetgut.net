@@ -8,12 +8,18 @@ import {
   GoogleAuthProvider,
   signInWithCredential,
 } from "firebase/auth";
-import { connectFirestoreEmulator } from "firebase/firestore";
+import {
+  connectFirestoreEmulator,
+  disableNetwork,
+  enableNetwork,
+} from "firebase/firestore";
 import { app, db } from "../src/lib/firebase";
 import "../src/styles.css";
 if (!import.meta.env.DEV || app?.options.projectId !== "demo-thatvetguy")
   throw new Error("Test entry requires the demo emulator project.");
 connectFirestoreEmulator(db!, "127.0.0.1", 8085);
+(window as any).fixtureNetwork = (enabled: boolean) =>
+  enabled ? enableNetwork(db!) : disableNetwork(db!);
 const auth = getAuth(app!);
 connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
 // Emulator-only credentials. No fixture API is imported by the application.

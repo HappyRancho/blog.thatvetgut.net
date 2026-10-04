@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   LogOut,
@@ -19,7 +19,7 @@ import {
   doc,
 } from "firebase/firestore";
 import { useCatalog } from "../lib/contexts";
-import { useAuth, AuthProvider, authMessage } from "../lib/auth-context";
+import { useAuth, AuthProvider, authMessage, auth } from "../lib/auth-context";
 import { configured, database } from "../lib/firebase";
 import {
   manuscripts,
@@ -45,18 +45,25 @@ import { authors as sourceProfiles } from "../data/editorial";
 function Profile({
   onDone,
   onDirty,
+  initial,
+  onDraftChange,
 }: {
   onDone: () => void;
   onDirty: (dirty: boolean) => void;
+  initial?: Author;
+  onDraftChange: (author: Author) => void;
 }) {
   const { member } = useAuth();
   const { authors } = useCatalog();
   const [a, setA] = useState<Author>(
-    authors.find((p) => p.id === member?.authorId)!,
+    initial || authors.find((p) => p.id === member?.authorId)!,
   );
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
-  const [saved, setSaved] = useState(JSON.stringify(a));
+  const [saved, setSaved] = useState(
+    JSON.stringify(authors.find((p) => p.id === member?.authorId)),
+  );
+  useEffect(() => onDraftChange(a), [a, onDraftChange]);
   const dirty = JSON.stringify(a) !== saved;
   useEffect(() => {
     onDirty(dirty);
@@ -301,6 +308,26 @@ function Admin() {
   const [queryText, setQueryText] = useState("");
   const [visible, setVisible] = useState(20);
   const [profileDirty, setProfileDirty] = useState(false);
+  const [profileBuffer, setProfileBuffer] = useState<Author>();
+  const rememberProfile = useCallback((a: Author) => setProfileBuffer(a), []);
+  const rememberDraft = useCallback(
+    (article: Article) =>
+      setEditor((old) =>
+        !old || old.initial === article ? old : { ...old, initial: article },
+      ),
+    [],
+  );
+  const previousUid = useRef<string>();
+  useEffect(() => {
+    if (previousUid.current !== user?.uid) {
+      previousUid.current = user?.uid;
+      setEditor(null);
+      setProfileBuffer(undefined);
+      setProfileDirty(false);
+      setRows([]);
+      setLoaded(false);
+    }
+  }, [user?.uid]);
   useEffect(() => setVisible(20), [queryText, filter]);
   const reload = async () => {
     setBusy(true);
@@ -483,6 +510,8 @@ function Admin() {
       <div className="admin-main">
         {tab === "profile" ? (
           <Profile
+            initial={profileBuffer}
+            onDraftChange={rememberProfile}
             onDone={() => void reloadCatalog()}
             onDirty={setProfileDirty}
           />
@@ -544,7 +573,9 @@ function Admin() {
               <ManuscriptEditor
                 key={editor.session}
                 {...editor}
+                onDraftChange={rememberDraft}
                 onSaved={(saved) => {
+                  if (auth?.currentUser?.uid !== user?.uid) return;
                   if (editor.manuscript?.status === "PUBLISHED")
                     void reloadCatalog();
                   setRows((old) => [
@@ -552,7 +583,9 @@ function Admin() {
                     ...old.filter((m) => m.article.id !== saved.article.id),
                   ]);
                   setEditor((old) =>
-                    old ? { ...old, manuscript: saved } : null,
+                    old
+                      ? { ...old, manuscript: saved, initial: saved.article }
+                      : null,
                   );
                 }}
                 onClose={() => setEditor(null)}

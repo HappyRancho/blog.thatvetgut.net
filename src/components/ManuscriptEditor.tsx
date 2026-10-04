@@ -16,19 +16,25 @@ export function ManuscriptEditor({
   initial,
   onSaved,
   onClose,
+  onDraftChange,
 }: {
   manuscript?: Manuscript;
   initial?: Article;
   onSaved: (saved: Manuscript) => void;
   onClose: () => void;
+  onDraftChange: (article: Article) => void;
 }) {
   const { user, member } = useAuth();
   const { authors } = useCatalog();
   const [a, setA] = useState<Article>(
-    manuscript?.article || initial || emptyArticle(member!.authorId),
+    initial || manuscript?.article || emptyArticle(member!.authorId),
   );
-  const [manual, setManual] = useState(!!manuscript || !!initial);
-  const [dirty, setDirty] = useState(false);
+  const [manual, setManual] = useState(!!manuscript || !!initial?.id);
+  const [dirty, setDirty] = useState(
+    !!initial &&
+      JSON.stringify(initial) !== JSON.stringify(manuscript?.article),
+  );
+  useEffect(() => onDraftChange(a), [a, onDraftChange]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [preview, setPreview] = useState(false);
