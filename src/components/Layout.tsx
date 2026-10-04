@@ -133,9 +133,9 @@ export function Layout({ children }: { children: ReactNode }) {
             ThatVetGuy<span className="brand-dot">.</span>
           </Link>
           <div className="masthead-note">
-            The veterinary
+            Animal health.
             <br />
-            collaborative
+            Everyday care.
           </div>
           <form
             className="header-search"
@@ -151,7 +151,7 @@ export function Layout({ children }: { children: ReactNode }) {
               id="header-search"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="What would you like to understand?"
+              placeholder="Search pet health & care"
             />
             <button aria-label="Search">
               <Search size={19} />
@@ -175,13 +175,14 @@ export function Layout({ children }: { children: ReactNode }) {
         </div>
         <nav id="navigation" className={open ? "nav open" : "nav"}>
           <NavLink to="/" end>
-            The Journal
+            Home
           </NavLink>
           <NavLink to="/articles">All articles</NavLink>
-          <NavLink to="/category/pet-health">Pet health</NavLink>
+          <NavLink to="/tag/dogs">Dogs</NavLink>
+          <NavLink to="/tag/cats">Cats</NavLink>
           <NavLink to="/category/animal-nutrition">Nutrition</NavLink>
           <NavLink to="/category/preventive-care">Prevention</NavLink>
-          <NavLink to="/categories">Explore specialties</NavLink>
+          <NavLink to="/categories">More animal care</NavLink>
           <NavLink
             to="/category/emergency-critical-care"
             className="emergency-nav"
@@ -203,11 +204,13 @@ export function Layout({ children }: { children: ReactNode }) {
               ThatVetGuy.
             </Link>
             <p>
-              Clinical knowledge.
+              For healthier pets.
               <br />
-              Everyday understanding.
+              And happier lives together.
             </p>
-            <p className="muted">A collaborative veterinary publication.</p>
+            <p className="muted">
+              Practical animal-care education from six veterinarians.
+            </p>
           </div>
           <div>
             <h3>Explore</h3>
@@ -223,6 +226,7 @@ export function Layout({ children }: { children: ReactNode }) {
             <Link to="/about">Editorial standards</Link>
             <Link to="/contact">Contact & corrections</Link>
             <Link to="/privacy">Privacy</Link>
+            <a href="https://unsplash.com/">Animal photography via Unsplash</a>
             <a href="https://www.thatvetguy.net/">The ThatVetGuy Collective</a>
           </div>
           <div>
@@ -270,7 +274,7 @@ export function Empty({
 export function Loading() {
   return (
     <div className="loading" role="status">
-      Loading the journal…
+      Loading the blog…
     </div>
   );
 }

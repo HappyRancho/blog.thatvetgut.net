@@ -2,20 +2,25 @@ import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
+import appletConfig from "../../firebase-applet-config.json";
 const e = import.meta.env;
+const projectId = e.VITE_FIREBASE_PROJECT_ID || appletConfig.projectId;
+const sameProject = projectId === appletConfig.projectId;
 const apiKey =
-  e.VITE_FIREBASE_API_KEY || "AIzaSyDvoUKv8ergiYefqQd4XMOBJDZSf3v7UEU";
+  e.VITE_FIREBASE_API_KEY || (sameProject ? appletConfig.apiKey : "");
 const authDomain =
-  e.VITE_FIREBASE_AUTH_DOMAIN || "adroit-bus-1ghtt.firebaseapp.com";
-const projectId = e.VITE_FIREBASE_PROJECT_ID || "adroit-bus-1ghtt";
-const appId =
-  e.VITE_FIREBASE_APP_ID || "1:848868631308:web:8745e698037df398eb9f29";
+  e.VITE_FIREBASE_AUTH_DOMAIN || (sameProject ? appletConfig.authDomain : "");
+const appId = e.VITE_FIREBASE_APP_ID || (sameProject ? appletConfig.appId : "");
 const databaseId =
-  e.VITE_FIREBASE_DATABASE_ID && e.VITE_FIREBASE_DATABASE_ID !== "(default)"
-    ? e.VITE_FIREBASE_DATABASE_ID
-    : "ai-studio-thatvetguy-7ee5cb09-c3e8-4d7e-8c1c-f5ef3b5df638";
-
-export const configured = !!(apiKey && projectId && appId && authDomain);
+  sameProject &&
+  (!e.VITE_FIREBASE_DATABASE_ID || e.VITE_FIREBASE_DATABASE_ID === "(default)")
+    ? appletConfig.firestoreDatabaseId
+    : e.VITE_FIREBASE_DATABASE_ID || "(default)";
+// Only the isolated browser-test build uses the labelled, unauthenticated content preview.
+// Production always uses the connected project; the test build is never deployed.
+export const configured =
+  import.meta.env.MODE !== "test" &&
+  !!(apiKey && projectId && appId && authDomain);
 export const app = configured
   ? initializeApp({
       apiKey,

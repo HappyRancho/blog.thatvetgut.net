@@ -13,9 +13,12 @@
     "deploy": "npm run build && node --env-file-if-exists=.env.local scripts/deploy.mjs",
     "test:browser": "node tests/browser.mjs",
     "format": "prettier --write src worker docs tests scripts *.json *.ts README.md .github/workflows",
-    "lint": "prettier --check src worker docs tests scripts *.json *.ts README.md .github/workflows",
+    "lint": "prettier --check src content worker docs tests scripts *.json *.ts README.md .github/workflows",
     "test:worker": "node --experimental-strip-types --test tests/worker.test.mjs",
-    "test:cms": "firebase emulators:exec --project demo-thatvetguy --only firestore,auth 'node tests/cms-browser.mjs'"
+    "test:cms": "firebase emulators:exec --project demo-thatvetguy --only firestore,auth 'node tests/cms-browser.mjs'",
+    "test:content": "node --experimental-strip-types tests/content.test.mjs",
+    "build:test": "vite build --mode test --outDir dist-test",
+    "test:config": "node tests/config.test.mjs"
   },
   "dependencies": {
     "react": "18.3.1",

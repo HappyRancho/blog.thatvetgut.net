@@ -11,15 +11,20 @@ try {
     await readFile("firebase-applet-config.json", "utf8"),
   );
 } catch {}
+const projectId =
+  process.env.VITE_FIREBASE_PROJECT_ID || appletConfig.projectId || "";
+const sameProject = projectId === appletConfig.projectId;
 const config = {
-  projectId:
-    process.env.VITE_FIREBASE_PROJECT_ID || appletConfig.projectId || "",
+  projectId,
   databaseId:
-    process.env.VITE_FIREBASE_DATABASE_ID &&
-    process.env.VITE_FIREBASE_DATABASE_ID !== "(default)"
-      ? process.env.VITE_FIREBASE_DATABASE_ID
-      : appletConfig.firestoreDatabaseId || "(default)",
-  apiKey: process.env.VITE_FIREBASE_API_KEY || appletConfig.apiKey || "",
+    sameProject &&
+    (!process.env.VITE_FIREBASE_DATABASE_ID ||
+      process.env.VITE_FIREBASE_DATABASE_ID === "(default)")
+      ? appletConfig.firestoreDatabaseId
+      : process.env.VITE_FIREBASE_DATABASE_ID || "(default)",
+  apiKey:
+    process.env.VITE_FIREBASE_API_KEY ||
+    (sameProject ? appletConfig.apiKey : ""),
   siteUrl: process.env.VITE_SITE_URL || "https://blog.thatvetguy.net",
   cmsUrl: process.env.VITE_CMS_URL || "https://blog.thatvetguy.net",
 };
