@@ -325,6 +325,7 @@ export default {
         `User-agent: *\nDisallow: /admin\nDisallow: /api/\nDisallow: /search\nSitemap: ${origin()}/sitemap.xml\n`,
         { headers: { ...headers, "Content-Type": "text/plain" } },
       );
+    let fallbackShell;
     try {
       if (path === "/sitemap.xml") return await sitemap();
       if (/^\/media\/[a-f0-9-]{36}$/.test(path)) return await media(path);
@@ -340,6 +341,7 @@ export default {
           },
         });
       if (!config.projectId) return base;
+      fallbackShell = base.clone();
       let title = "Veterinary medicine, clearly explained",
         description =
           "Practical veterinary reading for people who care for animals.",
@@ -577,17 +579,34 @@ export default {
         },
       });
     } catch (e) {
-      return new Response(
-        '<!doctype html><html><head><meta name="robots" content="noindex"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Publication temporarily unavailable</title></head><body><main><h1>The journal is temporarily unavailable.</h1><p>Please try again shortly. </p></main></body></html>',
-        {
+      // Log only a bounded error message: never tokens or database payloads.
+      console.error("Journal rendering failed", {
+        path,
+        reason: e instanceof Error ? e.message.slice(0, 160) : "Unknown error",
+      });
+      const failureHeaders = {
+        ...headers,
+        "X-Robots-Tag": "noindex, nofollow",
+        "Retry-After": "60",
+      };
+      // Preserve the CSS, scripts and navigation when anonymous data reads fail.
+      // Do not inject an empty catalog: the client must show its real read error.
+      if (fallbackShell)
+        return new Response(fallbackShell.body, {
           status: 503,
           headers: {
-            ...headers,
-            "Content-Type": "text/html; charset=utf-8",
-            "Retry-After": "60",
+            ...Object.fromEntries(fallbackShell.headers),
+            ...failureHeaders,
           },
+        });
+      // Image and sitemap failures must never masquerade as an HTML document.
+      return new Response("Publication service temporarily unavailable.", {
+        status: 503,
+        headers: {
+          ...failureHeaders,
+          "Content-Type": "text/plain; charset=utf-8",
         },
-      );
+      });
     }
   },
 };
