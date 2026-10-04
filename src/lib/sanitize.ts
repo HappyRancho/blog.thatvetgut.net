@@ -73,4 +73,12 @@ export const sanitize = (html: string) =>
     FORBID_ATTR: ["style", "id"],
   });
 export const plain = (html: string) =>
-  DOMPurify.sanitize(html, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+  DOMPurify.sanitize(
+    sanitize(html).replace(
+      /<\/(?:p|h[1-6]|li|blockquote|tr|td|th|figcaption|aside|div)>|<br\s*\/?>/gi,
+      " ",
+    ),
+    { ALLOWED_TAGS: [], ALLOWED_ATTR: [] },
+  )
+    .replace(/\s+/g, " ")
+    .trim();
