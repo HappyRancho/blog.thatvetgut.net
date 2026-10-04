@@ -58,7 +58,11 @@ Use the correct author mapping for each person:
 
 Each founder should sign out and in after provisioning. Set `status` to `INACTIVE` to revoke protected access. Client code cannot create, list or modify these access records. Do not provide access to an account solely because it knows a founder's public name or email.
 
-## 6. Deploy from your own computer
+## 6. Legacy Firebase Hosting deployment
+
+For the current enhancement, deploy the database rules through the Console and use Cloudflare as described in [ENHANCEMENT-DEPLOYMENT.md](ENHANCEMENT-DEPLOYMENT.md). The commands below retain the original Firebase Hosting alternative; they do not deploy the Cloudflare Worker and therefore do not provide its importer, public HTML or media endpoint. Do not use this alternative to release the enhanced journal.
+
+### From your own computer
 
 With Node 22 installed, in the repository:
 

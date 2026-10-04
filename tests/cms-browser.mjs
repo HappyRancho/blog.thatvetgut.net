@@ -34,6 +34,8 @@ const server = spawn(
   },
 );
 let browser;
+let page;
+const errors = [];
 try {
   await env.clearFirestore();
   for (let i = 0; i < 60; i++) {
@@ -44,10 +46,9 @@ try {
     await new Promise((r) => setTimeout(r, 250));
   }
   browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  page = await browser.newPage({ viewport: { width: 390, height: 844 } });
   page.setDefaultTimeout(15000);
   page.on("dialog", (d) => d.accept());
-  const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("http://127.0.0.1:4184/tests/cms-fixture.html");
   await page.waitForFunction(() => !!window.fixtureSignIn);
@@ -337,6 +338,15 @@ try {
   console.log(
     "CMS browser checks passed: denied membership, real editor/save/preview, image optimisation/privacy, independent review, publish/withdraw, own profile, cross-profile denial, revoked session and logout.",
   );
+} catch (error) {
+  await mkdir("screenshots", { recursive: true });
+  await page?.screenshot({
+    path: "screenshots/cms-failure.png",
+    fullPage: true,
+  });
+  console.log("CMS errors", errors);
+  console.log("CMS page", await page?.locator("body").innerText());
+  throw error;
 } finally {
   await browser?.close();
   server.kill("SIGTERM");

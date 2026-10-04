@@ -33,7 +33,7 @@ Without Firebase configuration the application is an explicitly labelled, non-in
 
 ## Deployment and editorial setup
 
-The existing Cloudflare Workers hosting integration is supported by `wrangler.jsonc`. See [Cloudflare hosting](docs/CLOUDFLARE.md) for build/deploy settings. Firebase Hosting remains an alternative; Cloudflare can host the public site while Firebase handles authentication and the database.
+The existing Cloudflare Workers hosting integration is supported by `wrangler.jsonc`. See [Cloudflare hosting](docs/CLOUDFLARE.md) for build/deploy settings. The legacy Firebase Hosting configuration is retained, but it does not deploy Worker features. Release this enhancement through Cloudflare, with Firebase handling authentication and the database.
 
 Read [Firebase Spark setup](docs/FIREBASE-SPARK.md), [Launch checklist](docs/LAUNCH.md) and [Editorial guide](docs/EDITORIAL.md). The deployment workflow is manual and requires your own Firebase/Google Cloud authorization; this repository does not contain credentials.
 
