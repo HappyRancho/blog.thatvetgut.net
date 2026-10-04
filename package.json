@@ -13,7 +13,8 @@
     "deploy": "npm run build && node --env-file-if-exists=.env.local scripts/deploy.mjs",
     "test:browser": "node tests/browser.mjs",
     "format": "prettier --write src worker docs tests scripts *.json *.ts README.md .github/workflows",
-    "lint": "prettier --check src worker docs tests scripts *.json *.ts README.md .github/workflows"
+    "lint": "prettier --check src worker docs tests scripts *.json *.ts README.md .github/workflows",
+    "test:worker": "node --experimental-strip-types --test tests/worker.test.mjs"
   },
   "dependencies": {
     "react": "18.3.1",

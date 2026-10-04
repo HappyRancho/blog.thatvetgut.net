@@ -14,8 +14,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-      - run: npm install --package-lock-only --ignore-scripts --no-fund --no-audit
+          node-version: "22"
       - run: npm ci --no-fund --no-audit
       - run: npx playwright install --with-deps chromium
       - run: node scripts/research.mjs
@@ -24,41 +23,3 @@ jobs:
         with:
           name: publication-benchmark
           path: research/
-      - name: Package verification tools
-        run: |
-          mkdir -p /tmp/local-deps
-          node -e "const fs=require('fs');const p=require('./package.json'); delete p.devDependencies['firebase-tools']; delete p.devDependencies['@firebase/rules-unit-testing'];delete p.devDependencies.wrangler;fs.writeFileSync('/tmp/local-deps/package.json',JSON.stringify(p))"
-          npm install --prefix /tmp/local-deps --ignore-scripts --no-fund --no-audit
-          tar -czf /tmp/verification-deps.tgz -C /tmp/local-deps node_modules
-          mkdir -p /tmp/dependency-parts
-          split -b 24000000 /tmp/verification-deps.tgz /tmp/dependency-parts/part-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: local-deps-a
-          path: /tmp/dependency-parts/part-aa
-          if-no-files-found: ignore
-      - uses: actions/upload-artifact@v4
-        with:
-          name: local-deps-b
-          path: /tmp/dependency-parts/part-ab
-          if-no-files-found: ignore
-      - uses: actions/upload-artifact@v4
-        with:
-          name: local-deps-c
-          path: /tmp/dependency-parts/part-ac
-          if-no-files-found: ignore
-      - uses: actions/upload-artifact@v4
-        with:
-          name: local-deps-d
-          path: /tmp/dependency-parts/part-ad
-          if-no-files-found: ignore
-      - uses: actions/upload-artifact@v4
-        with:
-          name: local-deps-e
-          path: /tmp/dependency-parts/part-ae
-          if-no-files-found: ignore
-      - uses: actions/upload-artifact@v4
-        with:
-          name: local-deps-f
-          path: /tmp/dependency-parts/part-af
-          if-no-files-found: ignore

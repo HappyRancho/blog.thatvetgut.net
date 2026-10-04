@@ -1,7 +1,9 @@
+import { MediaImage } from "./MediaImage";
 import { Link } from "react-router-dom";
 import { Clock, BookOpen } from "lucide-react";
 import type { Publication } from "../lib/domain";
 import { readingTime, safeUrl } from "../lib/domain";
+import { configured } from "../lib/firebase";
 import { categoryName } from "../data/editorial";
 import { useCatalog } from "../lib/contexts";
 export function ArticleCard({
@@ -23,7 +25,7 @@ export function ArticleCard({
         to={`/article/${a.id}`}
       >
         {a.image && safeUrl(a.image, true) ? (
-          <img
+          <MediaImage
             loading="lazy"
             src={safeUrl(a.image, true)}
             alt=""
@@ -45,7 +47,9 @@ export function ArticleCard({
         </h3>
         {!compact && <p>{a.subtitle}</p>}
         <div className="card-meta">
-          <span>{author?.name || "ThatVetGuy editorial team"}</span>
+          <span>
+            {author ? `${!configured ? "Proposed: " : ""}${author.name}` : ""}
+          </span>
           <span>
             <Clock size={13} />
             {readingTime(a.content)} min read

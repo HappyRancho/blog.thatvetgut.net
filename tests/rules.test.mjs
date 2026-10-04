@@ -126,20 +126,21 @@ test("independent review and atomic publish, withdrawal and stale-publication re
     reviewerAuthorId: "dr-ritesh-verma",
   });
   await assertFails(
-    updateDoc(ref(a), { status: "APPROVED", reviewedAt: "2026-10-03" }),
+    updateDoc(ref(a), { status: "APPROVED", reviewedAt: serverTimestamp() }),
   );
   await assertSucceeds(
-    updateDoc(ref(r), { status: "APPROVED", reviewedAt: "2026-10-03" }),
+    updateDoc(ref(r), { status: "APPROVED", reviewedAt: serverTimestamp() }),
   );
   await assertFails(updateDoc(ref(a), { status: "PUBLISHED" }));
   let b = writeBatch(a);
   b.update(ref(a), { status: "PUBLISHED" });
+  const reviewed = (await getDoc(ref(a))).data().reviewedAt;
   b.set(ref(a, "publications"), {
     article,
     revision: 1,
     reviewerUid: "reviewer",
     reviewerAuthorId: "dr-ritesh-verma",
-    reviewedAt: "2026-10-03",
+    reviewedAt: reviewed,
     publishedAt: serverTimestamp(),
   });
   await assertSucceeds(b.commit());
@@ -256,4 +257,122 @@ test("public snapshot cannot differ from approved clinical content", async () =>
     publishedAt: serverTimestamp(),
   });
   await assertFails(b.commit());
+});
+
+test("unrecognised founder mappings and unverified identities cannot manage content", async () => {
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), "cms_users", "unexpected"), {
+      authorId: "outsider",
+      role: "CO_FOUNDER",
+      status: "ACTIVE",
+    });
+  });
+  await assertFails(setDoc(ref(db("unexpected")), manuscript));
+  const unverified = env
+    .authenticatedContext("author", { email_verified: false })
+    .firestore();
+  await assertFails(getDoc(ref(unverified)));
+});
+test("review time cannot be forged and requesting changes cannot alter review metadata", async () => {
+  const a = db("author"),
+    r = db("reviewer");
+  await setDoc(ref(a), manuscript);
+  await updateDoc(ref(a), { status: "SUBMITTED FOR REVIEW" });
+  await updateDoc(ref(r), {
+    status: "UNDER REVIEW",
+    reviewerUid: "reviewer",
+    reviewerAuthorId: "dr-ritesh-verma",
+  });
+  await assertFails(
+    updateDoc(ref(r), { status: "APPROVED", reviewedAt: "invented date" }),
+  );
+  await assertFails(
+    updateDoc(ref(r), {
+      status: "CHANGES REQUESTED",
+      reviewedAt: "invented date",
+    }),
+  );
+});
+test("draft media remains private and another founder cannot upload profile media for me", async () => {
+  const id = "11111111-1111-1111-1111-111111111111",
+    a = db("author"),
+    publicDb = env.unauthenticatedContext().firestore();
+  const image = {
+    ownerType: "article",
+    ownerId: article.id,
+    uploadedBy: "author",
+    data: "data:image/webp;base64,AAAA",
+    width: 800,
+    height: 600,
+    createdAt: serverTimestamp(),
+  };
+  await assertSucceeds(setDoc(doc(a, "media", id), image));
+  await assertFails(getDoc(doc(publicDb, "media", id)));
+  await assertSucceeds(getDoc(doc(a, "media", id)));
+  await assertFails(getDocs(collection(a, "media")));
+  await assertFails(
+    setDoc(
+      doc(db("reviewer"), "media", "22222222-2222-2222-2222-222222222222"),
+      {
+        ...image,
+        ownerType: "author",
+        ownerId: authorId,
+        uploadedBy: "reviewer",
+      },
+    ),
+  );
+  await assertFails(
+    setDoc(doc(a, "media", "33333333-3333-3333-3333-333333333333"), {
+      ...image,
+      data: "data:image/svg+xml;base64,AAAA",
+    }),
+  );
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), "publications", article.id), {
+      article: { ...article, image: "/media/" + id },
+    });
+  });
+  await assertSucceeds(getDoc(doc(publicDb, "media", id)));
+  await env.withSecurityRulesDisabled(async (ctx) => {
+    await deleteDoc(doc(ctx.firestore(), "publications", article.id));
+  });
+  await assertFails(getDoc(doc(publicDb, "media", id)));
+});
+test("each of the six founders can edit only their mapped profile", async () => {
+  const ids = [
+    "dr-chirag-patidar",
+    "dr-amaan-ahmed",
+    "dr-shivam-singh-thakur",
+    "dr-ritesh-verma",
+    "dr-deepesh-mathur",
+    "dr-deepesh-chaware",
+  ];
+  for (let i = 0; i < ids.length; i++) {
+    const uid = "founder-" + i;
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "cms_users", uid), {
+        authorId: ids[i],
+        role: "CO_FOUNDER",
+        status: "ACTIVE",
+      });
+    });
+    const profile = {
+      id: ids[i],
+      name: "Founder",
+      role: "Veterinarian",
+      qualifications: "BVSc & AH",
+      bio: "Biography",
+      expertise: [],
+      affiliation: "ThatVetGuy",
+      image: "",
+      linkedin: "",
+    };
+    await assertSucceeds(setDoc(doc(db(uid), "authors", ids[i]), profile));
+    await assertFails(
+      setDoc(doc(db(uid), "authors", ids[(i + 1) % ids.length]), {
+        ...profile,
+        id: ids[(i + 1) % ids.length],
+      }),
+    );
+  }
 });

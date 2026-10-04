@@ -14,6 +14,11 @@ const server = spawn(
   ],
   { stdio: "ignore" },
 );
+const editorServer = spawn(
+  process.execPath,
+  ["node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--port", "4174"],
+  { stdio: "ignore" },
+);
 let browser;
 try {
   for (let i = 0; i < 40; i++) {
@@ -22,7 +27,12 @@ try {
     } catch {}
     await new Promise((r) => setTimeout(r, 250));
   }
-  browser = await chromium.launch({ headless: true });
+  browser = await chromium.launch({
+    headless: true,
+    ...(process.env.CHROMIUM_EXECUTABLE_PATH
+      ? { executablePath: process.env.CHROMIUM_EXECUTABLE_PATH }
+      : {}),
+  });
   await mkdir("screenshots", { recursive: true });
   const page = await browser.newPage({
     viewport: { width: 1440, height: 1000 },
@@ -39,10 +49,11 @@ try {
     fullPage: true,
   });
   assert.equal(await page.locator(".article-grid .article-card").count(), 3);
+  assert.equal(await page.locator('a[href="/admin"]').count(), 0);
   await page.getByRole("link", { name: "Read the story", exact: true }).click();
   await page
     .getByRole("heading", {
-      name: "Your dog is vomiting. What should you do next?",
+      name: "Make your next vet visit more useful",
     })
     .waitFor();
   await page
@@ -68,7 +79,7 @@ try {
   await page.getByRole("heading", { name: "The reading room." }).waitFor();
   await page
     .getByRole("link", {
-      name: "Rabies prevention starts with shared responsibility",
+      name: "Rabies prevention starts before a bite",
       exact: true,
     })
     .waitFor();
@@ -80,11 +91,11 @@ try {
   await page.getByRole("heading", { name: "Co-founder access" }).waitFor();
   assert.equal(
     await page
-      .getByRole("button", { name: "New article", exact: true })
+      .getByRole("button", { name: "Create article", exact: true })
       .count(),
     0,
   );
-  for (const width of [390, 320]) {
+  for (const width of [768, 390, 320]) {
     await page.setViewportSize({ width, height: 844 });
     await page.goto("http://127.0.0.1:4173");
     await page
@@ -115,6 +126,37 @@ try {
     path: "screenshots/home-mobile.png",
     fullPage: true,
   });
+  await page.goto("http://127.0.0.1:4174/tests/editor-fixture.html");
+  const editor = page.getByRole("textbox", { name: "Article body" });
+  await editor.waitFor();
+  assert.match(await page.getByTestId("stored").innerText(), /figcaption/);
+  assert.equal(await editor.locator("aside.pro-tip").count(), 1);
+  await editor.click();
+  await page.keyboard.press("ControlOrMeta+A");
+  await page.keyboard.insertText("A meaningful paragraph for formatting.");
+  await page.keyboard.press("ControlOrMeta+A");
+  await page.getByRole("button", { name: "Bold", exact: true }).click();
+  assert.match(await page.getByTestId("stored").innerText(), /<strong>/);
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  assert.ok(
+    !(await page.getByTestId("stored").innerText()).includes("<strong>"),
+  );
+  await page.getByRole("button", { name: "Redo", exact: true }).click();
+  assert.match(await page.getByTestId("stored").innerText(), /<strong>/);
+  await page.getByRole("button", { name: "Paste unsafe fixture" }).click();
+  const safe = await page.getByTestId("stored").innerText();
+  assert.ok(!/script|javascript:|onerror|iframe|data:image/.test(safe));
+  assert.equal(await page.evaluate(() => window.__unsafe), undefined);
+  assert.ok(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 1,
+    ),
+    "Editor mobile overflow",
+  );
+  await page.screenshot({
+    path: "screenshots/editor-mobile.png",
+    fullPage: true,
+  });
   assert.deepEqual(errors, []);
   console.log(
     "Browser checks passed: desktop/mobile routes, search, bookmarks, reading controls, share dialog, unavailable article, CMS gate and horizontal overflow.",
@@ -123,4 +165,6 @@ try {
   await browser?.close();
   server.kill("SIGTERM");
   server.unref();
+  editorServer.kill("SIGTERM");
+  editorServer.unref();
 }

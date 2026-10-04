@@ -1,11 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import type { Article, Manuscript } from "../lib/domain";
 import { emptyArticle, slugify, safeUrl } from "../lib/domain";
-import { useAuth, useCatalog } from "../lib/contexts";
+import { useCatalog } from "../lib/contexts";
+import { useAuth } from "../lib/auth-context";
 import { categories } from "../data/editorial";
 import { saveDraft } from "../lib/repository";
-import { RichEditor } from "./RichEditor";
+const RichEditor = lazy(() =>
+  import("./RichEditor").then((m) => ({ default: m.RichEditor })),
+);
 import { sanitize } from "../lib/sanitize";
+import { ImageField } from "./ImageField";
+import { useInlineMedia } from "./MediaImage";
 export function ManuscriptEditor({
   manuscript,
   initial,
@@ -14,7 +19,7 @@ export function ManuscriptEditor({
 }: {
   manuscript?: Manuscript;
   initial?: Article;
-  onSaved: () => void;
+  onSaved: (saved: Manuscript) => void;
   onClose: () => void;
 }) {
   const { user, member } = useAuth();
@@ -27,6 +32,25 @@ export function ManuscriptEditor({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [preview, setPreview] = useState(false);
+  const [revision, setRevision] = useState(manuscript?.revision);
+  const [savedMessage, setSavedMessage] = useState("");
+  const previewContent = useInlineMedia(sanitize(a.content));
+  useEffect(() => {
+    const guard = (e: MouseEvent) => {
+      const link = (e.target as Element)?.closest?.("a[href]");
+      if (
+        dirty &&
+        link &&
+        !link.getAttribute("href")?.startsWith("#") &&
+        !window.confirm("Leave this article and discard unsaved edits?")
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    document.addEventListener("click", guard, true);
+    return () => document.removeEventListener("click", guard, true);
+  }, [dirty]);
   const set = <K extends keyof Article>(key: K, value: Article[K]) => {
     setDirty(true);
     setA((old) => ({ ...old, [key]: value }));
@@ -75,9 +99,12 @@ export function ManuscriptEditor({
           setBusy(true);
           setError("");
           try {
-            await saveDraft(a, user!.uid, manuscript?.revision);
+            const saved = await saveDraft(a, user!.uid, revision);
+            setRevision(saved.revision);
+            setManual(true);
             setDirty(false);
-            onSaved();
+            setSavedMessage("Draft saved to Firebase.");
+            onSaved(saved);
           } catch (err) {
             setError(err instanceof Error ? err.message : "Save failed.");
           } finally {
@@ -126,13 +153,19 @@ export function ManuscriptEditor({
             {preview ? (
               <div
                 className="prose panel"
-                dangerouslySetInnerHTML={{ __html: sanitize(a.content) }}
+                dangerouslySetInnerHTML={{ __html: previewContent }}
               />
             ) : (
-              <RichEditor
-                value={a.content}
-                onChange={(value) => set("content", value)}
-              />
+              <Suspense
+                fallback={<p role="status">Opening the writing tools…</p>}
+              >
+                <RichEditor
+                  value={a.content}
+                  ownerId={a.id}
+                  onUploadStart={() => setManual(true)}
+                  onChange={(value) => set("content", value)}
+                />
+              </Suspense>
             )}
             <h3>Sources & references</h3>
             {a.references.map((r, i) => (
@@ -188,7 +221,10 @@ export function ManuscriptEditor({
               URL slug
               <input
                 value={a.id}
-                readOnly={!!manuscript}
+                readOnly={
+                  !!revision ||
+                  (manual && /\/media\//.test(a.image + a.content))
+                }
                 onChange={(e) => {
                   setManual(true);
                   set("id", slugify(e.target.value));
@@ -253,25 +289,14 @@ export function ManuscriptEditor({
                 }
               />
             </label>
-            <label>
-              Cover image URL
-              <input
-                value={a.image}
-                onChange={(e) => set("image", e.target.value)}
-                placeholder="https://… or /images/photo.webp"
-              />
-            </label>
-            <small>
-              Use an image you have permission to publish. Keep GitHub-hosted
-              images in public/images to avoid paid Firebase Storage.
-            </small>
-            {a.image && safeUrl(a.image, true) && (
-              <img
-                className="image-preview"
-                src={safeUrl(a.image, true)}
-                alt={a.imageAlt}
-              />
-            )}
+            <ImageField
+              value={a.image}
+              alt={a.imageAlt}
+              ownerType="article"
+              ownerId={a.id}
+              onUploadStart={() => setManual(true)}
+              onChange={(url) => set("image", url)}
+            />
             <label>
               Image description
               <input
@@ -312,7 +337,13 @@ export function ManuscriptEditor({
           </aside>
         </div>
         <div className="save-bar">
-          <span>{dirty ? "Unsaved changes" : "Draft workspace"}</span>
+          <span role="status">
+            {busy
+              ? "Saving…"
+              : dirty
+                ? "Unsaved changes"
+                : savedMessage || "No unsaved edits"}
+          </span>
           <button disabled={busy}>
             {busy ? "Saving to Firebase…" : "Save draft"}
           </button>

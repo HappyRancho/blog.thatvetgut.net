@@ -1,3 +1,4 @@
+import { MediaImage } from "../components/MediaImage";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { categories } from "../data/editorial";
@@ -52,7 +53,13 @@ export function Contributors() {
           <article key={a.id}>
             <div className="portrait">
               {a.image && safeUrl(a.image, true) ? (
-                <img src={safeUrl(a.image, true)} alt={a.name} />
+                <MediaImage
+                  src={safeUrl(a.image, true)}
+                  alt={a.name}
+                  loading="lazy"
+                  width={400}
+                  height={400}
+                />
               ) : (
                 <span>
                   {a.name
@@ -81,7 +88,17 @@ export function AuthorPage() {
   const { slug } = useParams();
   const { authors, items } = useCatalog();
   const a = authors.find((p) => p.id === slug);
-  if (!a) return <Empty title="Contributor not found" />;
+  if (!a)
+    return (
+      <>
+        <SEO
+          title="Contributor not found"
+          description="This contributor does not exist."
+          noindex
+        />
+        <Empty title="Contributor not found" />
+      </>
+    );
   return (
     <div className="container section">
       <SEO title={a.name} description={a.bio} />
@@ -89,6 +106,15 @@ export function AuthorPage() {
       <h1>{a.name}</h1>
       <p className="standfirst">{a.role}</p>
       <div className="profile-detail">
+        {a.image && (
+          <MediaImage
+            className="profile-photo"
+            width={220}
+            height={220}
+            src={safeUrl(a.image, true)}
+            alt={a.name}
+          />
+        )}
         <p>{a.bio}</p>
         <p>{a.affiliation}</p>
         <div className="article-tags">
@@ -106,6 +132,11 @@ export function AuthorPage() {
           </a>
         )}
       </div>
+      {a.portfolio && safeUrl(a.portfolio) && (
+        <a className="text-link" href={safeUrl(a.portfolio)}>
+          Professional portfolio on ThatVetGuy
+        </a>
+      )}
       <h2 className="section-title">From this contributor</h2>
       <div className="article-grid">
         {items
@@ -301,10 +332,10 @@ export function Privacy() {
         </p>
         <h2>LinkedIn imports</h2>
         <p>
-          The editor first attempts to retrieve a public URL directly. An
-          optional external reader is used only when the editor explicitly
-          permits it; that service receives the LinkedIn URL. Do not submit
-          private links or material you do not have permission to reproduce.
+          An authenticated importer requests publicly accessible LinkedIn
+          article pages through our Cloudflare service. It sends no LinkedIn
+          login credentials. Do not submit private links or material you do not
+          have permission to reproduce.
         </p>
         <h2>Your requests</h2>
         <p>

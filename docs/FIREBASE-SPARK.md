@@ -1,4 +1,8 @@
-# Connect Firebase without a payment card
+# Existing free Firebase project
+
+For this enhancement, use the existing AI Studio Starter/free project and named database. It does not require a new project or billing upgrade. Updated image uploads use bounded Firestore media documents, not Firebase Storage. Follow [ENHANCEMENT-DEPLOYMENT.md](ENHANCEMENT-DEPLOYMENT.md) for current setup and limitations.
+
+## Connect Firebase without a payment card
 
 ## 1. Use the correct project type
 

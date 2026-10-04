@@ -1,4 +1,10 @@
-# ThatVetGuy · Veterinary Collaborative
+# ThatVetGuy publication and editorial workspace
+
+The services/portfolio site at `www.thatvetguy.net` remains unchanged. This repository serves the journal at `blog.thatvetguy.net` and its direct private route `/admin`, with one Firebase data model and six equal founder memberships.
+
+See [enhancement deployment](docs/ENHANCEMENT-DEPLOYMENT.md) for the named database, required live-rule configuration, free image handling, Worker rendering/importer, and verification limits. See [research evidence](docs/RESEARCH.md) for actual inspected pages and author sources.
+
+## Original rebuild notes — ThatVetGuy · Veterinary Collaborative
 
 A complete replacement publication and editorial workspace designed for Firebase's no-cost Spark plan. React 18, TypeScript, Vite, Tailwind v4, Firebase Authentication/Firestore and DOMPurify.
 
