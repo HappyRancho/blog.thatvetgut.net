@@ -54,9 +54,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!auth || !db) return;
     let stopMember = () => {};
+    let generation = 0;
     let timeout: ReturnType<typeof setTimeout>;
 
     const stop = onIdTokenChanged(auth, (u) => {
+      const current = ++generation;
       stopMember();
       clearTimeout(timeout);
       setUser(u);
@@ -65,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(!!u);
       if (!u) return;
       timeout = setTimeout(() => {
+        if (current !== generation) return;
         setMember(null);
         setLoading(false);
         setError(
@@ -75,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         doc(db!, "cms_users", u.uid),
         { includeMetadataChanges: true },
         (snapshot) => {
+          if (current !== generation) return;
           // Cached membership must never keep a revoked or offline session in the workspace.
           if (snapshot.metadata.fromCache) {
             setMember(null);
@@ -99,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(false);
         },
         () => {
+          if (current !== generation) return;
           setMember(null);
           setLoading(false);
           setError(
@@ -108,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
     });
     return () => {
+      generation++;
       clearTimeout(timeout);
       stopMember();
       stop();

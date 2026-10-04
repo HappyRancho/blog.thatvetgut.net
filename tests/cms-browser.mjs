@@ -160,6 +160,10 @@ try {
       .count(),
     0,
   );
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await page
+    .getByRole("heading", { name: "Co-founder access", exact: true })
+    .waitFor();
   const reviewer = await page.evaluate(() => window.fixtureSignIn("reviewer"));
   await provision(reviewer, "dr-ritesh-verma");
   await page.getByRole("button", { name: "Take review", exact: true }).click();
