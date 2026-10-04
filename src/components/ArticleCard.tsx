@@ -1,7 +1,6 @@
-import { articlePhotoSizes } from "../data/photography";
 import { MediaImage } from "./MediaImage";
 import { Link } from "react-router-dom";
-import { Clock } from "lucide-react";
+import { Clock, BookOpen } from "lucide-react";
 import type { Publication } from "../lib/domain";
 import { readingTime, safeUrl } from "../lib/domain";
 import { configured } from "../lib/firebase";
@@ -28,7 +27,6 @@ export function ArticleCard({
         >
           <MediaImage
             loading="lazy"
-            {...articlePhotoSizes(a.image)}
             src={safeUrl(a.image, true)}
             alt=""
             width={640}

@@ -460,7 +460,7 @@ function Admin() {
             {authError || status}
           </p>
         </div>
-        <Link to="/">Return to the blog</Link>
+        <Link to="/">Return to the journal</Link>
       </div>
     );
   return (
@@ -553,7 +553,7 @@ function Admin() {
             <div className="section-title">
               <div>
                 <span className="eyebrow">The publishing desk</span>
-                <h1>Your articles, all in one place.</h1>
+                <h1>Your journal, in progress.</h1>
               </div>
               <button
                 disabled={busy}
@@ -872,14 +872,13 @@ function Admin() {
                     Show more articles
                   </button>
                 )}
-                {loaded && (
+                {loaded && rows.length === 0 && (
                   <div className="panel">
-                    <h2>Your 30-guide content pack.</h2>
+                    <h2>Start with practical reader questions.</h2>
                     <p>
-                      30 practical articles, five assigned to each founder,
-                      covering all eight specialties. Suggested authors must
-                      verify and accept the material; no clinical review or
-                      publication is implied.
+                      New educational drafts covering all eight specialties.
+                      Suggested authors must verify and accept the material; no
+                      clinical review or publication is implied.
                     </p>
                     <button
                       disabled={busy}
@@ -888,17 +887,12 @@ function Admin() {
                           const { launchDrafts } = await import(
                             "../data/launch-drafts"
                           );
-                          const existing = new Set(
-                            (await manuscripts()).map((m) => m.article.id),
-                          );
-                          for (const a of launchDrafts) {
-                            if (!existing.has(a.id))
-                              await saveDraft(a, user!.uid);
-                          }
+                          for (const a of launchDrafts)
+                            await saveDraft(a, user!.uid);
                         })
                       }
                     >
-                      Add missing article drafts
+                      Add starter drafts
                     </button>
                   </div>
                 )}

@@ -74,7 +74,7 @@ export default function App() {
                         description="The requested page does not exist."
                         noindex
                       />
-                      <h1>This page is not in the blog.</h1>
+                      <h1>This page is not in the journal.</h1>
                       <Link to="/">Return to the homepage</Link>
                     </div>
                   }

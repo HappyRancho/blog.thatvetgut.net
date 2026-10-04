@@ -73,11 +73,38 @@ async function list(collection, count = 48) {
       .filter((x) => x.document)
       .map((x) => unpack(x.document));
   }
-  const d = await rest(`${collection}?pageSize=${count}`);
-  return (d?.documents || []).map((d) => ({
-    ...unpack(d),
-    _id: d.name.split("/").at(-1),
-  }));
+  try {
+    const d = await rest(`${collection}?pageSize=${count}`);
+    if (d?.documents) {
+      return d.documents.map((d) => ({
+        ...unpack(d),
+        _id: d.name.split("/").at(-1),
+      }));
+    }
+  } catch {}
+  try {
+    const endpoint = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(config.projectId)}/databases/${encodeURIComponent(config.databaseId)}/documents:runQuery`;
+    const r = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        structuredQuery: {
+          from: [{ collectionId: collection }],
+          limit: count,
+        },
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (r.ok) {
+      return (await r.json())
+        .filter((x) => x.document)
+        .map((x) => ({
+          ...unpack(x.document),
+          _id: x.document.name.split("/").at(-1),
+        }));
+    }
+  } catch {}
+  return [];
 }
 const articleList = (items) =>
   items

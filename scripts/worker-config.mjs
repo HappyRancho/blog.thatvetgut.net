@@ -1,11 +1,22 @@
-import { writeFile } from "node:fs/promises";
+import { writeFile, readFile } from "node:fs/promises";
 try {
   process.loadEnvFile(".env.local");
 } catch {}
+let appletConfig = {};
+try {
+  appletConfig = JSON.parse(
+    await readFile("firebase-applet-config.json", "utf8"),
+  );
+} catch {}
 const config = {
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID || "",
-  databaseId: process.env.VITE_FIREBASE_DATABASE_ID || "(default)",
-  apiKey: process.env.VITE_FIREBASE_API_KEY || "",
+  projectId:
+    process.env.VITE_FIREBASE_PROJECT_ID || appletConfig.projectId || "",
+  databaseId:
+    process.env.VITE_FIREBASE_DATABASE_ID &&
+    process.env.VITE_FIREBASE_DATABASE_ID !== "(default)"
+      ? process.env.VITE_FIREBASE_DATABASE_ID
+      : appletConfig.firestoreDatabaseId || "(default)",
+  apiKey: process.env.VITE_FIREBASE_API_KEY || appletConfig.apiKey || "",
   siteUrl: process.env.VITE_SITE_URL || "https://blog.thatvetguy.net",
   cmsUrl: process.env.VITE_CMS_URL || "https://blog.thatvetguy.net",
 };
