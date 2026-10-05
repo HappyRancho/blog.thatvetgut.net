@@ -348,6 +348,7 @@ try {
     )
     .waitFor();
   assert.equal(await page.evaluate(() => window.__unsafe), undefined);
+  await page.getByRole("button", { name: "Close", exact: true }).click();
   // Loading the launch pack must preserve both edited drafts and existing public slugs.
   const pack = JSON.parse(
     await readFile("content/chirag-patidar.json", "utf8"),

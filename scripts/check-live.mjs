@@ -12,7 +12,15 @@ const report = {
   publications: null,
 };
 await mkdir("live-check", { recursive: true });
-for (const path of ["/", "/admin", "/sitemap.xml"]) {
+for (const path of [
+  "/",
+  "/admin",
+  "/articles",
+  "/contributors",
+  "/author/dr-chirag-patidar",
+  "/sitemap.xml",
+  "/article/deployment-probe-" + crypto.randomUUID(),
+]) {
   try {
     const r = await fetch(site + path, {
       signal: AbortSignal.timeout(20000),
@@ -100,6 +108,25 @@ for (const collection of [
     }
   } catch (e) {
     report.database.push({ collection, error: e.message });
+  }
+}
+report.publicDocumentReads = [];
+for (const path of [
+  "authors/dr-chirag-patidar",
+  "publications/deployment-probe-" + crypto.randomUUID(),
+]) {
+  try {
+    const r = await fetch(`${base}/${path}`, {
+      signal: AbortSignal.timeout(20000),
+    });
+    const data = await r.json();
+    report.publicDocumentReads.push({
+      path,
+      status: r.status,
+      error: data.error?.message,
+    });
+  } catch (e) {
+    report.publicDocumentReads.push({ path, error: e.message });
   }
 }
 try {
