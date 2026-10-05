@@ -58,31 +58,31 @@ Use the correct author mapping for each person:
 
 Each founder should sign out and in after provisioning. Set `status` to `INACTIVE` to revoke protected access. Client code cannot create, list or modify these access records. Do not provide access to an account solely because it knows a founder's public name or email.
 
-## 6. Legacy Firebase Hosting deployment
+## 6. Deploy Firestore rules and indexes
 
-For the current enhancement, deploy the database rules through the Console and use Cloudflare as described in [ENHANCEMENT-DEPLOYMENT.md](ENHANCEMENT-DEPLOYMENT.md). The commands below retain the original Firebase Hosting alternative; they do not deploy the Cloudflare Worker and therefore do not provide its importer, public HTML or media endpoint. Do not use this alternative to release the enhanced journal.
+Cloudflare hosts the blog and its Worker. The commands below deploy only Firestore rules and indexes to the connected named database. They do not deploy Firebase Hosting, Storage or Functions. See [ENHANCEMENT-DEPLOYMENT.md](ENHANCEMENT-DEPLOYMENT.md) for the Cloudflare release.
 
 ### From your own computer
 
 With Node 22 installed, in the repository:
 
 ```sh
-npm install
+npm ci
 npx firebase login
-npm test
-npm run build
+npm run test:config
+npm run deploy:check
 npm run deploy
 ```
 
-The login happens in your browser. No password or token needs to be shared in chat. The command deploys no Cloud Functions or Storage service. The deploy script reads the project and database from `.env.local`, matching the web build.
+The login happens in your browser. No password or token needs to be shared in chat. The script uses the connected public configuration, with explicit project/database environment overrides from `.env.local`. The dry run shows the exact rules target without authenticating or writing. A different database override for the connected project is rejected.
 
 If you only have a phone, use GitHub Actions after configuring keyless Google Cloud access below, or perform the same browser login in your own development environment. Do not paste service-account keys into chat.
 
 ## 7. Optional keyless GitHub deployment
 
-The manual `Deploy Firebase Spark` workflow uses Google Cloud Workload Identity Federation and short-lived credentials. Configure a dedicated deploy service account, an identity pool/provider trusting `https://token.actions.githubusercontent.com`, and restrict the provider's attribute condition to **your exact repository and intended deployment ref**. Bind only that repository principal to the deploy account using Workload Identity User. Google Cloud IAM setup requires the project owner's authorization; a project ID alone cannot grant it.
+The manual `Deploy Firestore rules` workflow uses Google Cloud Workload Identity Federation and short-lived credentials. Configure a dedicated deploy service account, an identity pool/provider trusting `https://token.actions.githubusercontent.com`, and restrict the provider's attribute condition to **your exact repository and intended deployment ref**. Bind only that repository principal to the deploy account using Workload Identity User. Google Cloud IAM setup requires the project owner's authorization; a project ID alone cannot grant it.
 
-Grant only the deployment permissions needed: Firebase Hosting Admin and Firebase Rules Admin; if deploying indexes, include Datastore Index Admin. Some projects also require Service Usage Consumer for quota-project access. Do not use Owner or Editor as a convenience. Consult current Firebase CLI requirements if an API reports an additional specific missing permission.
+Grant only the deployment permissions needed: Firebase Rules Admin; if deploying indexes, include Datastore Index Admin. Some projects also require Service Usage Consumer for quota-project access. Do not use Owner or Editor as a convenience. Consult current Firebase CLI requirements if an API reports an additional specific missing permission.
 
 Configure a GitHub `production` environment with a required reviewer and the following repository/environment variables:
 

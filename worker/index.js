@@ -295,21 +295,45 @@ async function importer(request) {
   }
 }
 async function sitemap() {
-  let entries = [];
-  try {
-    let token = "",
-      pages = 0;
-    do {
-      const d = await rest(
-        `publications?pageSize=500${token ? "&pageToken=" + encodeURIComponent(token) : ""}`,
+  const entries = [];
+  let cursor;
+  const endpoint = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(config.projectId)}/databases/${encodeURIComponent(config.databaseId)}/documents:runQuery`;
+  for (let page = 0; page < 20; page++) {
+    const r = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        structuredQuery: {
+          from: [{ collectionId: "publications" }],
+          orderBy: [
+            { field: { fieldPath: "__name__" }, direction: "ASCENDING" },
+          ],
+          limit: 500,
+          ...(cursor
+            ? {
+                startAt: {
+                  values: [{ referenceValue: cursor }],
+                  before: false,
+                },
+              }
+            : {}),
+        },
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!r.ok)
+      throw new Error("Published articles could not be read for the sitemap.");
+    const docs = (await r.json())
+      .filter((item) => item.document)
+      .map((item) => item.document);
+    entries.push(...docs.map(unpack));
+    if (docs.length < 500) break;
+    const next = docs.at(-1).name;
+    if (!next || next === cursor || page === 19)
+      throw new Error(
+        "Sitemap exceeds the configured page limit or cannot advance.",
       );
-      entries.push(...(d?.documents || []).map(unpack));
-      token = d?.nextPageToken || "";
-      pages++;
-    } while (token && pages < 20);
-    if (token) throw new Error("Sitemap exceeds the configured page limit.");
-  } catch {
-    entries = await list("publications", 500);
+    cursor = next;
   }
   const paths = [
     "/",

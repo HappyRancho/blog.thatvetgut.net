@@ -348,6 +348,62 @@ try {
     )
     .waitFor();
   assert.equal(await page.evaluate(() => window.__unsafe), undefined);
+  // Loading the launch pack must preserve both edited drafts and existing public slugs.
+  const pack = JSON.parse(
+    await readFile("content/chirag-patidar.json", "utf8"),
+  );
+  await env.withSecurityRulesDisabled(async (c) => {
+    await setDoc(doc(c.firestore(), "manuscripts", pack[0].id), {
+      ...saved,
+      article: { ...pack[0], title: "Keep this founder's existing manuscript" },
+      status: "DRAFT",
+    });
+    await setDoc(doc(c.firestore(), "publications", pack[1].id), {
+      article: { ...pack[1], title: "Keep this existing public article" },
+      publishedAt: "2026-10-01T12:00:00Z",
+    });
+  });
+  await page
+    .getByRole("button", { name: "Add missing article drafts", exact: true })
+    .click();
+  await page
+    .getByRole("status")
+    .filter({
+      hasText: "28 drafts added; 2 existing articles kept. Open a draft",
+    })
+    .waitFor({ timeout: 60000 });
+  await page
+    .getByRole("button", { name: "Add missing article drafts", exact: true })
+    .click();
+  await page
+    .getByRole("status")
+    .filter({
+      hasText: "0 drafts added; 30 existing articles kept. Open a draft",
+    })
+    .waitFor({ timeout: 60000 });
+  await env.withSecurityRulesDisabled(async (c) => {
+    const db = c.firestore();
+    assert.equal(
+      (await getDoc(doc(db, "manuscripts", pack[0].id))).data().article.title,
+      "Keep this founder's existing manuscript",
+    );
+    assert.equal(
+      (await getDoc(doc(db, "manuscripts", pack[1].id))).exists(),
+      false,
+    );
+    assert.equal(
+      (await getDoc(doc(db, "publications", pack[1].id))).data().article.title,
+      "Keep this existing public article",
+    );
+    assert.equal(
+      (await getDoc(doc(db, "manuscripts", pack[2].id))).data().status,
+      "DRAFT",
+    );
+    assert.equal(
+      (await getDoc(doc(db, "publications", pack[2].id))).exists(),
+      false,
+    );
+  });
   await env.withSecurityRulesDisabled(async (c) =>
     updateDoc(doc(c.firestore(), "cms_users", reviewer), {
       status: "INACTIVE",

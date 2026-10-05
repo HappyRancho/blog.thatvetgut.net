@@ -51,6 +51,8 @@ for (const collection of [
       signal: AbortSignal.timeout(20000),
     });
     let d = await r.json();
+    const listStatus = r.status;
+    let method = "list";
     if (!r.ok) {
       const q = await fetch(`${base}:runQuery`, {
         method: "POST",
@@ -67,13 +69,17 @@ for (const collection of [
         const items = (await q.json()).filter((x) => x.document);
         r = q;
         d = { documents: items.map((x) => x.document) };
+        method = "query";
       }
     }
     report.database.push({
       collection,
       status: r.status,
+      listStatus,
+      method,
       count: r.ok ? d.documents?.length || 0 : undefined,
-      hasMore: !!d.nextPageToken,
+      hasMore:
+        !!d.nextPageToken || (method === "query" && d.documents.length === 100),
       error: r.ok ? undefined : d.error?.message,
     });
     if (collection === "publications" && r.ok) {
@@ -87,7 +93,8 @@ for (const collection of [
       }
       report.publications = {
         count: docs.length,
-        hasMore: !!d.nextPageToken,
+        hasMore:
+          !!d.nextPageToken || (method === "query" && docs.length === 100),
         byAuthor: counts,
       };
     }

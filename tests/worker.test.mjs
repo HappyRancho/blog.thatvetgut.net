@@ -5,6 +5,49 @@ import worker, {
   readLimited,
   decode,
 } from "../worker/index.js";
+test("sitemap uses paginated public queries and includes articles beyond the first 500", async () => {
+  const original = globalThis.fetch;
+  const requests = [];
+  const prefix =
+    "projects/demo-thatvetguy/databases/(default)/documents/publications/";
+  const document = (i) => ({
+    name: prefix + "guide-" + String(i).padStart(4, "0"),
+    fields: {
+      article: { mapValue: { fields: { id: { stringValue: "guide-" + i } } } },
+      publishedAt: { timestampValue: "2026-10-04T12:00:00Z" },
+    },
+  });
+  globalThis.fetch = async (url, options) => {
+    assert.match(String(url), /documents:runQuery$/);
+    const q = JSON.parse(options.body).structuredQuery;
+    requests.push(q);
+    assert.equal(q.from[0].collectionId, "publications");
+    assert.equal(q.orderBy[0].field.fieldPath, "__name__");
+    return Response.json(
+      (requests.length === 1
+        ? Array.from({ length: 500 }, (_, i) => document(i))
+        : [document(500)]
+      ).map((d) => ({ document: d })),
+    );
+  };
+  try {
+    const r = await worker.fetch(
+      new Request("https://blog.thatvetguy.net/sitemap.xml"),
+      {},
+    );
+    assert.equal(r.status, 200);
+    const xml = await r.text();
+    assert.equal((xml.match(/\/article\/guide-/g) || []).length, 501);
+    assert.match(xml, /\/article\/guide-500<\/loc>/);
+    assert.equal(requests[0].startAt, undefined);
+    assert.deepEqual(requests[1].startAt, {
+      values: [{ referenceValue: prefix + "guide-0499" }],
+      before: false,
+    });
+  } finally {
+    globalThis.fetch = original;
+  }
+});
 test("import fetch validates each redirect and cannot reach arbitrary hosts", async () => {
   const calls = [];
   await assert.rejects(

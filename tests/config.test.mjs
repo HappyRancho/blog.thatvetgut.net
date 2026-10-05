@@ -4,9 +4,56 @@ import { mkdtemp, mkdir, copyFile, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
+import { firestoreDeployment } from "../scripts/firebase-target.mjs";
 const fixture = JSON.parse(
   await readFile("firebase-applet-config.json", "utf8"),
 );
+test("rules deployment selects only the connected named database and never Hosting", async () => {
+  const config = JSON.parse(await readFile("firebase.json", "utf8"));
+  const result = firestoreDeployment(config, fixture);
+  assert.equal(result.project, fixture.projectId);
+  assert.deepEqual(result.config, {
+    firestore: [
+      {
+        database: fixture.firestoreDatabaseId,
+        rules: "firestore.rules",
+        indexes: "firestore.indexes.json",
+      },
+    ],
+  });
+  assert.equal("hosting" in result.config, false);
+  assert.equal(config.firestore.length, 1);
+  assert.throws(
+    () =>
+      firestoreDeployment(config, fixture, {
+        VITE_FIREBASE_DATABASE_ID: "(default)",
+      }),
+    /Refusing/,
+  );
+  const multi = {
+    firestore: [
+      ...config.firestore,
+      { database: "(default)", rules: "other.rules", indexes: "other.json" },
+    ],
+  };
+  assert.deepEqual(firestoreDeployment(multi, fixture), result);
+  assert.deepEqual(
+    firestoreDeployment(
+      {
+        firestore: {
+          rules: "firestore.rules",
+          indexes: "firestore.indexes.json",
+        },
+      },
+      fixture,
+    ),
+    result,
+  );
+  assert.throws(
+    () => firestoreDeployment({ firestore: [] }, fixture),
+    /No rules/,
+  );
+});
 test("Worker defaults and isolated project overrides select the intended database", async () => {
   const cwd = await mkdtemp(join(tmpdir(), "tvg-config-"));
   try {
