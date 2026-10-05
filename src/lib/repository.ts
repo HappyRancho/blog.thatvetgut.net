@@ -58,6 +58,7 @@ export async function profiles() {
 export async function saveProfile(a: Author) {
   await setDoc(doc(database(), "authors", a.id), a);
 }
+export class ExistingArticleError extends Error {}
 export async function saveDraft(
   article: Article,
   uid: string,
@@ -72,6 +73,7 @@ export async function saveDraft(
     : null;
   return await runTransaction(db, async (tx) => {
     const snap = await tx.get(ref);
+    const publication = await tx.get(doc(db, "publications", article.id));
     const existingSource = sourceRef ? await tx.get(sourceRef) : null;
     if (
       existingSource?.exists() &&
@@ -81,8 +83,13 @@ export async function saveDraft(
         "This LinkedIn source has already been imported. Open the existing manuscript.",
       );
     const old = snap.exists() ? (snap.data() as Manuscript) : null;
-    if (old && expectedRevision === undefined)
-      throw new Error("This slug is already used. Choose a different one.");
+    if (
+      (old && expectedRevision === undefined) ||
+      (!old && publication.exists())
+    )
+      throw new ExistingArticleError(
+        "This slug is already used. Choose a different one.",
+      );
     if (old && old.revision !== expectedRevision)
       throw new Error(
         "Another founder changed this article. Reload before saving.",

@@ -35,6 +35,10 @@ Without Firebase configuration the application is an explicitly labelled, non-in
 
 The existing Cloudflare Workers hosting integration is supported by `wrangler.jsonc`. See [Cloudflare hosting](docs/CLOUDFLARE.md) for build/deploy settings. The legacy Firebase Hosting configuration is retained, but it does not deploy Worker features. Release this enhancement through Cloudflare, with Firebase handling authentication and the database.
 
+`npm run deploy:check` previews the single named Firestore rules/indexes target without authenticating or writing anything. `npm run deploy` deploys only those rules and indexes using your existing Firebase credentials; it never deploys Hosting. The workflow “Deploy Firestore rules” uses configured Google workload identity. A `(default)` override for the connected production project is rejected, so this command cannot accidentally change another database's rules.
+
+In the CMS, **Add missing article drafts** imports the 30-guide pack with live progress and reports created/skipped counts. Retrying keeps existing manuscripts and public articles. Imported text remains private until the author checks it and a different eligible founder completes clinical review; publication records and review identities must reflect actual editorial actions.
+
 Read [Firebase Spark setup](docs/FIREBASE-SPARK.md), [Launch checklist](docs/LAUNCH.md) and [Editorial guide](docs/EDITORIAL.md). The deployment workflow is manual and requires your own Firebase/Google Cloud authorization; this repository does not contain credentials.
 
 ## Important boundaries

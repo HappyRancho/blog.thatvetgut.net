@@ -12,7 +12,15 @@ const report = {
   publications: null,
 };
 await mkdir("live-check", { recursive: true });
-for (const path of ["/", "/admin", "/sitemap.xml"]) {
+for (const path of [
+  "/",
+  "/admin",
+  "/articles",
+  "/contributors",
+  "/author/dr-chirag-patidar",
+  "/sitemap.xml",
+  "/article/deployment-probe-" + crypto.randomUUID(),
+]) {
   try {
     const r = await fetch(site + path, {
       signal: AbortSignal.timeout(20000),
@@ -51,6 +59,8 @@ for (const collection of [
       signal: AbortSignal.timeout(20000),
     });
     let d = await r.json();
+    const listStatus = r.status;
+    let method = "list";
     if (!r.ok) {
       const q = await fetch(`${base}:runQuery`, {
         method: "POST",
@@ -67,13 +77,17 @@ for (const collection of [
         const items = (await q.json()).filter((x) => x.document);
         r = q;
         d = { documents: items.map((x) => x.document) };
+        method = "query";
       }
     }
     report.database.push({
       collection,
       status: r.status,
+      listStatus,
+      method,
       count: r.ok ? d.documents?.length || 0 : undefined,
-      hasMore: !!d.nextPageToken,
+      hasMore:
+        !!d.nextPageToken || (method === "query" && d.documents.length === 100),
       error: r.ok ? undefined : d.error?.message,
     });
     if (collection === "publications" && r.ok) {
@@ -87,12 +101,32 @@ for (const collection of [
       }
       report.publications = {
         count: docs.length,
-        hasMore: !!d.nextPageToken,
+        hasMore:
+          !!d.nextPageToken || (method === "query" && docs.length === 100),
         byAuthor: counts,
       };
     }
   } catch (e) {
     report.database.push({ collection, error: e.message });
+  }
+}
+report.publicDocumentReads = [];
+for (const path of [
+  "authors/dr-chirag-patidar",
+  "publications/deployment-probe-" + crypto.randomUUID(),
+]) {
+  try {
+    const r = await fetch(`${base}/${path}`, {
+      signal: AbortSignal.timeout(20000),
+    });
+    const data = await r.json();
+    report.publicDocumentReads.push({
+      path,
+      status: r.status,
+      error: data.error?.message,
+    });
+  } catch (e) {
+    report.publicDocumentReads.push({ path, error: e.message });
   }
 }
 try {

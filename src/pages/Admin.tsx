@@ -27,6 +27,7 @@ import {
   deleteDraft,
   saveDraft,
   saveProfile,
+  ExistingArticleError,
 } from "../lib/repository";
 import {
   type Manuscript,
@@ -387,6 +388,42 @@ function Admin() {
     } catch (err) {
       setStatus(
         err instanceof Error ? err.message : "The change could not be saved.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+  const addContentPack = async () => {
+    if (!user || !member) return;
+    setBusy(true);
+    let added = 0;
+    let skipped = 0;
+    setStatus("Preparing the 30 article drafts…");
+    try {
+      const { launchDrafts } = await import("../data/launch-drafts");
+      for (const article of launchDrafts) {
+        try {
+          const saved = await saveDraft(article, user.uid);
+          added++;
+          setRows((old) => [
+            saved,
+            ...old.filter((m) => m.article.id !== article.id),
+          ]);
+        } catch (error) {
+          if (error instanceof ExistingArticleError) skipped++;
+          else throw error;
+        }
+        setStatus(
+          `${added} drafts added; ${skipped} existing articles kept. ${added + skipped} of 30 checked.`,
+        );
+      }
+      setRows(await manuscripts());
+      setStatus(
+        `${added} drafts added; ${skipped} existing articles kept. Open a draft to check the content, then submit it for clinical review.`,
+      );
+    } catch (error) {
+      setStatus(
+        `${added} drafts added; ${skipped} existing articles kept. ${error instanceof Error ? error.message : "Import could not finish."} Retry to add the remaining drafts; saved articles will be kept.`,
       );
     } finally {
       setBusy(false);
@@ -883,20 +920,7 @@ function Admin() {
                     </p>
                     <button
                       disabled={busy}
-                      onClick={() =>
-                        void run(async () => {
-                          const { launchDrafts } = await import(
-                            "../data/launch-drafts"
-                          );
-                          const existing = new Set(
-                            (await manuscripts()).map((m) => m.article.id),
-                          );
-                          for (const a of launchDrafts) {
-                            if (!existing.has(a.id))
-                              await saveDraft(a, user!.uid);
-                          }
-                        })
-                      }
+                      onClick={() => void addContentPack()}
                     >
                       Add missing article drafts
                     </button>
